@@ -36,10 +36,10 @@ The `songleaf` console script is the same command.
 import songleaf
 
 hits = songleaf.search("wonderwall oasis")
-song = songleaf.get_song(hits[0].key)           # a Song: lyrics text + annotations
+song = songleaf.get_song(hits[0].key)  # a Song: lyrics text + annotations
 songleaf.render_dense_a4(song, "wonderwall.pdf")  # {'font_size': ..., 'pages': 1, ...}
 
-songleaf.sheet("wonderwall oasis")              # search, store and render in one call
+songleaf.sheet("wonderwall oasis")  # search, store and render in one call
 ```
 
 ## The song model
@@ -55,8 +55,12 @@ Metadata (title, artist, capo, key) and provenance (source, id, url, licence) tr
 ```python
 from songleaf import Song, chord, section, parse_chords_over_lyrics
 
-song = Song("Paper boats drift", [section(0, 17, "Verse 1"), chord(0, "G"), chord(6, "D")])
-song = parse_chords_over_lyrics("G     D\nPaper boats drift")   # the same chords, from a chart
+song = Song(
+    "Paper boats drift", [section(0, 17, "Verse 1"), chord(0, "G"), chord(6, "D")]
+)
+song = parse_chords_over_lyrics(
+    "G     D\nPaper boats drift"
+)  # the same chords, from a chart
 ```
 
 ## Storage
