@@ -107,6 +107,8 @@ Songs are kept in a `MutableMapping` (`songleaf.song_store()`): one JSON file pe
 
 Loading the corpus takes about five seconds on the first search in a process.
 
+Other sources surveyed, plus the Ultimate Guitar / MuseScore decisions, are in [`misc/docs/sources.md`](misc/docs/sources.md).
+
 ## Extending
 
 Three keyword arguments are the extension points, on `sheet` (and `search` for sources):
