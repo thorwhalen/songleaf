@@ -70,7 +70,9 @@ from functools import partial
 from songleaf import SheetLayout, render_sheet
 from songleaf.packing import pack_structured
 
-layout = SheetLayout(chords="inline", packing=partial(pack_structured, row_cost=5), columns=2)
+layout = SheetLayout(
+    chords="inline", packing=partial(pack_structured, row_cost=5), columns=2
+)
 render_sheet(song, "sheet.pdf", layout=layout)
 ```
 
