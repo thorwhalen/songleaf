@@ -18,22 +18,38 @@ or ``python -m songleaf sheet "wonderwall oasis"``.
 
 from songleaf.model import Annotation, Song, chord, score_link, section
 from songleaf.parse import parse_chords_over_lyrics
-from songleaf.render import DenseStyle, fit_font_size, render_dense_a4
+from songleaf.render import (
+    LAYOUT_OPTIONS,
+    DenseStyle,
+    SheetLayout,
+    fit_font_size,
+    layout_named,
+    layout_spec,
+    make_renderer,
+    render_dense_a4,
+    render_sheet,
+)
 from songleaf.sources import Hit, KaggleChordsSource, get_song, search
 from songleaf.store import song_store
 from songleaf.tools import sheet, songs
 
 __all__ = [
+    "LAYOUT_OPTIONS",
     "Annotation",
     "DenseStyle",
     "Hit",
     "KaggleChordsSource",
+    "SheetLayout",
     "Song",
     "chord",
     "fit_font_size",
     "get_song",
+    "layout_named",
+    "layout_spec",
+    "make_renderer",
     "parse_chords_over_lyrics",
     "render_dense_a4",
+    "render_sheet",
     "score_link",
     "search",
     "section",

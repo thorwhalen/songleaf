@@ -40,6 +40,7 @@ def sheet(
     output: str = "",
     pick: int = 1,
     refresh: bool = False,
+    layout: str = "dense",
     sources=None,
     store=None,
     renderer=None,
@@ -52,9 +53,26 @@ def sheet(
     best match instead of the best. The song is saved to the store; ``refresh``
     fetches it from its source again, replacing the stored copy. The PDF goes to
     ``output``, by default the ``sheets`` data directory.
+
+    ``layout`` is ``dense`` (the default), or options joined with ``+``:
+    ``overlap`` (chords over the words themselves), ``inline`` (chords in the
+    line, before their syllable), ``packed`` (rows break where the lyrics do),
+    ``two-column``, ``shaded`` (sections, repeated lines and chord functions);
+    for example ``inline+packed+two-column``. A ``renderer`` decides the layout
+    itself, so it does not go with ``layout``.
     """
     if pick < 1:
         raise ValueError(f"pick counts from 1, got {pick}")
+    layout_name = ""
+    if renderer is None:
+        from songleaf.render import layout_spec, make_renderer
+
+        renderer = make_renderer(layout)  # a bad layout fails before any search
+        layout_name = "" if layout_spec(layout) == "dense" else layout_spec(layout)
+    elif layout != "dense":
+        raise ValueError(
+            "Pass a layout or a renderer, not both: the renderer decides the layout"
+        )
     store = song_store() if store is None else store
     key = _key_named_by(query, store=store, sources=sources)
     if key is None:
@@ -66,11 +84,9 @@ def sheet(
     if refresh or not _is_stored(store, key):
         store[key] = _sources.get_song(key, sources=sources)
     song = store[key]
-    if renderer is None:
-        from songleaf.render import render_dense_a4
-
-        renderer = render_dense_a4
-    output = output or os.path.join(data_dir("sheets"), _file_name(song, key))
+    output = output or os.path.join(
+        data_dir("sheets"), _file_name(song, key, layout_name)
+    )
     return {
         "key": key,
         "title": song.title,
@@ -103,12 +119,12 @@ def _key_named_by(query: str, *, store, sources) -> str | None:
     return None
 
 
-def _file_name(song, key: str) -> str:
+def _file_name(song, key: str, layout: str = "") -> str:
     def slug(text):
         return re.sub(r"\W+", "-", text.lower()).strip("-")
 
     stem = slug(f"{song.artist} {song.title}")[:_MAX_FILE_STEM].strip("-")
-    return "-".join(filter(None, (stem, slug(key)))) + ".pdf"
+    return "-".join(filter(None, (stem, slug(key), slug(layout)))) + ".pdf"
 
 
 #: Every operation, in the order the CLI lists them.
