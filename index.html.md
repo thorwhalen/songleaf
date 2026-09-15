@@ -71,7 +71,9 @@ from functools import partial
 from songleaf import SheetLayout, render_sheet
 from songleaf.packing import pack_structured
 
-layout = SheetLayout(chords="inline", packing=partial(pack_structured, row_cost=5), columns=2)
+layout = SheetLayout(
+    chords="inline", packing=partial(pack_structured, row_cost=5), columns=2
+)
 render_sheet(song, "sheet.pdf", layout=layout)
 ```
 
@@ -105,6 +107,8 @@ Songs are kept in a `MutableMapping` (`songleaf.song_store()`): one JSON file pe
 `KaggleChordsSource` reads the [chords-and-lyrics dataset](https://www.kaggle.com/datasets/eitanbentora/chords-and-lyrics-dataset) through `sung`. It needs a local copy of the zip: point `SUNG_CHORDS_AND_LYRICS_ZIP` at it, or keep it where `haggle` downloads it (`$HAGGLE_ROOTDIR/zips/eitanbentora/chords-and-lyrics-dataset.zip`). Without a local copy, `sung` downloads it from Kaggle, which needs Kaggle credentials. The corpus was scraped from a chords site, so keep it to personal use.
 
 Loading the corpus takes about five seconds on the first search in a process.
+
+Other sources surveyed, plus the Ultimate Guitar / MuseScore decisions, are in [`misc/docs/sources.md`]().
 
 ## Extending
 
