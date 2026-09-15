@@ -1,0 +1,21 @@
+songleaf.sources
+================
+
+.. automodule:: songleaf.sources
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      default_sources
+      get_song
+      search
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Hit
+      KaggleChordsSource
+   

@@ -1,0 +1,14 @@
+songleaf.parse
+==============
+
+.. automodule:: songleaf.parse
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      is_chord_line
+      is_chord_token
+      parse_chords_over_lyrics
+   

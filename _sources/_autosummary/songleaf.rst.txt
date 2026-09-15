@@ -1,0 +1,44 @@
+﻿songleaf
+========
+
+.. automodule:: songleaf
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      chord
+      fit_font_size
+      get_song
+      parse_chords_over_lyrics
+      render_dense_a4
+      score_link
+      search
+      section
+      sheet
+      song_store
+      songs
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Annotation
+      DenseStyle
+      Hit
+      KaggleChordsSource
+      Song
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   model
+   parse
+   render
+   sources
+   store
+   tools

@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "built_at": "2026-09-15T12:04:27Z",
+  "package": {
+    "name": "songleaf",
+    "version": "0.0.1",
+    "display_name": "songleaf",
+    "source": "pyproject.toml"
+  },
+  "git": {
+    "available": true,
+    "commit": "ade29dcd86dc75bb15a1a08ac9c817482800d677",
+    "short_commit": "ade29dc",
+    "branch": "main",
+    "tags": [],
+    "dirty": false,
+    "remote_url": "https://github.com/thorwhalen/songleaf",
+    "commit_url": "https://github.com/thorwhalen/songleaf/commit/ade29dcd86dc75bb15a1a08ac9c817482800d677",
+    "error": null
+  },
+  "ci": {
+    "provider": "github",
+    "repository": "thorwhalen/songleaf",
+    "sha": "ade29dcd86dc75bb15a1a08ac9c817482800d677",
+    "sha_in_history": true,
+    "ref": "refs/heads/main",
+    "ref_name": "main",
+    "run_id": "34966571793",
+    "run_url": "https://github.com/thorwhalen/songleaf/actions/runs/34966571793",
+    "server_url": "https://github.com"
+  },
+  "tools": {
+    "epythet": "0.2.11",
+    "sphinx": "9.1.0",
+    "docutils": "0.22.4",
+    "python": "3.12.14"
+  },
+  "config": {
+    "theme": "auto",
+    "html_theme": "furo",
+    "accent": "#8e3c00",
+    "mode": "auto",
+    "api_generator": "autosummary",
+    "ignore": [
+      "tests/",
+      "scrap/",
+      "examples/"
+    ],
+    "agent_outputs": true,
+    "aggregates": [
+      "md"
+    ],
+    "ai_artifacts": true,
+    "provenance": true,
+    "docs_dir": "docsrc"
+  },
+  "site": {
+    "modules_documented": 7,
+    "objects_documented": 62
+  },
+  "pypi": {
+    "checked": true,
+    "latest": "0.0.2",
+    "relation": "behind",
+    "error": null
+  },
+  "reproduce": "git clone https://github.com/thorwhalen/songleaf && cd songleaf\ngit checkout ade29dcd86dc75bb15a1a08ac9c817482800d677\npip install \"epythet==0.2.11\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "warnings": [],
+  "alignment": {
+    "aligned": false,
+    "notes": [
+      "The documented version (0.0.1) is behind the latest release on PyPI (0.0.2): `pip install songleaf` gives newer code than these docs describe."
+    ]
+  }
+}

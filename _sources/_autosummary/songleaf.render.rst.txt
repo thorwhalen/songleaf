@@ -1,0 +1,26 @@
+songleaf.render
+===============
+
+.. automodule:: songleaf.render
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      DFLT_MARGIN
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      fit_font_size
+      render_dense_a4
+      short_label
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      DenseStyle
+   

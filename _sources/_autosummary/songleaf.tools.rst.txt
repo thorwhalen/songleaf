@@ -1,0 +1,20 @@
+songleaf.tools
+==============
+
+.. automodule:: songleaf.tools
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      TOOLS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      search
+      sheet
+      songs
+   

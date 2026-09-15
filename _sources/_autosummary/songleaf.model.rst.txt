@@ -1,0 +1,28 @@
+songleaf.model
+==============
+
+.. automodule:: songleaf.model
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      CHORD_TIMINGS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      chord
+      score_link
+      section
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Annotation
+      Line
+      Song
+   
