@@ -24,7 +24,7 @@ _ROOT_RE = re.compile(r"[*.(\s]*([A-G])([#b]?)(.*)", re.DOTALL)
 _PITCH_CLASSES = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 _ACCIDENTALS = {"#": 1, "b": -1, "": 0}
 _DIMINISHED_RE = re.compile(r"(?:dim|°|º|ø|m(?:in)?7?\(?b5)")
-_OPEN_RE = re.compile(r"(?:sus|5(?!\d))")
+_POWER_RE = re.compile(r"5(?!\d)")
 
 # Qualities each scale degree (semitones above the tonic) takes in a key.
 _MAJOR_KEY = {
@@ -60,13 +60,19 @@ def parse_chord(symbol: str) -> tuple[int, str] | None:
     """``(root pitch class, quality)``, or None for what is not a chord.
 
     The quality is ``"major"``, ``"minor"``, ``"diminished"``, or ``"open"`` (a
-    suspended or power chord, which has no third). A bass note is ignored.
+    suspended or power chord, which has no third). A bass note is ignored. What
+    the chart parser would not read as a chord (``is_chord_token``) is not one.
 
-    >>> parse_chord("F#m7"), parse_chord("Bbmaj7/D"), parse_chord("Asus4"), parse_chord("Bm7b5")
+    >>> parse_chord("F#m7"), parse_chord("Bbmaj7/D"), parse_chord("A7sus4"), parse_chord("Bm7b5")
     ((6, 'minor'), (10, 'major'), (9, 'open'), (11, 'diminished'))
+    >>> parse_chord("C-7"), parse_chord("Bridge")
+    ((0, 'minor'), None)
     """
-    match = _ROOT_RE.fullmatch(symbol.strip())
-    if not match:
+    from songleaf.parse import is_chord_token
+
+    symbol = symbol.strip()
+    match = _ROOT_RE.fullmatch(symbol)
+    if not (match and is_chord_token(symbol)):
         return None
     letter, accidental, rest = match.groups()
     root = (_PITCH_CLASSES[letter] + _ACCIDENTALS[accidental]) % 12
@@ -74,9 +80,9 @@ def parse_chord(symbol: str) -> tuple[int, str] | None:
         quality = "major"
     elif _DIMINISHED_RE.match(rest):
         quality = "diminished"
-    elif rest.startswith(("min", "m")):
+    elif rest.startswith(("min", "m", "-")):  # "C-7" is jazz for Cm7
         quality = "minor"
-    elif _OPEN_RE.match(rest):
+    elif "sus" in rest or _POWER_RE.match(rest):
         quality = "open"
     else:
         quality = "major"

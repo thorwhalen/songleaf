@@ -139,11 +139,21 @@ def test_bad_layouts_are_refused_early():
         SheetLayout(columns=0)
 
 
-def test_the_dense_layout_is_v1(chart):
-    song = parse_chords_over_lyrics(chart)
-    assert render_dense_a4(song, io.BytesIO()) == render_sheet(
-        song, io.BytesIO(), layout="dense"
-    )
+@pytest.mark.parametrize(
+    "lines, font_size, rows", [(None, 68.49, 10), (60, 15.18, 37), (20, 29.78, 21)]
+)
+def test_the_dense_layout_keeps_the_numbers_of_v1(
+    chart, long_chart, lines, font_size, rows
+):
+    # measured with songleaf 0.0.2, before the layouts existed
+    text = chart if lines is None else long_chart(lines)
+    meta = {"title": "Paper Boats", "artist": "The Invented Band"}
+    song = parse_chords_over_lyrics(text, meta=meta)
+    for info in (
+        render_dense_a4(song, io.BytesIO()),
+        render_sheet(song, io.BytesIO(), layout="dense"),
+    ):
+        assert (info["font_size"], info["pages"], info["rows"]) == (font_size, 1, rows)
 
 
 def test_strategies_can_be_passed_as_objects(chart):

@@ -46,6 +46,7 @@ Text is set in reportlab's built-in Helvetica, which covers Latin-1.
 
 from __future__ import annotations
 
+import inspect
 import itertools
 import math
 import os
@@ -374,6 +375,7 @@ class ChordPlacement(Protocol):
         """What to draw for the piece, starting at ``x``."""
 
 
+@dataclass(frozen=True)
 class OverChords:
     """Chords above their syllables, smaller and lighter, overlapping the lyric row by ``chord_rise``."""
 
@@ -478,6 +480,7 @@ def _inline_positions(piece: _Piece, size: float, style: DenseStyle, snap: bool 
     return segments, placed, prefix[-1] * size + shift
 
 
+@dataclass(frozen=True, kw_only=True)
 class InlineChords:
     """Chords in the lyric line, right before their syllable; a chord-only line is a row of chords.
 
@@ -487,21 +490,22 @@ class InlineChords:
             annotations are not changed.
     """
 
-    _bare = OverChords()
-
-    def __init__(self, *, snap_to_syllables: bool = True):
-        self.snap = snap_to_syllables
+    snap_to_syllables: bool = True
+    _bare = OverChords()  # not a field: how a line of bare chords is set
 
     def extent(self, piece, size, style):
         if not piece.text:
             return self._bare.extent(piece, size, style)
-        return _inline_positions(piece, size, style, self.snap)[2]
+        return _inline_positions(piece, size, style, self.snap_to_syllables)[2]
 
     def fitting_length(self, piece, available, size, style):
         text, font = piece.text, style.lyric_font
         chord_size = size * style.inline_chord_scale
         pad = style.inline_chord_pad * chord_size
-        chords, total = iter(_inline_chords(text, piece.chords, self.snap)), 0.0
+        chords, total = (
+            iter(_inline_chords(text, piece.chords, self.snap_to_syllables)),
+            0.0,
+        )
         pending = next(chords, None)
         for index, character in enumerate(text):
             while pending is not None and pending[0] <= index:
@@ -519,7 +523,9 @@ class InlineChords:
     def items(self, piece, x, size, style, paint):
         if not piece.text:
             return self._bare.items(piece, x, size, style, paint)
-        segments, placed, _ = _inline_positions(piece, size, style, self.snap)
+        segments, placed, _ = _inline_positions(
+            piece, size, style, self.snap_to_syllables
+        )
         chord_size, rise = (
             size * style.inline_chord_scale,
             style.inline_chord_rise * size,
@@ -654,6 +660,12 @@ def _wrap(
             parts.append(piece)
             return parts
         head, piece = split
+        if head.text and head.chords and chords.extent(head, size, style) > available:
+            # A word broken inside can leave the head ending in chords that do not fit.
+            overhang = _split_overhanging_chords(head, available, size, style, chords)
+            if overhang:
+                parts.extend(overhang)
+                continue
         parts.append(head)
 
 
@@ -734,10 +746,8 @@ def _break_costs(run: list[_Piece]) -> list[float]:
         return [0.0] * (len(run) - 1)
     texts, index_of_line = [], {}
     for part in run:
-        if part.line in index_of_line:
-            texts[index_of_line[part.line]] = (
-                part.text
-            )  # a line rhymes on its last part
+        if part.line in index_of_line:  # the whole line: it rhymes and repeats as one
+            texts[index_of_line[part.line]] += " " + part.text
         else:
             index_of_line[part.line] = len(texts)
             texts.append(part.text)
@@ -824,12 +834,23 @@ class SheetLayout:
     shading: bool = False
     style: DenseStyle = field(default_factory=DenseStyle)
 
-    def __post_init__(self):
-        if not isinstance(self.columns, int) or self.columns < 1:
+    def __post_init__(self):  # a bad layout fails here, not mid-render
+        columns = self.columns
+        if isinstance(columns, bool) or not isinstance(columns, int) or columns < 1:
+            raise ValueError(f"columns must be a positive integer, got {columns!r}")
+        if not isinstance(self.shading, bool):
+            raise ValueError(f"shading must be True or False, got {self.shading!r}")
+        methods = ("extent", "fitting_length", "items")
+        if not all(callable(getattr(self.placement, name, None)) for name in methods):
             raise ValueError(
-                f"columns must be a positive integer, got {self.columns!r}"
+                f"chords must be one of {sorted(CHORD_PLACEMENTS)} or a "
+                f"ChordPlacement, got {self.chords!r}"
             )
-        self.placement, self.packer  # unknown names fail here, not mid-render
+        if not callable(self.packer):
+            raise ValueError(
+                f"packing must be one of {sorted(PACKERS)} or a packer function, "
+                f"got {self.packing!r}"
+            )
 
     @property
     def placement(self) -> ChordPlacement:
@@ -871,6 +892,32 @@ _OPTION_ALIASES = {
 }
 
 
+def _spec_options(spec: str) -> list[str]:
+    """The options of a spec, in order: aliases resolved, ``dense`` and earlier repeats dropped."""
+    options = []
+    for token in filter(None, re.split(r"[+,\s]+", spec.strip().lower())):
+        name = _OPTION_ALIASES.get(token, token)
+        if name not in LAYOUT_OPTIONS:
+            raise ValueError(
+                f"Unknown layout option {token!r}: join options from "
+                f"{', '.join(LAYOUT_OPTIONS)} with '+', as in 'inline+two-column'"
+            )
+        if name in options:
+            options.remove(name)  # the last mention decides, as in layout_named
+        if name != "dense":
+            options.append(name)
+    return options
+
+
+def layout_spec(spec: str) -> str:
+    """The one spelling of a layout spec, for names: ``"Dense"`` -> ``"dense"``.
+
+    >>> layout_spec("2col + INLINE"), layout_spec("dense+"), layout_spec("inline+2col+inline")
+    ('two-column+inline', 'dense', 'two-column+inline')
+    """
+    return "+".join(_spec_options(spec)) or "dense"
+
+
 def layout_named(spec: str, *, style: DenseStyle | None = None) -> SheetLayout:
     """The layout of a spec: options of :data:`LAYOUT_OPTIONS` joined by ``+`` (``"inline+two-column"``).
 
@@ -878,14 +925,8 @@ def layout_named(spec: str, *, style: DenseStyle | None = None) -> SheetLayout:
     :class:`DenseStyle`).
     """
     changes, style_changes = {}, {}
-    for token in filter(None, re.split(r"[+,\s]+", spec.strip().lower())):
-        option = LAYOUT_OPTIONS.get(_OPTION_ALIASES.get(token, token))
-        if option is None:
-            raise ValueError(
-                f"Unknown layout option {token!r}: join options from "
-                f"{', '.join(LAYOUT_OPTIONS)} with '+', as in 'inline+two-column'"
-            )
-        for name, value in option.items():
+    for option_name in _spec_options(spec):
+        for name, value in LAYOUT_OPTIONS[option_name].items():
             if name == "style":
                 style_changes.update(value)
             else:
@@ -973,6 +1014,12 @@ def fit_font_size(
     layout = _as_layout(layout, style)
     page_width, page_height = _page_dimensions(page_size)
     width, height = page_width - 2 * margin, page_height - 2 * margin
+    gaps = layout.style.column_gap * min_font_size * (layout.columns - 1)
+    if width - gaps <= 0:
+        raise ValueError(
+            f"{layout.columns} column(s) do not fit across a {page_width:g} pt page "
+            f"with {margin:g} pt margins, even at {min_font_size:g} pt"
+        )
     pieces, heading = _pieces(song), _heading(song)
     paint = _paint(song, layout.style, layout.shading)
 
@@ -1160,4 +1207,6 @@ def make_renderer(layout: SheetLayout | str = "dense", **render_options) -> Call
     >>> make_renderer("packed+shaded").keywords["layout"].packing
     'structured'
     """
-    return partial(render_sheet, layout=_as_layout(layout, None), **render_options)
+    layout = _as_layout(layout, None)
+    inspect.signature(render_sheet).bind(None, None, layout=layout, **render_options)
+    return partial(render_sheet, layout=layout, **render_options)

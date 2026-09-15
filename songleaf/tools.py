@@ -58,16 +58,21 @@ def sheet(
     ``overlap`` (chords over the words themselves), ``inline`` (chords in the
     line, before their syllable), ``packed`` (rows break where the lyrics do),
     ``two-column``, ``shaded`` (sections, repeated lines and chord functions);
-    for example ``inline+packed+two-column``.
+    for example ``inline+packed+two-column``. A ``renderer`` decides the layout
+    itself, so it does not go with ``layout``.
     """
     if pick < 1:
         raise ValueError(f"pick counts from 1, got {pick}")
     layout_name = ""
     if renderer is None:
-        from songleaf.render import make_renderer
+        from songleaf.render import layout_spec, make_renderer
 
         renderer = make_renderer(layout)  # a bad layout fails before any search
-        layout_name = "" if layout == "dense" else layout
+        layout_name = "" if layout_spec(layout) == "dense" else layout_spec(layout)
+    elif layout != "dense":
+        raise ValueError(
+            "Pass a layout or a renderer, not both: the renderer decides the layout"
+        )
     store = song_store() if store is None else store
     key = _key_named_by(query, store=store, sources=sources)
     if key is None:
