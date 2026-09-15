@@ -226,50 +226,55 @@ def _split_at(piece: _Piece, cut: int) -> tuple[_Piece, _Piece]:
     return head, _Piece(text[tail_start:], tail_chords)
 
 
-def _last_fitting(cuts: list[int], prefix: tuple, limit: float) -> int:
-    """Index of the last cut whose prefix width is within ``limit``; -1 if none is."""
-    low, high, best = 0, len(cuts) - 1, -1
-    while low <= high:
-        middle = (low + high) // 2
-        if prefix[cuts[middle]] <= limit:
-            best, low = middle, middle + 1
-        else:
-            high = middle - 1
-    return best
+def _fitting_length(text: str, font: str, limit: float) -> int:
+    """How many leading characters of ``text`` fit within ``limit`` (at font size 1).
+
+    Stops at the first character past the limit, so the cost is one row, not
+    the whole text: a very long line wraps in time proportional to its length.
+    """
+    total = 0.0
+    for index, character in enumerate(text):
+        total += _width(character, font)
+        if total > limit + _EPSILON:
+            return index
+    return len(text)
 
 
-def _split(piece: _Piece, available: float, size: float, style: DenseStyle):
-    """Split a piece in two, the head as long as fits in ``available``; None if it can't split."""
-    if not piece.text:
-        if len(piece.chords) < 2:
-            return None
-        for k in range(len(piece.chords) - 1, 0, -1):
-            head = _Piece("", piece.chords[:k], piece.label, piece.new_paragraph)
-            if k == 1 or _chord_positions(head, size, style)[1] <= available:
-                return head, _Piece("", piece.chords[k:])
+def _split_text(piece: _Piece, available: float, size: float, style: DenseStyle):
+    """Split off the longest head that fits in ``available``; None if no split is needed or possible."""
     text = piece.text
-    prefix = _prefix_widths(text, style.lyric_font)
-    spaces = [i for i, ch in enumerate(text) if ch == " " and i and text[i - 1] != " "]
-    best = _last_fitting(spaces, prefix, available / size)
-    while best >= 0:  # step back if a chord overhanging the head's end breaks the fit
-        head, tail = _split_at(piece, spaces[best])
-        if tail.text and _chord_positions(head, size, style)[1] <= available:
-            return head, tail
-        best -= 1
-    # No break at a space fits: break inside the first word, as late as fits.
-    cuts = list(range(1, len(text)))
-    if not cuts:
+    fitting = _fitting_length(text, style.lyric_font, available / size)
+    if fitting == len(text) and _chord_positions(piece, size, style)[1] <= available:
         return None
-    return _split_at(piece, cuts[max(_last_fitting(cuts, prefix, available / size), 0)])
+    # Break at the latest space that fits, stepping back while a chord
+    # overhanging the head's end would still break the fit.
+    for cut in range(min(fitting, len(text) - 1), 0, -1):
+        if text[cut] == " " and text[cut - 1] != " ":
+            head, tail = _split_at(piece, cut)
+            if tail.text and _chord_positions(head, size, style)[1] <= available:
+                return head, tail
+    if fitting == len(text) or len(text) < 2:
+        return None  # only a chord overhangs, or a single character: let it be
+    # No break at a space fits: break inside the word, as late as fits.
+    return _split_at(piece, max(fitting, 1))
+
+
+def _split_chords(piece: _Piece, available: float, size: float, style: DenseStyle):
+    """Split a chord-only piece so its head fits in ``available``; None if it fits or can't split."""
+    if len(piece.chords) < 2 or _chord_positions(piece, size, style)[1] <= available:
+        return None
+    for k in range(len(piece.chords) - 1, 0, -1):
+        head = _Piece("", piece.chords[:k], piece.label, piece.new_paragraph)
+        if k == 1 or _chord_positions(head, size, style)[1] <= available:
+            return head, _Piece("", piece.chords[k:])
 
 
 def _wrap(piece: _Piece, size: float, width: float, style: DenseStyle) -> list[_Piece]:
     parts = []
+    split_piece = _split_text if piece.text else _split_chords
     while True:
         available = width - _label_width(piece, size, style)
-        split = None
-        if _chord_positions(piece, size, style)[1] > available:
-            split = _split(piece, available, size, style)
+        split = split_piece(piece, available, size, style)
         if split is None:  # it fits, or it cannot be split any further
             parts.append(piece)
             return parts
