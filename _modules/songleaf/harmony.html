@@ -3,11 +3,11 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark">
-<link rel="alternate" type="text/markdown" href="tools.html.md">
+<link rel="alternate" type="text/markdown" href="harmony.html.md">
 <link rel="describedby" href="../../llms.txt" type="text/markdown"><link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>songleaf.tools - songleaf</title>
+        <title>songleaf.harmony - songleaf</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d75fae25" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -246,147 +246,147 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <h1>Source code for songleaf.tools</h1><div class="highlight"><pre>
-<span></span><span class="sd">"""The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.</span>
+          <h1>Source code for songleaf.harmony</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""What a chord does in its song's key, so that sheets can shade chords by function.</span>
 
-<span class="sd">The CLI (``python -m songleaf``) is ``cw`` over :data:`TOOLS`. Nothing here</span>
-<span class="sd">knows about any surface. ``sources``, ``store`` and ``renderer`` are the seams:</span>
-<span class="sd">library callers pass them, the CLI hides them. Code that wants objects rather</span>
-<span class="sd">than dicts uses :mod:`songleaf.sources`, :mod:`songleaf.store` and</span>
-<span class="sd">:mod:`songleaf.render` directly.</span>
+<span class="sd">The key is estimated from the chords alone (a key given in a chart often names</span>
+<span class="sd">the sounding key while the chords are written for a capo), and each chord is</span>
+<span class="sd">then the ``"tonic"``, ``"diatonic"`` (another chord of the key), or ``"outside"``</span>
+<span class="sd">the key (borrowed, secondary dominant, chromatic).</span>
+
+<span class="sd">&gt;&gt;&gt; key = estimate_key(["G", "D", "Em", "C", "G", "D", "G"])</span>
+<span class="sd">&gt;&gt;&gt; key</span>
+<span class="sd">Key(tonic=7, minor=False)</span>
+<span class="sd">&gt;&gt;&gt; [chord_function(symbol, key) for symbol in ["G", "Em", "C", "Bb", "N.C."]]</span>
+<span class="sd">['tonic', 'diatonic', 'diatonic', 'outside', None]</span>
+<span class="sd">&gt;&gt;&gt; estimate_key(["Am", "Dm", "E7", "Am"])</span>
+<span class="sd">Key(tonic=9, minor=True)</span>
 <span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">songleaf</span><span class="w"> </span><span class="kn">import</span> <span class="n">sources</span> <span class="k">as</span> <span class="n">_sources</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">data_dir</span><span class="p">,</span> <span class="n">song_store</span>
+<span class="n">_ROOT_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"[*.(\s]*([A-G])([#b]?)(.*)"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">)</span>
+<span class="n">_PITCH_CLASSES</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"C"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"D"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"E"</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">"F"</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">"G"</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span> <span class="s2">"A"</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">:</span> <span class="mi">11</span><span class="p">}</span>
+<span class="n">_ACCIDENTALS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"#"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"b"</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s2">""</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+<span class="n">_DIMINISHED_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(?:dim|°|º|ø|m(?:in)?7?\(?b5)"</span><span class="p">)</span>
+<span class="n">_POWER_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"5(?!\d)"</span><span class="p">)</span>
 
-<span class="n">_MAX_FILE_STEM</span> <span class="o">=</span> <span class="mi">120</span>
+<span class="c1"># Qualities each scale degree (semitones above the tonic) takes in a key.</span>
+<span class="n">_MAJOR_KEY</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mi">0</span><span class="p">:</span> <span class="p">{</span><span class="s2">"major"</span><span class="p">},</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="p">{</span><span class="s2">"minor"</span><span class="p">},</span>
+    <span class="mi">4</span><span class="p">:</span> <span class="p">{</span><span class="s2">"minor"</span><span class="p">},</span>
+    <span class="mi">5</span><span class="p">:</span> <span class="p">{</span><span class="s2">"major"</span><span class="p">},</span>
+    <span class="mi">7</span><span class="p">:</span> <span class="p">{</span><span class="s2">"major"</span><span class="p">},</span>
+    <span class="mi">9</span><span class="p">:</span> <span class="p">{</span><span class="s2">"minor"</span><span class="p">},</span>
+    <span class="mi">11</span><span class="p">:</span> <span class="p">{</span><span class="s2">"diminished"</span><span class="p">,</span> <span class="s2">"minor"</span><span class="p">},</span>
+<span class="p">}</span>
+<span class="n">_MINOR_KEY</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mi">0</span><span class="p">:</span> <span class="p">{</span><span class="s2">"minor"</span><span class="p">},</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="p">{</span><span class="s2">"diminished"</span><span class="p">,</span> <span class="s2">"minor"</span><span class="p">},</span>
+    <span class="mi">3</span><span class="p">:</span> <span class="p">{</span><span class="s2">"major"</span><span class="p">},</span>
+    <span class="mi">5</span><span class="p">:</span> <span class="p">{</span><span class="s2">"minor"</span><span class="p">},</span>
+    <span class="mi">7</span><span class="p">:</span> <span class="p">{</span><span class="s2">"minor"</span><span class="p">,</span> <span class="s2">"major"</span><span class="p">},</span>  <span class="c1"># the harmonic-minor V is at home in a minor key</span>
+    <span class="mi">8</span><span class="p">:</span> <span class="p">{</span><span class="s2">"major"</span><span class="p">},</span>
+    <span class="mi">10</span><span class="p">:</span> <span class="p">{</span><span class="s2">"major"</span><span class="p">},</span>
+<span class="p">}</span>
+<span class="n">_TONIC_WEIGHT</span><span class="p">,</span> <span class="n">_DIATONIC_WEIGHT</span><span class="p">,</span> <span class="n">_ENDS_WEIGHT</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span>
 
 
-<div class="viewcode-block" id="search">
-<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.search">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">search</span><span class="p">(</span>
-    <span class="n">query</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
-    <span class="o">*</span><span class="p">,</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
-    <span class="n">artist</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
-    <span class="n">lyrics</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
-    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
-    <span class="n">sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Find songs: fuzzy title and artist (``query``), or by title, artist, or whole words of the lyrics."""</span>
-    <span class="n">hits</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
-        <span class="n">query</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">artist</span><span class="o">=</span><span class="n">artist</span><span class="p">,</span> <span class="n">lyrics</span><span class="o">=</span><span class="n">lyrics</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span>
-    <span class="p">)</span>
-    <span class="k">return</span> <span class="p">[</span><span class="n">hit</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">hits</span><span class="p">]</span></div>
+<div class="viewcode-block" id="Key">
+<a class="viewcode-back" href="../../_autosummary/songleaf.harmony.html#songleaf.harmony.Key">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Key</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A key: its tonic as a pitch class (C = 0, C# = 1, ... B = 11), major or minor."""</span>
+
+    <span class="n">tonic</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">minor</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
 
-<div class="viewcode-block" id="sheet">
-<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.sheet">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">sheet</span><span class="p">(</span>
-    <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="o">*</span><span class="p">,</span>
-    <span class="n">output</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
-    <span class="n">pick</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-    <span class="n">refresh</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">layout</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"dense"</span><span class="p">,</span>
-    <span class="n">sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">renderer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Make a one-page song sheet (PDF) for the best match of ``query``.</span>
+<div class="viewcode-block" id="parse_chord">
+<a class="viewcode-back" href="../../_autosummary/songleaf.harmony.html#songleaf.harmony.parse_chord">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_chord</span><span class="p">(</span><span class="n">symbol</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``(root pitch class, quality)``, or None for what is not a chord.</span>
 
-<span class="sd">    ``query`` may also be a song key, as ``search`` and ``songs`` show them</span>
-<span class="sd">    (``kaggle_chords:1234``): a stored song renders without searching, and the</span>
-<span class="sd">    key of a known source is fetched from it directly. ``pick`` chooses the n-th</span>
-<span class="sd">    best match instead of the best. The song is saved to the store; ``refresh``</span>
-<span class="sd">    fetches it from its source again, replacing the stored copy. The PDF goes to</span>
-<span class="sd">    ``output``, by default the ``sheets`` data directory.</span>
+<span class="sd">    The quality is ``"major"``, ``"minor"``, ``"diminished"``, or ``"open"`` (a</span>
+<span class="sd">    suspended or power chord, which has no third). A bass note is ignored. What</span>
+<span class="sd">    the chart parser would not read as a chord (``is_chord_token``) is not one.</span>
 
-<span class="sd">    ``layout`` is ``dense`` (the default), or options joined with ``+``:</span>
-<span class="sd">    ``overlap`` (chords over the words themselves), ``inline`` (chords in the</span>
-<span class="sd">    line, before their syllable), ``packed`` (rows break where the lyrics do),</span>
-<span class="sd">    ``two-column``, ``shaded`` (sections, repeated lines and chord functions);</span>
-<span class="sd">    for example ``inline+packed+two-column``. A ``renderer`` decides the layout</span>
-<span class="sd">    itself, so it does not go with ``layout``.</span>
+<span class="sd">    &gt;&gt;&gt; parse_chord("F#m7"), parse_chord("Bbmaj7/D"), parse_chord("A7sus4"), parse_chord("Bm7b5")</span>
+<span class="sd">    ((6, 'minor'), (10, 'major'), (9, 'open'), (11, 'diminished'))</span>
+<span class="sd">    &gt;&gt;&gt; parse_chord("C-7"), parse_chord("Bridge")</span>
+<span class="sd">    ((0, 'minor'), None)</span>
 <span class="sd">    """</span>
-    <span class="k">if</span> <span class="n">pick</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"pick counts from 1, got </span><span class="si">{</span><span class="n">pick</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="n">layout_name</span> <span class="o">=</span> <span class="s2">""</span>
-    <span class="k">if</span> <span class="n">renderer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.render</span><span class="w"> </span><span class="kn">import</span> <span class="n">layout_spec</span><span class="p">,</span> <span class="n">make_renderer</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_chord_token</span>
 
-        <span class="n">renderer</span> <span class="o">=</span> <span class="n">make_renderer</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span>  <span class="c1"># a bad layout fails before any search</span>
-        <span class="n">layout_name</span> <span class="o">=</span> <span class="s2">""</span> <span class="k">if</span> <span class="n">layout_spec</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"dense"</span> <span class="k">else</span> <span class="n">layout_spec</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">layout</span> <span class="o">!=</span> <span class="s2">"dense"</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">"Pass a layout or a renderer, not both: the renderer decides the layout"</span>
-        <span class="p">)</span>
-    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
-    <span class="n">key</span> <span class="o">=</span> <span class="n">_key_named_by</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">hits</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">pick</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">pick</span><span class="p">:</span>
-            <span class="n">found</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span><span class="si">}</span><span class="s2"> match"</span> <span class="k">if</span> <span class="n">hits</span> <span class="k">else</span> <span class="s2">"nothing matches"</span>
-            <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No song number </span><span class="si">{</span><span class="n">pick</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="n">query</span><span class="si">!r}</span><span class="s2">: </span><span class="si">{</span><span class="n">found</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="n">key</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="n">pick</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">key</span>
-    <span class="k">if</span> <span class="n">refresh</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">_is_stored</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">get_song</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">)</span>
-    <span class="n">song</span> <span class="o">=</span> <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-    <span class="n">output</span> <span class="o">=</span> <span class="n">output</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-        <span class="n">data_dir</span><span class="p">(</span><span class="s2">"sheets"</span><span class="p">),</span> <span class="n">_file_name</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">layout_name</span><span class="p">)</span>
-    <span class="p">)</span>
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">"key"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span>
-        <span class="s2">"title"</span><span class="p">:</span> <span class="n">song</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
-        <span class="s2">"artist"</span><span class="p">:</span> <span class="n">song</span><span class="o">.</span><span class="n">artist</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">renderer</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">output</span><span class="p">),</span>
-    <span class="p">}</span></div>
+    <span class="n">symbol</span> <span class="o">=</span> <span class="n">symbol</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">_ROOT_RE</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">match</span> <span class="ow">and</span> <span class="n">is_chord_token</span><span class="p">(</span><span class="n">symbol</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">letter</span><span class="p">,</span> <span class="n">accidental</span><span class="p">,</span> <span class="n">rest</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="p">(</span><span class="n">_PITCH_CLASSES</span><span class="p">[</span><span class="n">letter</span><span class="p">]</span> <span class="o">+</span> <span class="n">_ACCIDENTALS</span><span class="p">[</span><span class="n">accidental</span><span class="p">])</span> <span class="o">%</span> <span class="mi">12</span>
+    <span class="k">if</span> <span class="n">rest</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s2">"maj"</span><span class="p">,</span> <span class="s2">"M"</span><span class="p">)):</span>
+        <span class="n">quality</span> <span class="o">=</span> <span class="s2">"major"</span>
+    <span class="k">elif</span> <span class="n">_DIMINISHED_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">rest</span><span class="p">):</span>
+        <span class="n">quality</span> <span class="o">=</span> <span class="s2">"diminished"</span>
+    <span class="k">elif</span> <span class="n">rest</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s2">"min"</span><span class="p">,</span> <span class="s2">"m"</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">)):</span>  <span class="c1"># "C-7" is jazz for Cm7</span>
+        <span class="n">quality</span> <span class="o">=</span> <span class="s2">"minor"</span>
+    <span class="k">elif</span> <span class="s2">"sus"</span> <span class="ow">in</span> <span class="n">rest</span> <span class="ow">or</span> <span class="n">_POWER_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">rest</span><span class="p">):</span>
+        <span class="n">quality</span> <span class="o">=</span> <span class="s2">"open"</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">quality</span> <span class="o">=</span> <span class="s2">"major"</span>
+    <span class="k">return</span> <span class="n">root</span><span class="p">,</span> <span class="n">quality</span></div>
 
 
 
-<div class="viewcode-block" id="songs">
-<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.songs">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">songs</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""The keys of the stored songs."""</span>
-    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
-    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">store</span><span class="p">)</span></div>
+<span class="k">def</span><span class="w"> </span><span class="nf">_function</span><span class="p">(</span><span class="n">parsed</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">key</span><span class="p">:</span> <span class="n">Key</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">root</span><span class="p">,</span> <span class="n">quality</span> <span class="o">=</span> <span class="n">parsed</span>
+    <span class="n">degree</span> <span class="o">=</span> <span class="p">(</span><span class="n">root</span> <span class="o">-</span> <span class="n">key</span><span class="o">.</span><span class="n">tonic</span><span class="p">)</span> <span class="o">%</span> <span class="mi">12</span>
+    <span class="n">qualities</span> <span class="o">=</span> <span class="p">(</span><span class="n">_MINOR_KEY</span> <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">minor</span> <span class="k">else</span> <span class="n">_MAJOR_KEY</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">degree</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">qualities</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="p">(</span><span class="n">quality</span> <span class="o">!=</span> <span class="s2">"open"</span> <span class="ow">and</span> <span class="n">quality</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">qualities</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">"outside"</span>
+    <span class="k">return</span> <span class="s2">"tonic"</span> <span class="k">if</span> <span class="n">degree</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">"diatonic"</span>
+
+
+<div class="viewcode-block" id="chord_function">
+<a class="viewcode-back" href="../../_autosummary/songleaf.harmony.html#songleaf.harmony.chord_function">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">chord_function</span><span class="p">(</span><span class="n">symbol</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">Key</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``"tonic"``, ``"diatonic"`` or ``"outside"`` in ``key``; None if ``symbol`` is not a chord."""</span>
+    <span class="n">parsed</span> <span class="o">=</span> <span class="n">parse_chord</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">parsed</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">_function</span><span class="p">(</span><span class="n">parsed</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span></div>
 
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_is_stored</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">store</span>
-    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>  <span class="c1"># not a storable key (too long, say), so not stored</span>
-        <span class="k">return</span> <span class="kc">False</span>
+<div class="viewcode-block" id="estimate_key">
+<a class="viewcode-back" href="../../_autosummary/songleaf.harmony.html#songleaf.harmony.estimate_key">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">estimate_key</span><span class="p">(</span><span class="n">symbols</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Key</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The key that best explains a song's chords, in order; None if there are no chords.</span>
 
+<span class="sd">    Each chord scores for a key when it belongs to it, and more when it is its</span>
+<span class="sd">    tonic; a song that starts or ends on a key's tonic chord scores extra for</span>
+<span class="sd">    that key. Ties go to the major key, and to the lower tonic.</span>
+<span class="sd">    """</span>
+    <span class="n">chords</span> <span class="o">=</span> <span class="p">[</span><span class="n">parsed</span> <span class="k">for</span> <span class="n">parsed</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="n">parse_chord</span><span class="p">,</span> <span class="n">symbols</span><span class="p">)</span> <span class="k">if</span> <span class="n">parsed</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">chords</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"tonic"</span><span class="p">:</span> <span class="n">_TONIC_WEIGHT</span><span class="p">,</span> <span class="s2">"diatonic"</span><span class="p">:</span> <span class="n">_DIATONIC_WEIGHT</span><span class="p">,</span> <span class="s2">"outside"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span>
+    <span class="n">best</span><span class="p">,</span> <span class="n">best_score</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"-inf"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">tonic</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">minor</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">Key</span><span class="p">(</span><span class="n">tonic</span><span class="p">,</span> <span class="n">minor</span><span class="p">)</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">_function</span><span class="p">(</span><span class="n">parsed</span><span class="p">,</span> <span class="n">key</span><span class="p">)]</span> <span class="k">for</span> <span class="n">parsed</span> <span class="ow">in</span> <span class="n">chords</span><span class="p">)</span>
+            <span class="n">score</span> <span class="o">+=</span> <span class="n">_ENDS_WEIGHT</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span>
+                <span class="n">_function</span><span class="p">(</span><span class="n">parsed</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"tonic"</span> <span class="k">for</span> <span class="n">parsed</span> <span class="ow">in</span> <span class="p">(</span><span class="n">chords</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">chords</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="n">best_score</span><span class="p">:</span>
+                <span class="n">best</span><span class="p">,</span> <span class="n">best_score</span> <span class="o">=</span> <span class="n">key</span><span class="p">,</span> <span class="n">score</span>
+    <span class="k">return</span> <span class="n">best</span></div>
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_key_named_by</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">sources</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""``query`` itself when it names a song: a stored key, or ``&lt;source&gt;:&lt;id&gt;`` of a known source."""</span>
-    <span class="k">if</span> <span class="n">_is_stored</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">query</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">query</span>
-    <span class="n">name</span><span class="p">,</span> <span class="n">sep</span><span class="p">,</span> <span class="n">song_id</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)</span>
-    <span class="n">known</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">default_sources</span><span class="p">()</span> <span class="k">if</span> <span class="n">sources</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">sources</span>
-    <span class="k">if</span> <span class="n">sep</span> <span class="ow">and</span> <span class="n">song_id</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span> <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">known</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">query</span>
-    <span class="k">return</span> <span class="kc">None</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_file_name</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">layout</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">slug</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\W+"</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">,</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">"-"</span><span class="p">)</span>
-
-    <span class="n">stem</span> <span class="o">=</span> <span class="n">slug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">song</span><span class="o">.</span><span class="n">artist</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">song</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">"</span><span class="p">)[:</span><span class="n">_MAX_FILE_STEM</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">"-"</span><span class="p">)</span>
-    <span class="k">return</span> <span class="s2">"-"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="p">(</span><span class="n">stem</span><span class="p">,</span> <span class="n">slug</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="n">slug</span><span class="p">(</span><span class="n">layout</span><span class="p">))))</span> <span class="o">+</span> <span class="s2">".pdf"</span>
-
-
-<span class="c1">#: Every operation, in the order the CLI lists them.</span>
-<span class="n">TOOLS</span> <span class="o">=</span> <span class="p">(</span><span class="n">search</span><span class="p">,</span> <span class="n">sheet</span><span class="p">,</span> <span class="n">songs</span><span class="p">)</span>
 </pre></div>
         </article>
       </div>

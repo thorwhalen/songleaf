@@ -11,8 +11,12 @@
       chord
       fit_font_size
       get_song
+      layout_named
+      layout_spec
+      make_renderer
       parse_chords_over_lyrics
       render_dense_a4
+      render_sheet
       score_link
       search
       section
@@ -28,6 +32,7 @@
       DenseStyle
       Hit
       KaggleChordsSource
+      SheetLayout
       Song
    
 .. rubric:: Modules
@@ -36,7 +41,9 @@
    :toctree:
    :recursive:
 
+   harmony
    model
+   packing
    parse
    render
    sources

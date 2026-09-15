@@ -8,14 +8,16 @@
 - [songleaf](index.html.md): Dense, readable one-page song sheets: lyrics and chords on one A4 page, with the lyrics as large as ...
 - [API reference](api.html.md): | [`songleaf`](_autosummary/songleaf.html.md#module-songleaf)   | songleaf: dense, readable one-page...
 - [songleaf](_autosummary/songleaf.html.md): songleaf: dense, readable one-page song sheets from searchable sources.
+- [songleaf.harmony](_autosummary/songleaf.harmony.html.md): What a chord does in its song’s key, so that sheets can shade chords by function.
 - [songleaf.model](_autosummary/songleaf.model.html.md): The linked-artifact model: a song is lyrics text plus standoff annotations.
+- [songleaf.packing](_autosummary/songleaf.packing.html.md): Line packing: which consecutive lines of a paragraph share a row.
 - [songleaf.parse](_autosummary/songleaf.parse.html.md): Parse chords-over-lyrics text into a [`Song`](songleaf.model.html.md#songleaf.model.Song).
-- [songleaf.render](_autosummary/songleaf.render.html.md): Render a song onto one dense A4 page, with the lyrics as large as will fit.
+- [songleaf.render](_autosummary/songleaf.render.html.md): Render a song onto one dense page, with the lyrics as large as will fit.
 - [songleaf.sources](_autosummary/songleaf.sources.html.md): Where songs are found: sources, and a search that composes them.
 - [songleaf.store](_autosummary/songleaf.store.html.md): Where songs persist: a `MutableMapping` of songs, JSON files by default.
 - [songleaf.tools](_autosummary/songleaf.tools.html.md): The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.
 - [For AI agents](ai-agents.html.md): `songleaf` ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on **2026-09-15 12:04 UTC** from commit <a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on **2026-09-15 13:04 UTC** from commit <a href="https://github.com/tho...
 
 ---
 

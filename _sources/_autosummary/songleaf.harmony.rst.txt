@@ -1,0 +1,20 @@
+songleaf.harmony
+================
+
+.. automodule:: songleaf.harmony
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      chord_function
+      estimate_key
+      parse_chord
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Key
+   

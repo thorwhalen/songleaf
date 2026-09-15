@@ -9,18 +9,30 @@ songleaf.render
    .. autosummary::
    
       DFLT_MARGIN
+      CHORD_PLACEMENTS
+      PACKERS
+      LAYOUT_OPTIONS
    
    .. rubric:: Functions
 
    .. autosummary::
    
       fit_font_size
+      layout_named
+      layout_spec
+      make_renderer
       render_dense_a4
+      render_sheet
+      section_family
       short_label
    
    .. rubric:: Classes
 
    .. autosummary::
    
+      ChordPlacement
       DenseStyle
+      InlineChords
+      OverChords
+      SheetLayout
    

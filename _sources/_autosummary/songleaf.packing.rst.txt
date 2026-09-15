@@ -1,0 +1,15 @@
+songleaf.packing
+================
+
+.. automodule:: songleaf.packing
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      line_break_costs
+      pack_greedy
+      pack_structured
+      rhyme_key
+   

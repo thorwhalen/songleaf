@@ -3,11 +3,11 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark">
-<link rel="alternate" type="text/markdown" href="tools.html.md">
+<link rel="alternate" type="text/markdown" href="packing.html.md">
 <link rel="describedby" href="../../llms.txt" type="text/markdown"><link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>songleaf.tools - songleaf</title>
+        <title>songleaf.packing - songleaf</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d75fae25" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -246,147 +246,204 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <h1>Source code for songleaf.tools</h1><div class="highlight"><pre>
-<span></span><span class="sd">"""The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.</span>
+          <h1>Source code for songleaf.packing</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Line packing: which consecutive lines of a paragraph share a row.</span>
 
-<span class="sd">The CLI (``python -m songleaf``) is ``cw`` over :data:`TOOLS`. Nothing here</span>
-<span class="sd">knows about any surface. ``sources``, ``store`` and ``renderer`` are the seams:</span>
-<span class="sd">library callers pass them, the CLI hides them. Code that wants objects rather</span>
-<span class="sd">than dicts uses :mod:`songleaf.sources`, :mod:`songleaf.store` and</span>
-<span class="sd">:mod:`songleaf.render` directly.</span>
+<span class="sd">A *packer* takes the widths of consecutive units (lines, or the parts of a</span>
+<span class="sd">wrapped line), the row ``width`` and the ``separator`` width, and returns the</span>
+<span class="sd">rows as ``(start, stop)`` index ranges, in order. It never reorders units, and a</span>
+<span class="sd">unit wider than the row gets a row of its own.</span>
+
+<span class="sd">- :func:`pack_greedy` puts as many units on each row as fit (the v1 packing).</span>
+<span class="sd">- :func:`pack_structured` finds the packing of least total cost: every row costs</span>
+<span class="sd">  ``row_cost``, and every break between rows costs what breaking the lyric there</span>
+<span class="sd">  costs (``break_costs``, usually from :func:`line_break_costs`): nothing</span>
+<span class="sd">  between quatrains, little between couplets, a lot inside a rhyming pair or</span>
+<span class="sd">  between a line and its repeat.</span>
+
+<span class="sd">A five-line verse where three lines fit on a row: greedy packing leaves a</span>
+<span class="sd">couplet split across rows, structured packing does not, on as many rows.</span>
+
+<span class="sd">&gt;&gt;&gt; verse = ["one", "two", "three", "four", "five"]</span>
+<span class="sd">&gt;&gt;&gt; pack_greedy([2] * 5, width=6.5, separator=0.25)</span>
+<span class="sd">[(0, 3), (3, 5)]</span>
+<span class="sd">&gt;&gt;&gt; pack_structured([2] * 5, width=6.5, separator=0.25, break_costs=line_break_costs(verse))</span>
+<span class="sd">[(0, 2), (2, 5)]</span>
+<span class="sd">&gt;&gt;&gt; rhyme_key("Paper boats on a silver stream"), rhyme_key("a morning dream")</span>
+<span class="sd">('eam', 'eam')</span>
 <span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">unicodedata</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">lru_cache</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">songleaf</span><span class="w"> </span><span class="kn">import</span> <span class="n">sources</span> <span class="k">as</span> <span class="n">_sources</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">data_dir</span><span class="p">,</span> <span class="n">song_store</span>
+<span class="n">_VOWELS</span> <span class="o">=</span> <span class="s2">"aeiouy"</span>
+<span class="n">_TRAILING_NOTE_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\s*[(\[][^)\]]*[)\]]\s*$"</span><span class="p">)</span>  <span class="c1"># "(x2)", "[repeat]"</span>
+<span class="n">_EPSILON</span> <span class="o">=</span> <span class="mf">1e-9</span>
 
-<span class="n">_MAX_FILE_STEM</span> <span class="o">=</span> <span class="mi">120</span>
 
-
-<div class="viewcode-block" id="search">
-<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.search">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">search</span><span class="p">(</span>
-    <span class="n">query</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+<div class="viewcode-block" id="pack_greedy">
+<a class="viewcode-back" href="../../_autosummary/songleaf.packing.html#songleaf.packing.pack_greedy">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pack_greedy</span><span class="p">(</span>
+    <span class="n">widths</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
-    <span class="n">artist</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
-    <span class="n">lyrics</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
-    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
-    <span class="n">sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Find songs: fuzzy title and artist (``query``), or by title, artist, or whole words of the lyrics."""</span>
-    <span class="n">hits</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
-        <span class="n">query</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">artist</span><span class="o">=</span><span class="n">artist</span><span class="p">,</span> <span class="n">lyrics</span><span class="o">=</span><span class="n">lyrics</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span>
-    <span class="p">)</span>
-    <span class="k">return</span> <span class="p">[</span><span class="n">hit</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">hits</span><span class="p">]</span></div>
+    <span class="n">width</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">separator</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">break_costs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""As many units on each row as fit. ``break_costs`` is accepted and ignored."""</span>
+    <span class="n">rows</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">used</span> <span class="o">=</span> <span class="p">[],</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">unit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">widths</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;</span> <span class="n">start</span> <span class="ow">and</span> <span class="n">used</span> <span class="o">+</span> <span class="n">separator</span> <span class="o">+</span> <span class="n">unit</span> <span class="o">&lt;=</span> <span class="n">width</span><span class="p">:</span>
+            <span class="n">used</span> <span class="o">+=</span> <span class="n">separator</span> <span class="o">+</span> <span class="n">unit</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;</span> <span class="n">start</span><span class="p">:</span>
+            <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">start</span><span class="p">,</span> <span class="n">index</span><span class="p">))</span>
+        <span class="n">start</span><span class="p">,</span> <span class="n">used</span> <span class="o">=</span> <span class="n">index</span><span class="p">,</span> <span class="n">unit</span>
+    <span class="k">if</span> <span class="n">widths</span><span class="p">:</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">start</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">widths</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">rows</span></div>
 
 
 
-<div class="viewcode-block" id="sheet">
-<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.sheet">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">sheet</span><span class="p">(</span>
-    <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<div class="viewcode-block" id="pack_structured">
+<a class="viewcode-back" href="../../_autosummary/songleaf.packing.html#songleaf.packing.pack_structured">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pack_structured</span><span class="p">(</span>
+    <span class="n">widths</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">output</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
-    <span class="n">pick</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-    <span class="n">refresh</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">layout</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"dense"</span><span class="p">,</span>
-    <span class="n">sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">renderer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Make a one-page song sheet (PDF) for the best match of ``query``.</span>
+    <span class="n">width</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">separator</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">break_costs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="n">row_cost</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""The rows of least ``row_cost * rows + sum(break_costs at the breaks)``.</span>
 
-<span class="sd">    ``query`` may also be a song key, as ``search`` and ``songs`` show them</span>
-<span class="sd">    (``kaggle_chords:1234``): a stored song renders without searching, and the</span>
-<span class="sd">    key of a known source is fetched from it directly. ``pick`` chooses the n-th</span>
-<span class="sd">    best match instead of the best. The song is saved to the store; ``refresh``</span>
-<span class="sd">    fetches it from its source again, replacing the stored copy. The PDF goes to</span>
-<span class="sd">    ``output``, by default the ``sheets`` data directory.</span>
-
-<span class="sd">    ``layout`` is ``dense`` (the default), or options joined with ``+``:</span>
-<span class="sd">    ``overlap`` (chords over the words themselves), ``inline`` (chords in the</span>
-<span class="sd">    line, before their syllable), ``packed`` (rows break where the lyrics do),</span>
-<span class="sd">    ``two-column``, ``shaded`` (sections, repeated lines and chord functions);</span>
-<span class="sd">    for example ``inline+packed+two-column``. A ``renderer`` decides the layout</span>
-<span class="sd">    itself, so it does not go with ``layout``.</span>
+<span class="sd">    ``break_costs[k]`` is the cost of a break between unit ``k`` and ``k + 1``</span>
+<span class="sd">    (missing entries cost nothing). With every break free this uses as few rows</span>
+<span class="sd">    as :func:`pack_greedy`, and ties go to the greedy packing.</span>
 <span class="sd">    """</span>
-    <span class="k">if</span> <span class="n">pick</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"pick counts from 1, got </span><span class="si">{</span><span class="n">pick</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="n">layout_name</span> <span class="o">=</span> <span class="s2">""</span>
-    <span class="k">if</span> <span class="n">renderer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.render</span><span class="w"> </span><span class="kn">import</span> <span class="n">layout_spec</span><span class="p">,</span> <span class="n">make_renderer</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">widths</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
 
-        <span class="n">renderer</span> <span class="o">=</span> <span class="n">make_renderer</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span>  <span class="c1"># a bad layout fails before any search</span>
-        <span class="n">layout_name</span> <span class="o">=</span> <span class="s2">""</span> <span class="k">if</span> <span class="n">layout_spec</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"dense"</span> <span class="k">else</span> <span class="n">layout_spec</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">layout</span> <span class="o">!=</span> <span class="s2">"dense"</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">"Pass a layout or a renderer, not both: the renderer decides the layout"</span>
-        <span class="p">)</span>
-    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
-    <span class="n">key</span> <span class="o">=</span> <span class="n">_key_named_by</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">hits</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">pick</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">pick</span><span class="p">:</span>
-            <span class="n">found</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span><span class="si">}</span><span class="s2"> match"</span> <span class="k">if</span> <span class="n">hits</span> <span class="k">else</span> <span class="s2">"nothing matches"</span>
-            <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No song number </span><span class="si">{</span><span class="n">pick</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="n">query</span><span class="si">!r}</span><span class="s2">: </span><span class="si">{</span><span class="n">found</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="n">key</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="n">pick</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">key</span>
-    <span class="k">if</span> <span class="n">refresh</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">_is_stored</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">get_song</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">)</span>
-    <span class="n">song</span> <span class="o">=</span> <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-    <span class="n">output</span> <span class="o">=</span> <span class="n">output</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-        <span class="n">data_dir</span><span class="p">(</span><span class="s2">"sheets"</span><span class="p">),</span> <span class="n">_file_name</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">layout_name</span><span class="p">)</span>
-    <span class="p">)</span>
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">"key"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span>
-        <span class="s2">"title"</span><span class="p">:</span> <span class="n">song</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
-        <span class="s2">"artist"</span><span class="p">:</span> <span class="n">song</span><span class="o">.</span><span class="n">artist</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">renderer</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">output</span><span class="p">),</span>
-    <span class="p">}</span></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cost_of_break_after</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">break_costs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">break_costs</span><span class="p">)</span> <span class="k">else</span> <span class="mf">0.0</span>
+
+    <span class="n">best</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="s2">"inf"</span><span class="p">)]</span> <span class="o">*</span> <span class="n">n</span>
+    <span class="n">first_of_last_row</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">stop</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">used</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">used</span> <span class="o">+=</span> <span class="n">widths</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">separator</span> <span class="k">if</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="n">stop</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="n">stop</span> <span class="o">-</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">used</span> <span class="o">&gt;</span> <span class="n">width</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">cost</span> <span class="o">=</span> <span class="n">best</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">+</span> <span class="n">row_cost</span>
+            <span class="k">if</span> <span class="n">stop</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+                <span class="n">cost</span> <span class="o">+=</span> <span class="n">cost_of_break_after</span><span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cost</span> <span class="o">&lt;</span> <span class="n">best</span><span class="p">[</span><span class="n">stop</span><span class="p">]</span> <span class="o">-</span> <span class="n">_EPSILON</span><span class="p">:</span>
+                <span class="n">best</span><span class="p">[</span><span class="n">stop</span><span class="p">],</span> <span class="n">first_of_last_row</span><span class="p">[</span><span class="n">stop</span><span class="p">]</span> <span class="o">=</span> <span class="n">cost</span><span class="p">,</span> <span class="n">start</span>
+    <span class="n">rows</span><span class="p">,</span> <span class="n">stop</span> <span class="o">=</span> <span class="p">[],</span> <span class="n">n</span>
+    <span class="k">while</span> <span class="n">stop</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">first_of_last_row</span><span class="p">[</span><span class="n">stop</span><span class="p">]</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">))</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="n">start</span>
+    <span class="k">return</span> <span class="n">rows</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
 
 
 
-<div class="viewcode-block" id="songs">
-<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.songs">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">songs</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""The keys of the stored songs."""</span>
-    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
-    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">store</span><span class="p">)</span></div>
+<span class="k">def</span><span class="w"> </span><span class="nf">_plain</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">decomposed</span> <span class="o">=</span> <span class="n">unicodedata</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s2">"NFKD"</span><span class="p">,</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+    <span class="k">return</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ch</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">decomposed</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">unicodedata</span><span class="o">.</span><span class="n">combining</span><span class="p">(</span><span class="n">ch</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="rhyme_key">
+<a class="viewcode-back" href="../../_autosummary/songleaf.packing.html#songleaf.packing.rhyme_key">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">rhyme_key</span><span class="p">(</span><span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The sound a line ends on, as letters: the last vowel group of its last word and what follows.</span>
+
+<span class="sd">    A silent final ``e`` is dropped first, so ``love`` and ``above`` share</span>
+<span class="sd">    ``"ov"``. Accents are ignored, and a trailing note such as ``(x2)`` is skipped.</span>
+
+<span class="sd">    &gt;&gt;&gt; rhyme_key("sing it low (x2)"), rhyme_key("Coração"), rhyme_key("")</span>
+<span class="sd">    ('ow', 'ao', '')</span>
+<span class="sd">    """</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"[^\W\d_]+"</span><span class="p">,</span> <span class="n">_plain</span><span class="p">(</span><span class="n">_TRAILING_NOTE_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="n">line</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">words</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">""</span>
+    <span class="n">word</span> <span class="o">=</span> <span class="n">words</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">word</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">word</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"e"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">word</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_VOWELS</span><span class="p">:</span>
+        <span class="n">word</span> <span class="o">=</span> <span class="n">word</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">rf</span><span class="s2">"[</span><span class="si">{</span><span class="n">_VOWELS</span><span class="si">}</span><span class="s2">]+[^</span><span class="si">{</span><span class="n">_VOWELS</span><span class="si">}</span><span class="s2">]*$"</span><span class="p">,</span> <span class="n">word</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">()</span> <span class="k">if</span> <span class="n">match</span> <span class="k">else</span> <span class="n">word</span></div>
 
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_is_stored</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">store</span>
-    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>  <span class="c1"># not a storable key (too long, say), so not stored</span>
-        <span class="k">return</span> <span class="kc">False</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_words</span><span class="p">(</span><span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\w+"</span><span class="p">,</span> <span class="n">_plain</span><span class="p">(</span><span class="n">line</span><span class="p">)))</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_key_named_by</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">sources</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""``query`` itself when it names a song: a stored key, or ``&lt;source&gt;:&lt;id&gt;`` of a known source."""</span>
-    <span class="k">if</span> <span class="n">_is_stored</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">query</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">query</span>
-    <span class="n">name</span><span class="p">,</span> <span class="n">sep</span><span class="p">,</span> <span class="n">song_id</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)</span>
-    <span class="n">known</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">default_sources</span><span class="p">()</span> <span class="k">if</span> <span class="n">sources</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">sources</span>
-    <span class="k">if</span> <span class="n">sep</span> <span class="ow">and</span> <span class="n">song_id</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span> <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">known</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">query</span>
-    <span class="k">return</span> <span class="kc">None</span>
+<span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">4096</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_cached_break_costs</span><span class="p">(</span><span class="n">lines</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">costs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+    <span class="n">between_quatrains</span><span class="p">,</span> <span class="n">between_couplets</span><span class="p">,</span> <span class="n">inside_couplet</span><span class="p">,</span> <span class="n">rhyme</span><span class="p">,</span> <span class="n">repeat</span> <span class="o">=</span> <span class="n">costs</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">rhyme_key</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">]</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">_words</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">rhymes</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">keys</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="ow">and</span> <span class="n">keys</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">keys</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>  <span class="c1"># lines before the break</span>
+        <span class="k">if</span> <span class="n">count</span> <span class="o">%</span> <span class="mi">4</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">cost</span> <span class="o">=</span> <span class="n">between_quatrains</span>
+        <span class="k">elif</span> <span class="n">count</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">cost</span> <span class="o">=</span> <span class="n">between_couplets</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cost</span> <span class="o">=</span> <span class="n">inside_couplet</span>
+        <span class="n">pair_ends</span> <span class="o">=</span> <span class="n">i</span> <span class="ow">and</span> <span class="n">rhymes</span><span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+        <span class="n">pair_starts</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="ow">and</span> <span class="n">rhymes</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">pair_ends</span> <span class="ow">or</span> <span class="n">pair_starts</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">rhymes</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">cost</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">cost</span><span class="p">,</span> <span class="n">between_couplets</span><span class="p">)</span>  <span class="c1"># a rhyming pair ends or starts here</span>
+        <span class="k">if</span> <span class="n">rhymes</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">cost</span> <span class="o">+=</span> <span class="n">rhyme</span>
+        <span class="k">if</span> <span class="n">words</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">and</span> <span class="n">words</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">words</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+            <span class="n">cost</span> <span class="o">+=</span> <span class="n">repeat</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cost</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_file_name</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">layout</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">slug</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\W+"</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">,</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">"-"</span><span class="p">)</span>
+<div class="viewcode-block" id="line_break_costs">
+<a class="viewcode-back" href="../../_autosummary/songleaf.packing.html#songleaf.packing.line_break_costs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">line_break_costs</span><span class="p">(</span>
+    <span class="n">lines</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">between_quatrains</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">between_couplets</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span>
+    <span class="n">inside_couplet</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">rhyme</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">repeat</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The cost of a row break after each line of a paragraph but the last.</span>
 
-    <span class="n">stem</span> <span class="o">=</span> <span class="n">slug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">song</span><span class="o">.</span><span class="n">artist</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">song</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">"</span><span class="p">)[:</span><span class="n">_MAX_FILE_STEM</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">"-"</span><span class="p">)</span>
-    <span class="k">return</span> <span class="s2">"-"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="p">(</span><span class="n">stem</span><span class="p">,</span> <span class="n">slug</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="n">slug</span><span class="p">(</span><span class="n">layout</span><span class="p">))))</span> <span class="o">+</span> <span class="s2">".pdf"</span>
+<span class="sd">    Counting from the paragraph's first line, a break after every fourth line</span>
+<span class="sd">    costs ``between_quatrains``, after every other even line</span>
+<span class="sd">    ``between_couplets``, and after an odd line ``inside_couplet``. A break</span>
+<span class="sd">    right before or after a rhyming pair costs no more than</span>
+<span class="sd">    ``between_couplets`` (so a pickup line shifts the couplets), a break</span>
+<span class="sd">    between two lines that rhyme costs ``rhyme`` more, and one between a line</span>
+<span class="sd">    and its repeat ``repeat`` more.</span>
 
+<span class="sd">    &gt;&gt;&gt; line_break_costs(["a stream", "a dream", "go slow", "go low"])</span>
+<span class="sd">    [2.0, 0.3, 2.0]</span>
+<span class="sd">    &gt;&gt;&gt; line_break_costs(["well", "a stream", "a dream", "go slow", "go slow"])</span>
+<span class="sd">    [0.3, 1.3, 0.3, 1.5]</span>
+<span class="sd">    """</span>
+    <span class="n">costs</span> <span class="o">=</span> <span class="p">(</span><span class="n">between_quatrains</span><span class="p">,</span> <span class="n">between_couplets</span><span class="p">,</span> <span class="n">inside_couplet</span><span class="p">,</span> <span class="n">rhyme</span><span class="p">,</span> <span class="n">repeat</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">_cached_break_costs</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">lines</span><span class="p">),</span> <span class="n">costs</span><span class="p">))</span></div>
 
-<span class="c1">#: Every operation, in the order the CLI lists them.</span>
-<span class="n">TOOLS</span> <span class="o">=</span> <span class="p">(</span><span class="n">search</span><span class="p">,</span> <span class="n">sheet</span><span class="p">,</span> <span class="n">songs</span><span class="p">)</span>
 </pre></div>
         </article>
       </div>

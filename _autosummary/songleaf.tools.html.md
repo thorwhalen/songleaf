@@ -31,7 +31,7 @@ Find songs: fuzzy title and artist (`query`), or by title, artist, or whole word
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
-### songleaf.tools.sheet(query, , output='', pick=1, refresh=False, sources=None, store=None, renderer=None)
+### songleaf.tools.sheet(query, , output='', pick=1, refresh=False, layout='dense', sources=None, store=None, renderer=None)
 
 Make a one-page song sheet (PDF) for the best match of `query`.
 
@@ -41,6 +41,13 @@ key of a known source is fetched from it directly. `pick` chooses the n-th
 best match instead of the best. The song is saved to the store; `refresh`
 fetches it from its source again, replacing the stored copy. The PDF goes to
 `output`, by default the `sheets` data directory.
+
+`layout` is `dense` (the default), or options joined with `+`:
+`overlap` (chords over the words themselves), `inline` (chords in the
+line, before their syllable), `packed` (rows break where the lyrics do),
+`two-column`, `shaded` (sections, repeated lines and chord functions);
+for example `inline+packed+two-column`. A `renderer` decides the layout
+itself, so it does not go with `layout`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
