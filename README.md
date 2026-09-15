@@ -24,7 +24,8 @@ python -m songleaf search --artist oasis --lyrics "roads winding"
 python -m songleaf sheet "wonderwall oasis" --output wonderwall.pdf
 python -m songleaf sheet "wonderwall oasis" --pick 2      # the second-best match
 python -m songleaf songs                                  # songs already stored
-python -m songleaf sheet kaggle_chords:1234               # re-render a stored song, no search
+python -m songleaf sheet kaggle_chords:1234               # a song by its key: no search
+python -m songleaf sheet kaggle_chords:1234 --refresh     # fetch it again from its source
 ```
 
 The `songleaf` console script is the same command.

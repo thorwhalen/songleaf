@@ -37,7 +37,7 @@ def test_sheets_go_to_the_data_dir_by_default(memory_source, tmp_path, monkeypat
     monkeypatch.setenv("SONGLEAF_DATA_DIR", str(tmp_path))
     result = tools.sheet("paper boats", sources=[memory_source])
     assert result["path"] == str(
-        tmp_path / "sheets" / "the-invented-band-paper-boats.pdf"
+        tmp_path / "sheets" / "the-invented-band-paper-boats-memory-1.pdf"
     )
 
 

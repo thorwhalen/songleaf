@@ -8,9 +8,10 @@ line of chord symbols, column-aligned over the lyric line it belongs to.
 - A chord line with no lyric line under it (an intro, a solo) becomes an empty
   text line carrying its chords in order.
 - Section headers (``Verse 1:``, ``[Chorus]``, ``Intro 2x: G D``) become
-  section annotations.
+  section annotations; a header with no lines of its own is a *marker*
+  (``{"marker": True}``), usually meaning "play that section again".
 - ``Capo``, ``Key``/``Tom`` and ``Tuning`` lines become metadata.
-- Tablature lines are dropped.
+- Tablature and decoration lines (``e|--3--|``, ``=====``) are dropped.
 
 >>> song = parse_chords_over_lyrics("Verse 1:\\nC       G\\nHello there my friend")
 >>> song.text
@@ -29,30 +30,44 @@ from collections.abc import Mapping
 from songleaf.model import Annotation, Song, chord, section
 
 _CHORD_RE = re.compile(
-    r"\(?"
+    r"[*.]{0,3}\(?"  # leading marks: *D, ...Dm6
     r"[A-G][#b]?"  # root
     r"(?:maj|min|dim|aug|sus|add|m|M|\+|°|º|ø)?"  # quality
-    r"\d{0,2}M?"  # extension (7, 9, 13, Brazilian 7M)
-    r"(?:(?:maj|sus|add|dim|aug|no|m|b|#|\+|-)\d{1,2})*"  # alterations: b5, sus4, add9
+    r"\d{0,2}[M+\-]?"  # extension: 7, 9, 13; Brazilian 7M, 7+, 5-
+    r"(?:sus\d{0,2}|(?:maj|add|dim|aug|no|m|b|#|\+|-)\d{1,2}[+\-]?)*"  # b5, sus, add9
+    r"(?:/[#b]?\d{1,2}[+\-#b]?)*"  # stacked extensions: 7/9, 4/7, 5-/7, /b13, 7/9b
     r"(?:\([^()\s]{1,10}\))?"  # parenthesised alterations: (#9), (4/9), (b5)
     r"(?:/[A-G][#b]?)?"  # bass
     r"\)?\*?"
 )
-# Tokens allowed on a chord line besides chords: bars, repeats, "no chord".
+# Tokens allowed on a chord line besides chords: bars, repeats, "no chord", stray
+# marks, and short notes such as "(riff)" or "(walking bass)".
 _FILLER_RE = re.compile(
-    r"\|+:?|:?\|+|-+|/+|%|\.+|\*+|\(?(?:x\s*\d+|\d+\s*x)\)?|N\.?C\.?", re.IGNORECASE
+    r"\|+:?|:?\|+|-+|/+|%|\.+|\*+|[()?]|x|\d{1,2}"
+    r"|\(?(?:x\s*\d+|\d+\s*x)\)?|N\.?C\.?|\(\w{1,12}\)?|\w{1,12}\)",
+    re.IGNORECASE,
 )
 _SECTION_WORDS = (
-    r"(?:pre-?|post-?)?"
-    r"(?:intro\w*|verses?|verso|chorus|refr[aã]o|coro|estribillo|bridge|ponte|puente"
-    r"|outro|final|solo|interlude|instrumental|refrain|hook|coda|ending|break|tag|riff)"
+    r"(?:pr[eé]-?|post-?)?"
+    r"(?:intro\w*|intr\.|verses?|verso|estrofa|chorus|refr[aã]o|coro|estribillo|bridge|ponte"
+    r"|puente|outro|final|solo|interlude|instrumental|refrain|hook|coda|ending|break"
+    r"|tag|riff)"
 )
 _HEADER_PLAIN_RE = re.compile(
-    rf"^\s*(?P<label>{_SECTION_WORDS}(?:\s*\d+)?(?:\s*\(?\s*(?:x\s*\d+|\d+\s*x)\s*\)?)?)"
+    rf"^\s*(?P<label>{_SECTION_WORDS}(?:\s*\d+)?"
+    r"(?:\s*\(?\s*(?:x\s*\d+|\d+\s*x)\s*\)?)?"  # repeats: x2, 2x, (x2)
+    r"(?:\s*\([^)]{1,20}\))?)"  # a note: (repeat)
     r"\s*(?::\s*(?P<rest>.*))?$",
     re.IGNORECASE,
 )
-_HEADER_BRACKET_RE = re.compile(r"^\s*\[(?P<label>[^\]]+)\]\s*(?P<rest>.*)$")
+_HEADER_BRACKET_RE = re.compile(
+    rf"^\s*\[\s*(?P<label>{_SECTION_WORDS}[^\]]*)\]\s*(?P<rest>.*)$", re.IGNORECASE
+)
+# "Intro G D Em": a section word followed directly by its chords, no colon.
+_HEADER_INLINE_RE = re.compile(
+    rf"^\s*(?P<label>{_SECTION_WORDS}(?:\s*\d+)?)\s*[:.]?\s+(?P<rest>\S.*)$",
+    re.IGNORECASE,
+)
 _CAPO_RE = re.compile(r"^\s*capo\b\D*(\d+)", re.IGNORECASE)
 _NO_CAPO_RE = re.compile(r"^\s*(?:no|sem|sin)\s+capo\b.*$", re.IGNORECASE)
 _META_RE = re.compile(
@@ -61,6 +76,7 @@ _META_RE = re.compile(
 )
 _META_FIELDS = {"tom": "key", "tono": "key", "key": "key"}
 _TAB_RE = re.compile(r"[A-Ga-g]?[#b]?\s*[|:]?[-0-9hpbrvx/\\~|*.()\s]+")
+_DECORATION_RE = re.compile(r"[=_\-~*.#^\s]{3,}")
 
 
 def is_chord_token(token: str) -> bool:
@@ -84,15 +100,27 @@ def is_chord_line(line: str) -> bool:
 
 def _is_tab_line(line: str) -> bool:
     stripped = line.strip()
-    return stripped.count("-") >= 4 and bool(_TAB_RE.fullmatch(stripped))
+    if _DECORATION_RE.fullmatch(stripped):
+        return True
+    looks_like_tab = "|" in stripped or any(ch.isdigit() for ch in stripped)
+    return (
+        stripped.count("-") >= 4
+        and looks_like_tab
+        and bool(_TAB_RE.fullmatch(stripped))
+    )
 
 
 def _header(line: str) -> tuple[str, str] | None:
     match = _HEADER_BRACKET_RE.match(line) or _HEADER_PLAIN_RE.match(line)
     if not match:
-        return None
+        match = _HEADER_INLINE_RE.match(line)
+        if not (match and is_chord_line(match.group("rest"))):
+            return None
     label = " ".join(match.group("label").split()).strip(" :")
-    return label, (match.group("rest") or "").strip()
+    rest = (match.group("rest") or "").strip()
+    if rest and all(_FILLER_RE.fullmatch(token) for token in rest.split()):
+        return f"{label} {rest}", ""  # "Chorus: x2"
+    return label, rest
 
 
 def _kind(line: str) -> str:
@@ -150,14 +178,14 @@ def parse_chords_over_lyrics(
     """
     raw_lines = [line.expandtabs(8).rstrip() for line in re.split(r"\r\n|\r|\n", raw)]
     lines: list[tuple[str, list]] = []  # (text, [(offset, symbol)])
-    sections: list[tuple[str, int, bool]] = []  # (label, line index, label only)
-    placeholders: set[int] = set()  # empty lines that carry a label-only section
+    sections: list[tuple[str, int, bool]] = []  # (label, line index, marker)
+    markers: set[int] = set()  # empty lines that carry a marker section
     pending = None  # a header's label, waiting for the first line of its section
     meta = dict(meta or {})
 
     def is_blank(index):
         text, chords = lines[index]
-        return not text and not chords and index not in placeholders
+        return not text and not chords and index not in markers
 
     def add(text, chords):
         nonlocal pending
@@ -167,12 +195,12 @@ def parse_chords_over_lyrics(
         lines.append((text, chords))
 
     def close_pending():
-        # A header with no lines before the next header or the end is a bare
-        # marker ("[Chorus]": play the chorus again): an empty line of its own.
+        # A header with no lines before the next header or the end is a marker
+        # ("[Chorus]": play the chorus again), on an empty line of its own.
         nonlocal pending
         if pending is not None:
             sections.append((pending, len(lines), True))
-            placeholders.add(len(lines))
+            markers.add(len(lines))
             lines.append(("", []))
             pending = None
 
@@ -215,13 +243,15 @@ def parse_chords_over_lyrics(
         for index, (_, chords) in enumerate(lines)
         for at, symbol in chords
     ]
-    for k, (label, index, label_only) in enumerate(sections):
-        if index >= len(lines):
-            continue
+    for k, (label, index, marker) in enumerate(sections):
         start = starts[index]
+        if marker:
+            annotations.append(
+                Annotation("section", start, start, {"label": label, "marker": True})
+            )
+            continue
         last = (sections[k + 1][1] if k + 1 < len(sections) else len(lines)) - 1
-        while not label_only and last > index and is_blank(last):
+        while last > index and is_blank(last):
             last -= 1
-        end = start if label_only else starts[last] + len(lines[last][0])
-        annotations.append(section(start, end, label))
+        annotations.append(section(start, starts[last] + len(lines[last][0]), label))
     return Song(text, annotations, meta=meta, provenance=dict(provenance or {}))

@@ -10,7 +10,8 @@ Kinds used so far:
 
 - ``"section"``: spans the section's lines, ``body={"label": "Chorus"}``. A
   label-only section (a bare ``[Chorus]`` marker meaning "repeat the chorus") is
-  empty (``start == end``) and sits on an empty line of its own.
+  empty (``start == end``), sits on an empty line of its own, and has
+  ``"marker": True`` in its body.
 - ``"chord"``: a point (``start == end``) on the first character of the
   syllable the chord lands on, ``body={"symbol": "G/B", "timing": "at"}``.
   ``timing`` is ``"at"`` (the chord sounds with that syllable, the default) or

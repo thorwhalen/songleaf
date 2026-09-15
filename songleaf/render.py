@@ -5,7 +5,8 @@ song fits on one page (:func:`fit_font_size`), then draws it:
 
 - consecutive lines of a paragraph are packed onto one row while they fit,
   separated by a light ``/``; a blank line or a new section starts a new row,
-  and a line too long for the page wraps at a space;
+  and a line too long for the page wraps at a space (inside a word only when
+  a single word is wider than the page);
 - chords ride on their lyric row, smaller and in a lighter colour, overlapping
   the tops of the letters instead of taking a line of their own; a chord starts
   over the syllable it lands on (a ``timing="before"`` chord ends there);
@@ -30,6 +31,11 @@ from songleaf.model import Song
 #: Page margin in points (5 mm), about the least a printer leaves blank anyway.
 DFLT_MARGIN = 14.0
 _EPSILON = 1e-6
+_MAX_LABEL_CHARS = 16
+#: After the bisection, sizes up to this many points larger are tried as well,
+#: since packing lines into rows makes "fits" not quite monotonic in the size.
+_PROBE_SPAN = 1.0
+_PROBE_STEP = 0.1
 
 
 @dataclass(frozen=True)
@@ -79,10 +85,18 @@ def short_label(label: str) -> str:
     """A compact section label: ``"Verse 1"`` -> ``"V1"``, ``"Chorus x2"`` -> ``"Ch x2"``."""
     match = re.match(r"\s*([^\W\d_][\w-]*)(.*)", label)
     if not match:
-        return label.strip()
-    word, rest = match.group(1), match.group(2).strip(" :-")
-    short = _LABEL_ABBREVIATIONS.get(word.lower(), word)
-    return f"{short}{rest}" if rest.isdigit() else f"{short} {rest}".strip()
+        short = label.strip()
+    else:
+        word, rest = match.group(1), match.group(2).strip(" :-")
+        abbreviation = _LABEL_ABBREVIATIONS.get(word.lower(), word)
+        short = (
+            f"{abbreviation}{rest}"
+            if rest.isdigit()
+            else f"{abbreviation} {rest}".strip()
+        )
+    if len(short) > _MAX_LABEL_CHARS:
+        short = short[: _MAX_LABEL_CHARS - 1].rstrip() + "…"
+    return short
 
 
 @lru_cache(maxsize=65536)
@@ -91,6 +105,15 @@ def _width(text: str, font: str) -> float:
     from reportlab.pdfbase.pdfmetrics import stringWidth
 
     return stringWidth(text, font, 1)
+
+
+@lru_cache(maxsize=4096)
+def _prefix_widths(text: str, font: str) -> tuple:
+    """``widths[i]`` is the width of ``text[:i]`` at font size 1 (the fonts have no kerning)."""
+    widths = [0.0]
+    for character in text:
+        widths.append(widths[-1] + _width(character, font))
+    return tuple(widths)
 
 
 @dataclass
@@ -173,13 +196,13 @@ def _chord_positions(piece: _Piece, size: float, style: DenseStyle):
     """The chords' x positions relative to the piece's text, and the piece's extent."""
     chord_size = size * style.chord_scale
     gap = (style.chord_gap if piece.text else style.bare_chord_gap) * chord_size
-    placed, free = [], 0.0
-    extent = _width(piece.text, style.lyric_font) * size
+    prefix = _prefix_widths(piece.text, style.lyric_font)
+    placed, free, extent = [], 0.0, prefix[-1] * size
     for offset, symbol, timing in piece.chords:
         chord_width = _width(symbol, style.chord_font) * chord_size
         x = free
         if piece.text:
-            x = _width(piece.text[:offset], style.lyric_font) * size
+            x = prefix[min(offset, len(piece.text))] * size
             if timing == "before":
                 x -= chord_width + gap
         x = max(x, free)
@@ -203,33 +226,55 @@ def _split_at(piece: _Piece, cut: int) -> tuple[_Piece, _Piece]:
     return head, _Piece(text[tail_start:], tail_chords)
 
 
+def _last_fitting(cuts: list[int], prefix: tuple, limit: float) -> int:
+    """Index of the last cut whose prefix width is within ``limit``; -1 if none is."""
+    low, high, best = 0, len(cuts) - 1, -1
+    while low <= high:
+        middle = (low + high) // 2
+        if prefix[cuts[middle]] <= limit:
+            best, low = middle, middle + 1
+        else:
+            high = middle - 1
+    return best
+
+
 def _split(piece: _Piece, available: float, size: float, style: DenseStyle):
     """Split a piece in two, the head as long as fits in ``available``; None if it can't split."""
-    if piece.text:
-        spaces = [i for i, ch in enumerate(piece.text) if ch == " " and i > 0]
-        splits = [_split_at(piece, i) for i in reversed(spaces)]
-        splits = [(head, tail) for head, tail in splits if head.text and tail.text]
-        for head, tail in splits:
-            if _chord_positions(head, size, style)[1] <= available:
-                return head, tail
-        return splits[-1] if splits else None
-    if len(piece.chords) < 2:
+    if not piece.text:
+        if len(piece.chords) < 2:
+            return None
+        for k in range(len(piece.chords) - 1, 0, -1):
+            head = _Piece("", piece.chords[:k], piece.label, piece.new_paragraph)
+            if k == 1 or _chord_positions(head, size, style)[1] <= available:
+                return head, _Piece("", piece.chords[k:])
+    text = piece.text
+    prefix = _prefix_widths(text, style.lyric_font)
+    spaces = [i for i, ch in enumerate(text) if ch == " " and i and text[i - 1] != " "]
+    best = _last_fitting(spaces, prefix, available / size)
+    while best >= 0:  # step back if a chord overhanging the head's end breaks the fit
+        head, tail = _split_at(piece, spaces[best])
+        if tail.text and _chord_positions(head, size, style)[1] <= available:
+            return head, tail
+        best -= 1
+    # No break at a space fits: break inside the first word, as late as fits.
+    cuts = list(range(1, len(text)))
+    if not cuts:
         return None
-    for k in range(len(piece.chords) - 1, 0, -1):
-        head = _Piece("", piece.chords[:k], piece.label, piece.new_paragraph)
-        if k == 1 or _chord_positions(head, size, style)[1] <= available:
-            return head, _Piece("", piece.chords[k:])
+    return _split_at(piece, cuts[max(_last_fitting(cuts, prefix, available / size), 0)])
 
 
 def _wrap(piece: _Piece, size: float, width: float, style: DenseStyle) -> list[_Piece]:
-    available = width - _label_width(piece, size, style)
-    if _chord_positions(piece, size, style)[1] <= available:
-        return [piece]
-    split = _split(piece, available, size, style)
-    if split is None:  # a single word or chord wider than the page: let it overflow
-        return [piece]
-    head, tail = split
-    return [head, *_wrap(tail, size, width, style)]
+    parts = []
+    while True:
+        available = width - _label_width(piece, size, style)
+        split = None
+        if _chord_positions(piece, size, style)[1] > available:
+            split = _split(piece, available, size, style)
+        if split is None:  # it fits, or it cannot be split any further
+            parts.append(piece)
+            return parts
+        head, piece = split
+        parts.append(head)
 
 
 def _row(
@@ -381,13 +426,20 @@ def fit_font_size(
         rows = _layout(pieces, size, width, style, heading)
         return _height(rows, size, style) <= height + _EPSILON
 
-    if fits(max_font_size) or not fits(min_font_size):
-        return max_font_size if fits(max_font_size) else min_font_size
+    if fits(max_font_size):
+        return max_font_size
+    if not fits(min_font_size):
+        return min_font_size
     low, high = min_font_size, max_font_size
     while high - low > precision:
         middle = (low + high) / 2
         low, high = (middle, high) if fits(middle) else (low, middle)
-    return low
+    best, probe = low, low + _PROBE_STEP
+    while probe <= min(low + _PROBE_SPAN, max_font_size):
+        if fits(probe):
+            best = probe
+        probe += _PROBE_STEP
+    return best
 
 
 def render_dense_a4(

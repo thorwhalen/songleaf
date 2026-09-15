@@ -22,9 +22,11 @@ from songleaf.model import Song
 KAGGLE_CHORDS_URL = (
     "https://www.kaggle.com/datasets/eitanbentora/chords-and-lyrics-dataset"
 )
-#: Lines the chords site's page left in the corpus (in ~9% of songs), not part of any song.
+#: Lines of the chords site's page left in the corpus, not part of any song:
+#: "hide this tab" (in ~9% of songs) and obfuscated e-mail addresses.
 _KAGGLE_SITE_NOISE = re.compile(
-    r"^[ \t]*(?:hide|show) this tab[ \t]*\r?$", re.IGNORECASE | re.MULTILINE
+    r"^[ \t]*(?:(?:hide|show) this tab|\[email[^\]\n]*protected\])[ \t]*\r?$",
+    re.IGNORECASE | re.MULTILINE,
 )
 
 
@@ -58,8 +60,9 @@ def _load_kaggle_corpus():
         raise RuntimeError(
             "Could not load the Kaggle chords-and-lyrics corpus. Point "
             "SUNG_CHORDS_AND_LYRICS_ZIP at a local copy of "
-            f"chords-and-lyrics-dataset.zip (from {KAGGLE_CHORDS_URL}), or set up "
-            "Kaggle credentials so sung can download it."
+            f"chords-and-lyrics-dataset.zip (from {KAGGLE_CHORDS_URL}). Without "
+            "one, sung downloads it through haggle, which needs `pip install haggle` "
+            f"and Kaggle credentials. (The loader said: {error})"
         ) from error
 
 
@@ -71,7 +74,8 @@ class KaggleChordsSource:
     chords site: personal use only (licence tag ``gray``).
 
     Title and artist are matched fuzzily (typos, punctuation and word order
-    do not matter); lyrics must contain every word of the ``lyrics`` query.
+    do not matter); lyrics must contain every word of the ``lyrics`` query as a
+    whole word. Lyrics matches are not ranked beyond popularity.
 
     Args:
         loader: ``() -> pandas.DataFrame`` with :attr:`columns`. Defaults to
@@ -141,7 +145,8 @@ class KaggleChordsSource:
 
         mask = None
         for word in utils.default_process(words).split():
-            has = self._plain_lyrics.str.contains(word, regex=False)
+            pattern = rf"\b{re.escape(word)}\b"
+            has = self._plain_lyrics.str.contains(pattern, regex=True)
             mask = has if mask is None else mask & has
         if mask is None:
             return {}
