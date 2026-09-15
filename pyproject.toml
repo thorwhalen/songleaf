@@ -58,6 +58,18 @@ docs = [
     "sphinx-rtd-theme>=1.0",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["songleaf"]
+
+# An allowlist, so a source distribution never ships anything but code, tests and docs.
+[tool.hatch.build.targets.sdist]
+include = [
+    "songleaf/**/*.py",
+    "tests/**/*.py",
+    "README.md",
+    "LICENSE",
+]
+
 [tool.ruff]
 line-length = 88
 target-version = "py310"
