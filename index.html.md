@@ -110,6 +110,8 @@ Loading the corpus takes about five seconds on the first search in a process.
 
 Other sources surveyed, plus the Ultimate Guitar / MuseScore decisions, are in [`misc/docs/sources.md`]().
 
+`LocalFolderSource` indexes a folder of files you exported yourself from a paid chords/tab or score site (Ultimate Guitar, MuseScore, …) — text charts are parsed like the Kaggle corpus, score/tab files (Guitar Pro, MusicXML, MSCZ, MIDI, PDF) are attached as a score link. Default folder: `~/.local/share/songleaf/imports/` (moved by `SONGLEAF_DATA_DIR`).
+
 ## Extending
 
 Three keyword arguments are the extension points, on `sheet` (and `search` for sources):

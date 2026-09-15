@@ -1,32 +1,32 @@
 {
   "schema_version": 1,
-  "built_at": "2026-09-15T14:25:03Z",
+  "built_at": "2026-09-15T14:32:02Z",
   "package": {
     "name": "songleaf",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "display_name": "songleaf",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "6c7b58b4d524990090e1c45c902857a620496f0d",
-    "short_commit": "6c7b58b",
+    "commit": "06072a61b4b607593aa9112031984da38e3f790d",
+    "short_commit": "06072a6",
     "branch": "main",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/thorwhalen/songleaf",
-    "commit_url": "https://github.com/thorwhalen/songleaf/commit/6c7b58b4d524990090e1c45c902857a620496f0d",
+    "commit_url": "https://github.com/thorwhalen/songleaf/commit/06072a61b4b607593aa9112031984da38e3f790d",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "thorwhalen/songleaf",
-    "sha": "6c7b58b4d524990090e1c45c902857a620496f0d",
+    "sha": "06072a61b4b607593aa9112031984da38e3f790d",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "34981264984",
-    "run_url": "https://github.com/thorwhalen/songleaf/actions/runs/34981264984",
+    "run_id": "34981945297",
+    "run_url": "https://github.com/thorwhalen/songleaf/actions/runs/34981945297",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -56,15 +56,15 @@
   },
   "site": {
     "modules_documented": 9,
-    "objects_documented": 94
+    "objects_documented": 97
   },
   "pypi": {
     "checked": true,
-    "latest": "0.0.3",
+    "latest": "0.0.4",
     "relation": "same",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/songleaf && cd songleaf\ngit checkout 6c7b58b4d524990090e1c45c902857a620496f0d\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/songleaf && cd songleaf\ngit checkout 06072a61b4b607593aa9112031984da38e3f790d\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": true,

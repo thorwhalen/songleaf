@@ -373,6 +373,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 <p><code class="docutils literal notranslate"><span class="pre">KaggleChordsSource</span></code> reads the <a class="reference external" href="https://www.kaggle.com/datasets/eitanbentora/chords-and-lyrics-dataset">chords-and-lyrics dataset</a> through <code class="docutils literal notranslate"><span class="pre">sung</span></code>. It needs a local copy of the zip: point <code class="docutils literal notranslate"><span class="pre">SUNG_CHORDS_AND_LYRICS_ZIP</span></code> at it, or keep it where <code class="docutils literal notranslate"><span class="pre">haggle</span></code> downloads it (<code class="docutils literal notranslate"><span class="pre">$HAGGLE_ROOTDIR/zips/eitanbentora/chords-and-lyrics-dataset.zip</span></code>). Without a local copy, <code class="docutils literal notranslate"><span class="pre">sung</span></code> downloads it from Kaggle, which needs Kaggle credentials. The corpus was scraped from a chords site, so keep it to personal use.</p>
 <p>Loading the corpus takes about five seconds on the first search in a process.</p>
 <p>Other sources surveyed, plus the Ultimate Guitar / MuseScore decisions, are in <a class="reference internal" href="#misc/docs/sources.md"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">misc/docs/sources.md</span></code></span></a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">LocalFolderSource</span></code> indexes a folder of files you exported yourself from a paid chords/tab or score site (Ultimate Guitar, MuseScore, …) — text charts are parsed like the Kaggle corpus, score/tab files (Guitar Pro, MusicXML, MSCZ, MIDI, PDF) are attached as a score link. Default folder: <code class="docutils literal notranslate"><span class="pre">~/.local/share/songleaf/imports/</span></code> (moved by <code class="docutils literal notranslate"><span class="pre">SONGLEAF_DATA_DIR</span></code>).</p>
 </section>
 <section id="extending">
 <h2>Extending<a class="headerlink" href="#extending" title="Link to this heading">¶</a></h2>
@@ -391,7 +392,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-09-15 14:25 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/6c7b58b4d524990090e1c45c902857a620496f0d">6c7b58b</a> (main) · songleaf 0.0.3 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-09-15 14:32 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/06072a61b4b607593aa9112031984da38e3f790d">06072a6</a> (main) · songleaf 0.0.4 · <a href="about-this-build.html">about this build</a></p>
         </article>
       </div>
       <footer>
@@ -453,7 +454,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=7cc827d7"></script>
+</div><script src="_static/documentation_options.js?v=94eb6667"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

@@ -23,6 +23,7 @@ what [`get_song()`](#songleaf.sources.get_song) resolves and what the store is k
 | [`Hit`](#songleaf.sources.Hit)(source, id, title[, artist, score, meta])   | One search result: a song a source can `get()`.                          |
 |--------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|
 | [`KaggleChordsSource`](#songleaf.sources.KaggleChordsSource)(\*[, loader, min_score])     | The Kaggle *chords-and-lyrics* corpus (~135K songs, chords over lyrics). |
+| [`LocalFolderSource`](#songleaf.sources.LocalFolderSource)([root, name])                 | A folder of files you exported yourself, indexed and searched by name.   |
 
 ### *class* songleaf.sources.Hit(source, id, title, artist='', score=0.0, meta=<factory>)
 
@@ -70,6 +71,62 @@ The song with this id, parsed into a `Song`.
 #### search(query='', , title='', artist='', lyrics='', limit=10)
 
 Songs matching every given constraint, best first.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](#songleaf.sources.Hit)]
+
+### *class* songleaf.sources.LocalFolderSource(root=None, , name='local_folder')
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+A folder of files you exported yourself, indexed and searched by name.
+
+For files a chords/tab site lets a paying user export – Ultimate Guitar’s
+Guitar Pro/PDF downloads, MuseScore’s MusicXML/MSCZ/MIDI/PDF exports – with
+no automated route into either site (songleaf#5, songleaf#6): the user
+exports the file through the site as usual and drops it here. No network
+calls, no login; this only reads what is already on disk.
+
+Text files (`.txt`, `.cho`, `.chopro`, `.crd`, `.pro`) are parsed
+as chords-over-lyrics charts, the same format as the Kaggle corpus. Files
+with no lyrics to parse (Guitar Pro, MusicXML, MSCZ, MIDI, PDF) become a
+[`Song`](songleaf.model.html.md#songleaf.model.Song) with empty text and one
+[`score_link()`](songleaf.model.html.md#songleaf.model.score_link) annotation pointing at the file, so a
+renderer can still show it as an attached score snippet.
+
+A file is named `"Artist - Title.ext"` (the artist part is optional; a
+plain `"Title.ext"` works too).
+
+* **Parameters:**
+  * **root** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – Directory to index (searched recursively). Defaults to the
+    `imports` data dir (`~/.local/share/songleaf/imports/`,
+    moved by `SONGLEAF_DATA_DIR`).
+  * **name** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str)) – Registry name (default `"local_folder"`).
+
+```pycon
+>>> import tempfile, pathlib
+>>> root = tempfile.mkdtemp()
+>>> _ = (pathlib.Path(root) / "Nobody - Paper Boats.txt").write_text(
+...     "C\nla la la"
+... )
+>>> local = LocalFolderSource(root)
+>>> hit = local.search("paper boats")[0]
+>>> (hit.title, hit.artist)
+('Paper Boats', 'Nobody')
+>>> local.get(hit.id).of_kind("chord")[0].body["symbol"]
+'C'
+```
+
+#### get(song_id)
+
+The song at this relative path, parsed if it’s a chart, else score-linked.
+
+* **Return type:**
+  [`Song`](songleaf.model.html.md#songleaf.model.Song)
+
+#### search(query='', , title='', artist='', lyrics='', limit=10)
+
+Substring-match the query/title/artist against each file’s name.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](#songleaf.sources.Hit)]

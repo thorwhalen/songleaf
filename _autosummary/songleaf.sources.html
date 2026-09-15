@@ -289,6 +289,9 @@ what <a class="reference internal" href="#songleaf.sources.get_song" title="song
 <tr class="row-even"><td><p><a class="reference internal" href="#songleaf.sources.KaggleChordsSource" title="songleaf.sources.KaggleChordsSource"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KaggleChordsSource</span></code></a>(*[, loader, min_score])</p></td>
 <td><p>The Kaggle <em>chords-and-lyrics</em> corpus (~135K songs, chords over lyrics).</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.sources.LocalFolderSource" title="songleaf.sources.LocalFolderSource"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LocalFolderSource</span></code></a>([root, name])</p></td>
+<td><p>A folder of files you exported yourself, indexed and searched by name.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -353,6 +356,71 @@ sung’s loader of the local corpus zip.</p></li>
 <dt class="sig sig-object py" id="songleaf.sources.KaggleChordsSource.search">
 <span class="sig-name descname"><span class="pre">search</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lyrics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/sources.html#KaggleChordsSource.search"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.sources.KaggleChordsSource.search" title="Link to this definition">¶</a></dt>
 <dd><p>Songs matching every given constraint, best first.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference internal" href="#songleaf.sources.Hit" title="songleaf.sources.Hit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Hit</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="songleaf.sources.LocalFolderSource">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.sources.</span></span><span class="sig-name descname"><span class="pre">LocalFolderSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'local_folder'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/sources.html#LocalFolderSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.sources.LocalFolderSource" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A folder of files you exported yourself, indexed and searched by name.</p>
+<p>For files a chords/tab site lets a paying user export – Ultimate Guitar’s
+Guitar Pro/PDF downloads, MuseScore’s MusicXML/MSCZ/MIDI/PDF exports – with
+no automated route into either site (songleaf#5, songleaf#6): the user
+exports the file through the site as usual and drops it here. No network
+calls, no login; this only reads what is already on disk.</p>
+<p>Text files (<code class="docutils literal notranslate"><span class="pre">.txt</span></code>, <code class="docutils literal notranslate"><span class="pre">.cho</span></code>, <code class="docutils literal notranslate"><span class="pre">.chopro</span></code>, <code class="docutils literal notranslate"><span class="pre">.crd</span></code>, <code class="docutils literal notranslate"><span class="pre">.pro</span></code>) are parsed
+as chords-over-lyrics charts, the same format as the Kaggle corpus. Files
+with no lyrics to parse (Guitar Pro, MusicXML, MSCZ, MIDI, PDF) become a
+<a class="reference internal" href="songleaf.model.html#songleaf.model.Song" title="songleaf.model.Song"><code class="xref py py-class docutils literal notranslate"><span class="pre">Song</span></code></a> with empty text and one
+<a class="reference internal" href="songleaf.model.html#songleaf.model.score_link" title="songleaf.model.score_link"><code class="xref py py-func docutils literal notranslate"><span class="pre">score_link()</span></code></a> annotation pointing at the file, so a
+renderer can still show it as an attached score snippet.</p>
+<p>A file is named <code class="docutils literal notranslate"><span class="pre">&quot;Artist</span> <span class="pre">-</span> <span class="pre">Title.ext&quot;</span></code> (the artist part is optional; a
+plain <code class="docutils literal notranslate"><span class="pre">&quot;Title.ext&quot;</span></code> works too).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>root</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Directory to index (searched recursively). Defaults to the
+<code class="docutils literal notranslate"><span class="pre">imports</span></code> data dir (<code class="docutils literal notranslate"><span class="pre">~/.local/share/songleaf/imports/</span></code>,
+moved by <code class="docutils literal notranslate"><span class="pre">SONGLEAF_DATA_DIR</span></code>).</p></li>
+<li><p><strong>name</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Registry name (default <code class="docutils literal notranslate"><span class="pre">&quot;local_folder&quot;</span></code>).</p></li>
+</ul>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span><span class="o">,</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">root</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"Nobody - Paper Boats.txt"</span><span class="p">)</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"C</span><span class="se">\n</span><span class="s2">la la la"</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">local</span> <span class="o">=</span> <span class="n">LocalFolderSource</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">hit</span> <span class="o">=</span> <span class="n">local</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">"paper boats"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">hit</span><span class="o">.</span><span class="n">artist</span><span class="p">)</span>
+<span class="go">('Paper Boats', 'Nobody')</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">local</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">of_kind</span><span class="p">(</span><span class="s2">"chord"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="s2">"symbol"</span><span class="p">]</span>
+<span class="go">'C'</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="songleaf.sources.LocalFolderSource.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">song_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/sources.html#LocalFolderSource.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.sources.LocalFolderSource.get" title="Link to this definition">¶</a></dt>
+<dd><p>The song at this relative path, parsed if it’s a chart, else score-linked.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="songleaf.model.html#songleaf.model.Song" title="songleaf.model.Song"><code class="xref py py-class docutils literal notranslate"><span class="pre">Song</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="songleaf.sources.LocalFolderSource.search">
+<span class="sig-name descname"><span class="pre">search</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lyrics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/sources.html#LocalFolderSource.search"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.sources.LocalFolderSource.search" title="Link to this definition">¶</a></dt>
+<dd><p>Substring-match the query/title/artist against each file’s name.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference internal" href="#songleaf.sources.Hit" title="songleaf.sources.Hit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Hit</span></code></a>]</span></p>
@@ -463,6 +531,11 @@ sung’s loader of the local corpus zip.</p></li>
 <li><a class="reference internal" href="#songleaf.sources.KaggleChordsSource.search"><code class="docutils literal notranslate"><span class="pre">KaggleChordsSource.search()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#songleaf.sources.LocalFolderSource"><code class="docutils literal notranslate"><span class="pre">LocalFolderSource</span></code></a><ul>
+<li><a class="reference internal" href="#songleaf.sources.LocalFolderSource.get"><code class="docutils literal notranslate"><span class="pre">LocalFolderSource.get()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.sources.LocalFolderSource.search"><code class="docutils literal notranslate"><span class="pre">LocalFolderSource.search()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#songleaf.sources.default_sources"><code class="docutils literal notranslate"><span class="pre">default_sources()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.sources.get_song"><code class="docutils literal notranslate"><span class="pre">get_song()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.sources.search"><code class="docutils literal notranslate"><span class="pre">search()</span></code></a></li>
@@ -477,7 +550,7 @@ sung’s loader of the local corpus zip.</p></li>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=7cc827d7"></script>
+</div><script src="../_static/documentation_options.js?v=94eb6667"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

@@ -1,4 +1,4 @@
-> built 2026-09-15 14:25 UTC from 6c7b58b (main) · songleaf 0.0.3. Details: build_info.json
+> built 2026-09-15 14:32 UTC from 06072a6 (main) · songleaf 0.0.4. Details: build_info.json
 
 # index.html.md
 
@@ -113,6 +113,8 @@ Songs are kept in a `MutableMapping` (`songleaf.song_store()`): one JSON file pe
 Loading the corpus takes about five seconds on the first search in a process.
 
 Other sources surveyed, plus the Ultimate Guitar / MuseScore decisions, are in [`misc/docs/sources.md`]().
+
+`LocalFolderSource` indexes a folder of files you exported yourself from a paid chords/tab or score site (Ultimate Guitar, MuseScore, …) — text charts are parsed like the Kaggle corpus, score/tab files (Guitar Pro, MusicXML, MSCZ, MIDI, PDF) are attached as a score link. Default folder: `~/.local/share/songleaf/imports/` (moved by `SONGLEAF_DATA_DIR`).
 
 ## Extending
 
@@ -1150,6 +1152,7 @@ what [`get_song()`](_autosummary/songleaf.sources.html.md#songleaf.sources.get_s
 | [`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)(source, id, title[, artist, score, meta])   | One search result: a song a source can `get()`.                          |
 |--------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|
 | [`KaggleChordsSource`](_autosummary/songleaf.sources.html.md#songleaf.sources.KaggleChordsSource)(\*[, loader, min_score])     | The Kaggle *chords-and-lyrics* corpus (~135K songs, chords over lyrics). |
+| [`LocalFolderSource`](_autosummary/songleaf.sources.html.md#songleaf.sources.LocalFolderSource)([root, name])                 | A folder of files you exported yourself, indexed and searched by name.   |
 
 ### *class* songleaf.sources.Hit(source, id, title, artist='', score=0.0, meta=<factory>)
 
@@ -1197,6 +1200,62 @@ The song with this id, parsed into a `Song`.
 #### search(query='', , title='', artist='', lyrics='', limit=10)
 
 Songs matching every given constraint, best first.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)]
+
+### *class* songleaf.sources.LocalFolderSource(root=None, , name='local_folder')
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+A folder of files you exported yourself, indexed and searched by name.
+
+For files a chords/tab site lets a paying user export – Ultimate Guitar’s
+Guitar Pro/PDF downloads, MuseScore’s MusicXML/MSCZ/MIDI/PDF exports – with
+no automated route into either site (songleaf#5, songleaf#6): the user
+exports the file through the site as usual and drops it here. No network
+calls, no login; this only reads what is already on disk.
+
+Text files (`.txt`, `.cho`, `.chopro`, `.crd`, `.pro`) are parsed
+as chords-over-lyrics charts, the same format as the Kaggle corpus. Files
+with no lyrics to parse (Guitar Pro, MusicXML, MSCZ, MIDI, PDF) become a
+[`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song) with empty text and one
+[`score_link()`](_autosummary/songleaf.model.html.md#songleaf.model.score_link) annotation pointing at the file, so a
+renderer can still show it as an attached score snippet.
+
+A file is named `"Artist - Title.ext"` (the artist part is optional; a
+plain `"Title.ext"` works too).
+
+* **Parameters:**
+  * **root** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – Directory to index (searched recursively). Defaults to the
+    `imports` data dir (`~/.local/share/songleaf/imports/`,
+    moved by `SONGLEAF_DATA_DIR`).
+  * **name** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str)) – Registry name (default `"local_folder"`).
+
+```pycon
+>>> import tempfile, pathlib
+>>> root = tempfile.mkdtemp()
+>>> _ = (pathlib.Path(root) / "Nobody - Paper Boats.txt").write_text(
+...     "C\nla la la"
+... )
+>>> local = LocalFolderSource(root)
+>>> hit = local.search("paper boats")[0]
+>>> (hit.title, hit.artist)
+('Paper Boats', 'Nobody')
+>>> local.get(hit.id).of_kind("chord")[0].body["symbol"]
+'C'
+```
+
+#### get(song_id)
+
+The song at this relative path, parsed if it’s a chart, else score-linked.
+
+* **Return type:**
+  [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song)
+
+#### search(query='', , title='', artist='', lyrics='', limit=10)
+
+Substring-match the query/title/artist against each file’s name.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)]
@@ -1366,7 +1425,7 @@ The keys of the stored songs.
 
 # About this build
 
-This documentation was built on **2026-09-15 14:25 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/6c7b58b4d524990090e1c45c902857a620496f0d"><code>6c7b58b</code></a> on branch <code>main</code>, for **songleaf 0.0.3** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-09-15 14:32 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/06072a61b4b607593aa9112031984da38e3f790d"><code>06072a6</code></a> on branch <code>main</code>, for **songleaf 0.0.4** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -1375,7 +1434,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/6c7b58b4d524990090e1c45c902857a620496f0d"><code>6c7b58b4d524990090e1c45c902857a620496f0d</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/06072a61b4b607593aa9112031984da38e3f790d"><code>06072a61b4b607593aa9112031984da38e3f790d</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -1386,9 +1445,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/34981264984">34981264984</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/34981945297">34981945297</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>6c7b58b4d524990090e1c45c902857a620496f0d</code> (in the history of the built commit) |
+| Event commit | <code>06072a61b4b607593aa9112031984da38e3f790d</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -1413,13 +1472,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.3/">0.0.3</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.4/">0.0.4</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 6c7b58b4d524990090e1c45c902857a620496f0d
+git checkout 06072a61b4b607593aa9112031984da38e3f790d
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

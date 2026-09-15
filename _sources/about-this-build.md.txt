@@ -5,7 +5,7 @@ orphan: true
 
 # About this build
 
-This documentation was built on **2026-09-15 14:25 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/6c7b58b4d524990090e1c45c902857a620496f0d"><code>6c7b58b</code></a> on branch <code>main</code>, for **songleaf 0.0.3** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-09-15 14:32 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/06072a61b4b607593aa9112031984da38e3f790d"><code>06072a6</code></a> on branch <code>main</code>, for **songleaf 0.0.4** (from <code>pyproject.toml</code>).
 
 :::{note}
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -15,7 +15,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 | | |
 |---|---|
-| Commit | <a href="https://github.com/thorwhalen/songleaf/commit/6c7b58b4d524990090e1c45c902857a620496f0d"><code>6c7b58b4d524990090e1c45c902857a620496f0d</code></a> |
+| Commit | <a href="https://github.com/thorwhalen/songleaf/commit/06072a61b4b607593aa9112031984da38e3f790d"><code>06072a61b4b607593aa9112031984da38e3f790d</code></a> |
 | Branch | <code>main</code> |
 | Tags at this commit | none |
 | Working tree | clean |
@@ -26,9 +26,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 | | |
 |---|---|
 | Repository | <code>thorwhalen/songleaf</code> |
-| Run | <a href="https://github.com/thorwhalen/songleaf/actions/runs/34981264984">34981264984</a> |
+| Run | <a href="https://github.com/thorwhalen/songleaf/actions/runs/34981945297">34981945297</a> |
 | Ref | <code>refs/heads/main</code> |
-| Event commit | <code>6c7b58b4d524990090e1c45c902857a620496f0d</code> (in the history of the built commit) |
+| Event commit | <code>06072a61b4b607593aa9112031984da38e3f790d</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -53,13 +53,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.3/">0.0.3</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.4/">0.0.4</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 6c7b58b4d524990090e1c45c902857a620496f0d
+git checkout 06072a61b4b607593aa9112031984da38e3f790d
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

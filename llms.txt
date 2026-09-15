@@ -17,7 +17,7 @@
 - [songleaf.store](_autosummary/songleaf.store.html.md): Where songs persist: a `MutableMapping` of songs, JSON files by default.
 - [songleaf.tools](_autosummary/songleaf.tools.html.md): The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.
 - [For AI agents](ai-agents.html.md): `songleaf` ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on **2026-09-15 14:25 UTC** from commit <a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on **2026-09-15 14:32 UTC** from commit <a href="https://github.com/tho...
 
 ---
 
