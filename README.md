@@ -11,10 +11,29 @@ The default source is the Kaggle *chords-and-lyrics* corpus (about 135,000 songs
 
 ## What the sheet looks like
 
-- **One page, largest type that fits.** The lyric font size is found by search for each song. On 1,500 randomly sampled corpus songs, the median came out around 22 pt, and 1,498 of the 1,500 fit on one page. A song that cannot fit at the minimum size spills onto a second page.
+- **One page, largest type that fits.** The lyric font size is found by search for each song. On 2,000 randomly sampled corpus songs, the default layout's median came out around 23 pt, and 1,999 of the 2,000 fit on one page. A song that cannot fit at the minimum size spills onto a second page.
 - **Chords take no line of their own.** They are smaller and blue, start over the syllable they land on, and overlap the tops of the letters of their lyric line.
 - **Lines share rows.** Consecutive lines of a paragraph are packed onto one row, separated by a light `/`. A blank line or a new section starts a new row.
 - **Small labels.** Sections are grey prefixes (`V1`, `Ch`, `Br`); title, artist, capo and key are one small line at the top.
+
+## Layouts
+
+That is the `dense` layout. Other layouts trade looks for larger lyrics. Name one by joining options with `+`:
+
+| option | what it changes |
+|---|---|
+| `overlap` | chords sit lower, on the words themselves, outlined in white and drawn over them: no extra height for chords |
+| `inline` | chords go in the lyric line, right before the syllable they land on; `‹G` marks a chord that sounds *before* its syllable |
+| `packed` | rows break where the lyrics break (between couplets, not inside a rhyming pair or a repeated line) instead of as late as fits |
+| `two-column` | two columns under a full-width heading |
+| `shaded` | light bands for choruses and bridges, dark grey for lines already sung, chords coloured by function in the song's key (tonic darker, outside the key in orange) |
+
+```bash
+python -m songleaf sheet "wonderwall oasis" --layout inline
+python -m songleaf sheet "wonderwall oasis" --layout overlap+packed+two-column+shaded
+```
+
+The comparison of the largest font size each layout fits, over the same 2,000 songs, is on [songleaf#4](https://github.com/thorwhalen/songleaf/issues/4).
 
 ## Command line
 
@@ -38,8 +57,21 @@ import songleaf
 hits = songleaf.search("wonderwall oasis")
 song = songleaf.get_song(hits[0].key)  # a Song: lyrics text + annotations
 songleaf.render_dense_a4(song, "wonderwall.pdf")  # {'font_size': ..., 'pages': 1, ...}
+songleaf.render_sheet(song, "wonderwall-inline.pdf", layout="inline+two-column")
 
 songleaf.sheet("wonderwall oasis")  # search, store and render in one call
+songleaf.sheet("wonderwall oasis", layout="overlap+shaded")
+```
+
+A layout is a `SheetLayout(chords=..., packing=..., columns=..., shading=..., style=DenseStyle(...))`. `chords` and `packing` also take your own strategy objects (a `ChordPlacement`, or a packer function with the signature of `songleaf.packing.pack_greedy`):
+
+```python
+from functools import partial
+from songleaf import SheetLayout, render_sheet
+from songleaf.packing import pack_structured
+
+layout = SheetLayout(chords="inline", packing=partial(pack_structured, row_cost=5), columns=2)
+render_sheet(song, "sheet.pdf", layout=layout)
 ```
 
 ## The song model
@@ -79,7 +111,7 @@ Three keyword arguments are the extension points, on `sheet` (and `search` for s
 
 - `sources=`: objects with a `name`, `search(query, *, title, artist, lyrics, limit)` returning `Hit`s, and `get(song_id)` returning a `Song`;
 - `store=`: any `MutableMapping[str, Song]` (a `dict` works);
-- `renderer=`: any `(song, output) -> dict` function.
+- `renderer=`: any `(song, output) -> dict` function (`songleaf.make_renderer("inline+shaded", page_size="LETTER")` makes one from a layout). It replaces `layout=`.
 
 ```python
 songleaf.sheet("paper boats", sources=[my_source], store={}, renderer=my_renderer)
