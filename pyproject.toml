@@ -30,7 +30,17 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Multimedia :: Sound/Audio",
 ]
-dependencies = []
+dependencies = [
+    "cw>=0.1.4,<0.2",
+    "dol",
+    "pandas",
+    "rapidfuzz>=3",
+    "reportlab>=4",
+    "sung>=0.0.26",
+]
+
+[project.scripts]
+songleaf = "songleaf.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/thorwhalen/songleaf"
