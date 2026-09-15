@@ -4,7 +4,7 @@ This is the running decision record for where `songleaf` gets lyrics, chords and
 
 ## Ultimate Guitar (songleaf#5)
 
-The "Tabs" app is **Ultimate Guitar**, used with a paid subscription.
+The "Tabs" app is **Ultimate Guitar**.
 
 Ultimate Guitar has no public API and its terms of service explicitly bar automated scraping — that route stays closed (per the songleaf#3 survey). What a paying subscriber *can* do legitimately, through the official website UI (not the mobile app), is:
 
@@ -18,7 +18,7 @@ There is no legitimate way to automate any of this — it is a logged-in, per-so
 
 ## MuseScore (songleaf#6)
 
-The repo owner has a MuseScore Pro subscription but could not obtain an API key pair (musescore.com's developer API requires emailing `api@musescore.com` to request one, and that request did not resolve — see songleaf#6).
+A MuseScore developer API key pair could not be obtained (musescore.com's developer API requires emailing `api@musescore.com` to request one, and that request did not resolve — see songleaf#6).
 
 Without an API key, the same shape of answer applies as for Ultimate Guitar. musescore.com lets a Pro subscriber **export their own or subscription-unlocked scores** through the website (or desktop app) as MusicXML, MSCZ, MIDI, PDF, MP3 or PNG — a per-score, logged-in, human action, not an automatable one without the key `songleaf` doesn't have.
 
@@ -27,6 +27,10 @@ Two routes stay open without any account at all, and are already how `scoreseek`
 - **PDMX** (250K public-domain MusicXML corpus, local bulk download) — also already in `scoreseek`.
 
 **Decision:** no automated MuseScore.com source (blocked on the API key). Score snippets come from `scoreseek`'s existing open sources by default. MuseScore Pro exports, like Ultimate Guitar's, are ingested as local files the same way — tracked in [songleaf#16](https://github.com/thorwhalen/songleaf/issues/16) alongside the Ultimate Guitar case, since both are "drop an exported file in a folder" the same mechanism.
+
+## Local-folder ingestion (songleaf#16)
+
+Built: `songleaf.sources.LocalFolderSource` indexes `~/.local/share/songleaf/imports/` (or any folder you point it at). Text exports are parsed as chords-over-lyrics charts; Guitar Pro/MusicXML/MSCZ/MIDI/PDF exports become a score-linked `Song` with no lyrics text. It reads only what's already on disk — no network calls, no login.
 
 ## What's built vs. what's a source survey
 
