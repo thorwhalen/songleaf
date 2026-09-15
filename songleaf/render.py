@@ -594,9 +594,29 @@ def _split_text(
             if tail.text and chords.extent(head, size, style) <= available:
                 return head, tail
     if fitting == len(text) or len(text) < 2:
-        return None  # only a chord overhangs, or a single character: let it be
+        # The words fit but the chords run past them (a chart's chord line is
+        # often longer than its lyric): the chords that do not fit go on a
+        # chord-only row after the words.
+        return _split_overhanging_chords(piece, available, size, style, chords)
     # No break at a space fits: break inside the word, as late as fits.
     return _split_at(piece, max(fitting, 1))
+
+
+def _split_overhanging_chords(
+    piece: _Piece,
+    available: float,
+    size: float,
+    style: DenseStyle,
+    chords: ChordPlacement = _OVER,
+):
+    """The piece with the chords that fit in ``available``, and a chord-only piece of the rest; None if none can move."""
+    for k in range(len(piece.chords) - 1, -1, -1):
+        head = replace(piece, chords=piece.chords[:k])
+        if chords.extent(head, size, style) <= available:
+            rest = [(0, symbol, timing) for _, symbol, timing in piece.chords[k:]]
+            tail = replace(piece, text="", chords=rest, label="", new_paragraph=False)
+            return head, tail
+    return None
 
 
 def _split_chords(
@@ -626,8 +646,8 @@ def _wrap(
     chords: ChordPlacement = _OVER,
 ) -> list[_Piece]:
     parts = []
-    split_piece = _split_text if piece.text else _split_chords
     while True:
+        split_piece = _split_text if piece.text else _split_chords
         available = width - _label_width(piece, size, style)
         split = split_piece(piece, available, size, style, chords)
         if split is None:  # it fits, or it cannot be split any further

@@ -103,6 +103,20 @@ def test_nothing_runs_past_its_column(spec, long_chart):
         assert all(right_edge(item) <= flow.column_width + 1e-6 for item in row.items)
 
 
+@pytest.mark.parametrize("spec", SPECS)
+def test_a_pile_of_chords_on_a_short_line_moves_to_a_chord_row(spec):
+    symbols = ["Cmaj7", "G/B", "Am7", "Fmaj7", "Dsus4", "E7", "Bb", "Ebmaj7"] * 3
+    song = Song("la\nla la", [chord(2, symbol) for symbol in symbols])
+    size = 30
+    flow = flow_at(song, size, spec)
+    rows = rows_of(flow)
+    for row in rows:
+        assert all(right_edge(item) <= flow.column_width + 1e-6 for item in row.items)
+    drawn = [item.text for row in rows for item in row.items if item.text in symbols]
+    assert drawn == symbols  # every chord, in order
+    assert lyric_texts(rows[0])[0].startswith("la")
+
+
 def test_layouts_are_named_by_joining_options():
     layout = layout_named("inline + packed+2col, shaded")
     assert (layout.chords, layout.packing, layout.columns, layout.shading) == (
