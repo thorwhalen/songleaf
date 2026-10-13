@@ -191,9 +191,18 @@ def usable_font(name: str) -> str:
     use; if its file cannot be loaded, the paired standard font is returned and a
     warning says so. Any other name is returned unchanged.
     """
-    if name not in BUNDLED_FONTS:
-        return name
     from reportlab.pdfbase import pdfmetrics
+
+    if name not in BUNDLED_FONTS:
+        try:
+            pdfmetrics.getFont(name)
+        except KeyError:
+            raise ValueError(
+                f"Unknown font {name!r}: use one of {sorted(BUNDLED_FONTS)}, a reportlab "
+                f"standard font (e.g. 'Helvetica'), or register a TTF with "
+                f"reportlab.pdfbase.pdfmetrics.registerFont first"
+            ) from None
+        return name
     from reportlab.pdfbase.ttfonts import TTFont
 
     if name in pdfmetrics.getRegisteredFontNames():

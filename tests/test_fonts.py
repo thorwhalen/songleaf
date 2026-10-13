@@ -72,3 +72,8 @@ def test_the_old_look_is_one_keyword_away():
     buffer = io.BytesIO()
     render_dense_a4(parse_chords_over_lyrics("C   G\nplain words here"), buffer, style=style)
     assert buffer.getvalue().startswith(b"%PDF")
+
+
+def test_an_unknown_font_name_says_what_to_do():
+    with pytest.raises(ValueError, match="registerFont"):
+        usable_font("SongleafNoSuchFont")
