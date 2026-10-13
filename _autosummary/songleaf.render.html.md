@@ -37,7 +37,13 @@ one page ([`fit_font_size()`](#songleaf.render.fit_font_size)), then draws it:
 - section labels are small grey prefixes (`V1`, `Ch`) on a section’s first row;
 - only a song that cannot fit at `min_font_size` spills onto more pages.
 
-Text is set in reportlab’s built-in Helvetica, which covers Latin-1.
+Text is set in DejaVu Sans, a TrueType font bundled in `songleaf/data/fonts`
+(Bitstream Vera licence, which allows embedding and redistribution; the licence
+text is beside the files) and embedded in each PDF. It covers Latin Extended
+(Turkish ş ğ ı), Greek, Cyrillic and more, where reportlab’s built-in Helvetica
+stops at its single-byte cp1252 encoding (songleaf#9). If a bundled file cannot
+be loaded, the matching Helvetica is used instead, with a warning. Emoji are
+not covered by either.
 
 ```pycon
 >>> short_label("Verse 1"), short_label("Pre-Chorus"), short_label("Coda")
@@ -51,6 +57,8 @@ Text is set in reportlab’s built-in Helvetica, which covers Latin-1.
 
 | [`DFLT_MARGIN`](#songleaf.render.DFLT_MARGIN)      | Page margin in points (5 mm), about the least a printer leaves blank anyway.                                                                                                              |
 |-------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`FONTS_DIR`](#songleaf.render.FONTS_DIR)        | Where the bundled TrueType fonts live (with their licence).                                                                                                                               |
+| [`BUNDLED_FONTS`](#songleaf.render.BUNDLED_FONTS)    | name -> (file in [`FONTS_DIR`](#songleaf.render.FONTS_DIR), standard font used when that file cannot be loaded).                                                         |
 | [`CHORD_PLACEMENTS`](#songleaf.render.CHORD_PLACEMENTS) | The chord placements a [`SheetLayout`](#songleaf.render.SheetLayout) can name.                                                                                             |
 | [`PACKERS`](#songleaf.render.PACKERS)          | The line packers a [`SheetLayout`](#songleaf.render.SheetLayout) can name (see [`songleaf.packing`](songleaf.packing.html.md#module-songleaf.packing)). |
 | [`LAYOUT_OPTIONS`](#songleaf.render.LAYOUT_OPTIONS)   | What each option of a layout spec changes, from the v1 layout (`dense`).                                                                                                                  |
@@ -66,6 +74,7 @@ Text is set in reportlab’s built-in Helvetica, which covers Latin-1.
 | [`render_sheet`](#songleaf.render.render_sheet)(song, output, \*[, layout, ...])       | Render `song` in `layout` (a [`SheetLayout`](#songleaf.render.SheetLayout) or a spec) as a PDF to `output`.              |
 | [`section_family`](#songleaf.render.section_family)(label)                               | `"chorus"` for a chorus or refrain, `"bridge"` for a pre-chorus or bridge, else `""`.                                                   |
 | [`short_label`](#songleaf.render.short_label)(label)                                  | A compact section label: `"Verse 1"` -> `"V1"`, `"Chorus x2"` -> `"Ch x2"`.                                                             |
+| [`usable_font`](#songleaf.render.usable_font)(name)                                   | The reportlab font name to set `name` in, registering a bundled TTF once.                                                               |
 
 ### Classes
 
@@ -75,6 +84,15 @@ Text is set in reportlab’s built-in Helvetica, which covers Latin-1.
 | [`InlineChords`](#songleaf.render.InlineChords)(\*[, snap_to_syllables])        | Chords in the lyric line, right before their syllable; a chord-only line is a row of chords.  |
 | [`OverChords`](#songleaf.render.OverChords)()                                 | Chords above their syllables, smaller and lighter, overlapping the lyric row by `chord_rise`. |
 | [`SheetLayout`](#songleaf.render.SheetLayout)([chords, packing, columns, ...]) | One way to lay a song out on a page.                                                          |
+
+### songleaf.render.BUNDLED_FONTS *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [str](https://docs.python.org/3/builtins/stdtypes.html#str)]]* *= {'DejaVuSans': ('DejaVuSans.ttf', 'Helvetica'), 'DejaVuSans-Bold': ('DejaVuSans-Bold.ttf', 'Helvetica-Bold')}*
+
+name -> (file in [`FONTS_DIR`](#songleaf.render.FONTS_DIR), standard font used
+when that file cannot be loaded). Any other name is passed to reportlab as is:
+one of its standard fonts, or a TTF the caller registered with `pdfmetrics`.
+
+* **Type:**
+  Fonts songleaf ships
 
 ### songleaf.render.CHORD_PLACEMENTS *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [ChordPlacement](#songleaf.render.ChordPlacement)]* *= {'inline': InlineChords(snap_to_syllables=True), 'over': OverChords()}*
 
@@ -111,11 +129,15 @@ What to draw for the piece, starting at `x`.
 
 Page margin in points (5 mm), about the least a printer leaves blank anyway.
 
-### *class* songleaf.render.DenseStyle(lyric_font='Helvetica', chord_font='Helvetica-Bold', label_font='Helvetica-Bold', title_font='Helvetica-Bold', lyric_color='#000000', chord_color='#3b73c4', label_color='#8c8c8c', separator_color='#a6a6a6', title_color='#595959', chord_scale=0.62, label_scale=0.5, title_scale=0.6, chord_rise=0.56, chord_halo='', chord_halo_width=0.16, ascent=0.72, descent=0.21, row_gap=0.06, paragraph_gap=0.3, separator=' / ', chord_gap=0.3, bare_chord_gap=0.9, label_gap=0.4, inline_chord_scale=0.7, inline_chord_rise=0.2, inline_chord_pad=0.15, before_marker='‹', column_gap=0.8, column_rule_color='#d9d9d9', chorus_shade='#f3efe4', bridge_shade='#e8eef6', band_pad=0.12, repeat_color='#4d4d4d', tonic_chord_color='#1c4a91', outside_chord_color='#c0602a')
+### *class* songleaf.render.DenseStyle(lyric_font='DejaVuSans', chord_font='DejaVuSans-Bold', label_font='DejaVuSans-Bold', title_font='DejaVuSans-Bold', lyric_color='#000000', chord_color='#3b73c4', label_color='#8c8c8c', separator_color='#a6a6a6', title_color='#595959', chord_scale=0.62, label_scale=0.5, title_scale=0.6, chord_rise=0.56, chord_halo='', chord_halo_width=0.16, ascent=0.72, descent=0.21, row_gap=0.06, paragraph_gap=0.3, separator=' / ', chord_gap=0.3, bare_chord_gap=0.9, label_gap=0.4, inline_chord_scale=0.7, inline_chord_rise=0.2, inline_chord_pad=0.15, before_marker='‹', column_gap=0.8, column_rule_color='#d9d9d9', chorus_shade='#f3efe4', bridge_shade='#e8eef6', band_pad=0.12, repeat_color='#4d4d4d', tonic_chord_color='#1c4a91', outside_chord_color='#c0602a')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Typography of the dense layouts. Lengths are fractions of the lyric font size.
+
+### songleaf.render.FONTS_DIR *= PosixPath('/home/runner/work/songleaf/songleaf/songleaf/data/fonts')*
+
+Where the bundled TrueType fonts live (with their licence).
 
 ### *class* songleaf.render.InlineChords(, snap_to_syllables=True)
 
@@ -250,6 +272,17 @@ Render `song` in `layout` (a [`SheetLayout`](#songleaf.render.SheetLayout) or a 
 ### songleaf.render.short_label(label)
 
 A compact section label: `"Verse 1"` -> `"V1"`, `"Chorus x2"` -> `"Ch x2"`.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### songleaf.render.usable_font(name)
+
+The reportlab font name to set `name` in, registering a bundled TTF once.
+
+A name in [`BUNDLED_FONTS`](#songleaf.render.BUNDLED_FONTS) is registered from [`FONTS_DIR`](#songleaf.render.FONTS_DIR) on first
+use; if its file cannot be loaded, the paired standard font is returned and a
+warning says so. Any other name is returned unchanged.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)

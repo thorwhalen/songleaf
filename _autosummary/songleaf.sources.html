@@ -5,7 +5,9 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <link rel="alternate" type="text/markdown" href="songleaf.sources.html.md">
-<link rel="describedby" href="../llms.txt" type="text/markdown"><link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="songleaf.store" href="songleaf.store.html"><link rel="prev" title="songleaf.render" href="songleaf.render.html">
+<link rel="describedby" href="../llms.txt" type="text/markdown">
+<link rel="alternate" type="text/markdown" href="songleaf.sources.html.md">
+<link rel="describedby" href="llms.txt"><link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="songleaf.store" href="songleaf.store.html"><link rel="prev" title="songleaf.render" href="songleaf.render.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
         <title>songleaf.sources - songleaf</title>
@@ -298,13 +300,13 @@ what <a class="reference internal" href="#songleaf.sources.get_song" title="song
 <dl class="py class">
 <dt class="sig sig-object py" id="songleaf.sources.Hit">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.sources.</span></span><span class="sig-name descname"><span class="pre">Hit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/sources.html#Hit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.sources.Hit" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>One search result: a song a source can <code class="xref py py-meth docutils literal notranslate"><span class="pre">get()</span></code>.</p>
 <dl class="field-list simple">
 </dl>
 <dl class="py property">
 <dt class="sig sig-object py" id="songleaf.sources.Hit.key">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">key</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><a class="headerlink" href="#songleaf.sources.Hit.key" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">key</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span><a class="headerlink" href="#songleaf.sources.Hit.key" title="Link to this definition">¶</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">&quot;&lt;source&gt;:&lt;id&gt;&quot;</span></code>, the song’s name for <a class="reference internal" href="#songleaf.sources.get_song" title="songleaf.sources.get_song"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_song()</span></code></a> and the store.</p>
 </dd></dl>
 
@@ -314,7 +316,7 @@ what <a class="reference internal" href="#songleaf.sources.get_song" title="song
 <dd><p>The JSON-ready form.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -324,7 +326,7 @@ what <a class="reference internal" href="#songleaf.sources.get_song" title="song
 <dl class="py class">
 <dt class="sig sig-object py" id="songleaf.sources.KaggleChordsSource">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.sources.</span></span><span class="sig-name descname"><span class="pre">KaggleChordsSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">loader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">70</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/sources.html#KaggleChordsSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.sources.KaggleChordsSource" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>The Kaggle <em>chords-and-lyrics</em> corpus (~135K songs, chords over lyrics).</p>
 <p>Read through <code class="docutils literal notranslate"><span class="pre">sung</span></code> from a local copy of the zip, with no Kaggle
 credentials needed when that copy exists. The corpus was scraped from a
@@ -337,7 +339,7 @@ whole word. Lyrics matches are not ranked beyond popularity.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>loader</strong> – <code class="docutils literal notranslate"><span class="pre">()</span> <span class="pre">-&gt;</span> <span class="pre">pandas.DataFrame</span></code> with <code class="xref py py-attr docutils literal notranslate"><span class="pre">columns</span></code>. Defaults to
 sung’s loader of the local corpus zip.</p></li>
-<li><p><strong>min_score</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span>) – Fuzzy-match cutoff, 0-100.</p></li>
+<li><p><strong>min_score</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span>) – Fuzzy-match cutoff, 0-100.</p></li>
 </ul>
 </dd>
 </dl>
@@ -358,7 +360,7 @@ sung’s loader of the local corpus zip.</p></li>
 <dd><p>Songs matching every given constraint, best first.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference internal" href="#songleaf.sources.Hit" title="songleaf.sources.Hit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Hit</span></code></a>]</span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference internal" href="#songleaf.sources.Hit" title="songleaf.sources.Hit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Hit</span></code></a>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -368,7 +370,7 @@ sung’s loader of the local corpus zip.</p></li>
 <dl class="py class">
 <dt class="sig sig-object py" id="songleaf.sources.LocalFolderSource">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.sources.</span></span><span class="sig-name descname"><span class="pre">LocalFolderSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'local_folder'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/sources.html#LocalFolderSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.sources.LocalFolderSource" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>A folder of files you exported yourself, indexed and searched by name.</p>
 <p>For files a chords/tab site lets a paying user export – Ultimate Guitar’s
 Guitar Pro/PDF downloads, MuseScore’s MusicXML/MSCZ/MIDI/PDF exports – with
@@ -386,10 +388,10 @@ plain <code class="docutils literal notranslate"><span class="pre">&quot;Title.e
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>root</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Directory to index (searched recursively). Defaults to the
+<li><p><strong>root</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Directory to index (searched recursively). Defaults to the
 <code class="docutils literal notranslate"><span class="pre">imports</span></code> data dir (<code class="docutils literal notranslate"><span class="pre">~/.local/share/songleaf/imports/</span></code>,
 moved by <code class="docutils literal notranslate"><span class="pre">SONGLEAF_DATA_DIR</span></code>).</p></li>
-<li><p><strong>name</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Registry name (default <code class="docutils literal notranslate"><span class="pre">&quot;local_folder&quot;</span></code>).</p></li>
+<li><p><strong>name</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Registry name (default <code class="docutils literal notranslate"><span class="pre">&quot;local_folder&quot;</span></code>).</p></li>
 </ul>
 </dd>
 </dl>
@@ -423,7 +425,7 @@ moved by <code class="docutils literal notranslate"><span class="pre">SONGLEAF_D
 <dd><p>Substring-match the query/title/artist against each file’s name.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference internal" href="#songleaf.sources.Hit" title="songleaf.sources.Hit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Hit</span></code></a>]</span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference internal" href="#songleaf.sources.Hit" title="songleaf.sources.Hit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Hit</span></code></a>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -436,7 +438,7 @@ moved by <code class="docutils literal notranslate"><span class="pre">SONGLEAF_D
 <dd><p>The sources used when none are given, built once per process.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -458,7 +460,7 @@ moved by <code class="docutils literal notranslate"><span class="pre">SONGLEAF_D
 <dd><p>Search every source and merge the hits, best first.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference internal" href="#songleaf.sources.Hit" title="songleaf.sources.Hit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Hit</span></code></a>]</span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference internal" href="#songleaf.sources.Hit" title="songleaf.sources.Hit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Hit</span></code></a>]</span></p>
 </dd>
 </dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">search</span><span class="p">(</span><span class="s2">"paper boats"</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="p">[])</span>
@@ -550,7 +552,7 @@ moved by <code class="docutils literal notranslate"><span class="pre">SONGLEAF_D
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=94eb6667"></script>
+</div><script src="../_static/documentation_options.js?v=3dab1201"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

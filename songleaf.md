@@ -1,4 +1,4 @@
-> built 2026-09-15 14:32 UTC from 06072a6 (main) · songleaf 0.0.4. Details: build_info.json
+> built 2026-10-13 21:05 UTC from 0c1dfcc (main) · songleaf 0.0.5. Details: build_info.json
 
 # index.html.md
 
@@ -18,6 +18,7 @@ The default source is the Kaggle *chords-and-lyrics* corpus (about 135,000 songs
 ## What the sheet looks like
 
 - **One page, largest type that fits.** The lyric font size is found by search for each song. On 2,000 randomly sampled corpus songs, the default layout’s median came out around 23 pt, and 1,999 of the 2,000 fit on one page. A song that cannot fit at the minimum size spills onto a second page.
+- **Any script the font covers.** Text is set in DejaVu Sans, bundled with the package and embedded in each PDF (Bitstream Vera licence, beside the font files), so Turkish, Greek, Cyrillic and other non-Latin-1 text draws correctly. It is wider than Helvetica, so fitted sizes are somewhat smaller than the numbers above, which were measured in Helvetica; `DenseStyle(lyric_font="Helvetica", ...)` restores the old look.
 - **Chords take no line of their own.** They are smaller and blue, start over the syllable they land on, and overlap the tops of the letters of their lyric line.
 - **Lines share rows.** Consecutive lines of a paragraph are packed onto one row, separated by a light `/`. A blank line or a new section starts a new row.
 - **Small labels.** Sections are grey prefixes (`V1`, `Ch`, `Br`); title, artist, capo and key are one small line at the top.
@@ -274,7 +275,7 @@ The JSON-ready form.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### *class* songleaf.DenseStyle(lyric_font='Helvetica', chord_font='Helvetica-Bold', label_font='Helvetica-Bold', title_font='Helvetica-Bold', lyric_color='#000000', chord_color='#3b73c4', label_color='#8c8c8c', separator_color='#a6a6a6', title_color='#595959', chord_scale=0.62, label_scale=0.5, title_scale=0.6, chord_rise=0.56, chord_halo='', chord_halo_width=0.16, ascent=0.72, descent=0.21, row_gap=0.06, paragraph_gap=0.3, separator=' / ', chord_gap=0.3, bare_chord_gap=0.9, label_gap=0.4, inline_chord_scale=0.7, inline_chord_rise=0.2, inline_chord_pad=0.15, before_marker='‹', column_gap=0.8, column_rule_color='#d9d9d9', chorus_shade='#f3efe4', bridge_shade='#e8eef6', band_pad=0.12, repeat_color='#4d4d4d', tonic_chord_color='#1c4a91', outside_chord_color='#c0602a')
+### *class* songleaf.DenseStyle(lyric_font='DejaVuSans', chord_font='DejaVuSans-Bold', label_font='DejaVuSans-Bold', title_font='DejaVuSans-Bold', lyric_color='#000000', chord_color='#3b73c4', label_color='#8c8c8c', separator_color='#a6a6a6', title_color='#595959', chord_scale=0.62, label_scale=0.5, title_scale=0.6, chord_rise=0.56, chord_halo='', chord_halo_width=0.16, ascent=0.72, descent=0.21, row_gap=0.06, paragraph_gap=0.3, separator=' / ', chord_gap=0.3, bare_chord_gap=0.9, label_gap=0.4, inline_chord_scale=0.7, inline_chord_rise=0.2, inline_chord_pad=0.15, before_marker='‹', column_gap=0.8, column_rule_color='#d9d9d9', chorus_shade='#f3efe4', bridge_shade='#e8eef6', band_pad=0.12, repeat_color='#4d4d4d', tonic_chord_color='#1c4a91', outside_chord_color='#c0602a')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -907,7 +908,13 @@ one page ([`fit_font_size()`](_autosummary/songleaf.render.html.md#songleaf.rend
 - section labels are small grey prefixes (`V1`, `Ch`) on a section’s first row;
 - only a song that cannot fit at `min_font_size` spills onto more pages.
 
-Text is set in reportlab’s built-in Helvetica, which covers Latin-1.
+Text is set in DejaVu Sans, a TrueType font bundled in `songleaf/data/fonts`
+(Bitstream Vera licence, which allows embedding and redistribution; the licence
+text is beside the files) and embedded in each PDF. It covers Latin Extended
+(Turkish ş ğ ı), Greek, Cyrillic and more, where reportlab’s built-in Helvetica
+stops at its single-byte cp1252 encoding (songleaf#9). If a bundled file cannot
+be loaded, the matching Helvetica is used instead, with a warning. Emoji are
+not covered by either.
 
 ```pycon
 >>> short_label("Verse 1"), short_label("Pre-Chorus"), short_label("Coda")
@@ -921,6 +928,8 @@ Text is set in reportlab’s built-in Helvetica, which covers Latin-1.
 
 | [`DFLT_MARGIN`](_autosummary/songleaf.render.html.md#songleaf.render.DFLT_MARGIN)      | Page margin in points (5 mm), about the least a printer leaves blank anyway.                                                                                                              |
 |-------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`FONTS_DIR`](_autosummary/songleaf.render.html.md#songleaf.render.FONTS_DIR)        | Where the bundled TrueType fonts live (with their licence).                                                                                                                               |
+| [`BUNDLED_FONTS`](_autosummary/songleaf.render.html.md#songleaf.render.BUNDLED_FONTS)    | name -> (file in [`FONTS_DIR`](_autosummary/songleaf.render.html.md#songleaf.render.FONTS_DIR), standard font used when that file cannot be loaded).                                                         |
 | [`CHORD_PLACEMENTS`](_autosummary/songleaf.render.html.md#songleaf.render.CHORD_PLACEMENTS) | The chord placements a [`SheetLayout`](_autosummary/songleaf.render.html.md#songleaf.render.SheetLayout) can name.                                                                                             |
 | [`PACKERS`](_autosummary/songleaf.render.html.md#songleaf.render.PACKERS)          | The line packers a [`SheetLayout`](_autosummary/songleaf.render.html.md#songleaf.render.SheetLayout) can name (see [`songleaf.packing`](_autosummary/songleaf.packing.html.md#module-songleaf.packing)). |
 | [`LAYOUT_OPTIONS`](_autosummary/songleaf.render.html.md#songleaf.render.LAYOUT_OPTIONS)   | What each option of a layout spec changes, from the v1 layout (`dense`).                                                                                                                  |
@@ -936,6 +945,7 @@ Text is set in reportlab’s built-in Helvetica, which covers Latin-1.
 | [`render_sheet`](_autosummary/songleaf.render.html.md#songleaf.render.render_sheet)(song, output, \*[, layout, ...])       | Render `song` in `layout` (a [`SheetLayout`](_autosummary/songleaf.render.html.md#songleaf.render.SheetLayout) or a spec) as a PDF to `output`.              |
 | [`section_family`](_autosummary/songleaf.render.html.md#songleaf.render.section_family)(label)                               | `"chorus"` for a chorus or refrain, `"bridge"` for a pre-chorus or bridge, else `""`.                                                   |
 | [`short_label`](_autosummary/songleaf.render.html.md#songleaf.render.short_label)(label)                                  | A compact section label: `"Verse 1"` -> `"V1"`, `"Chorus x2"` -> `"Ch x2"`.                                                             |
+| [`usable_font`](_autosummary/songleaf.render.html.md#songleaf.render.usable_font)(name)                                   | The reportlab font name to set `name` in, registering a bundled TTF once.                                                               |
 
 ### Classes
 
@@ -945,6 +955,15 @@ Text is set in reportlab’s built-in Helvetica, which covers Latin-1.
 | [`InlineChords`](_autosummary/songleaf.render.html.md#songleaf.render.InlineChords)(\*[, snap_to_syllables])        | Chords in the lyric line, right before their syllable; a chord-only line is a row of chords.  |
 | [`OverChords`](_autosummary/songleaf.render.html.md#songleaf.render.OverChords)()                                 | Chords above their syllables, smaller and lighter, overlapping the lyric row by `chord_rise`. |
 | [`SheetLayout`](_autosummary/songleaf.render.html.md#songleaf.render.SheetLayout)([chords, packing, columns, ...]) | One way to lay a song out on a page.                                                          |
+
+### songleaf.render.BUNDLED_FONTS *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [str](https://docs.python.org/3/builtins/stdtypes.html#str)]]* *= {'DejaVuSans': ('DejaVuSans.ttf', 'Helvetica'), 'DejaVuSans-Bold': ('DejaVuSans-Bold.ttf', 'Helvetica-Bold')}*
+
+name -> (file in [`FONTS_DIR`](_autosummary/songleaf.render.html.md#songleaf.render.FONTS_DIR), standard font used
+when that file cannot be loaded). Any other name is passed to reportlab as is:
+one of its standard fonts, or a TTF the caller registered with `pdfmetrics`.
+
+* **Type:**
+  Fonts songleaf ships
 
 ### songleaf.render.CHORD_PLACEMENTS *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [ChordPlacement](_autosummary/songleaf.render.html.md#songleaf.render.ChordPlacement)]* *= {'inline': InlineChords(snap_to_syllables=True), 'over': OverChords()}*
 
@@ -981,11 +1000,15 @@ What to draw for the piece, starting at `x`.
 
 Page margin in points (5 mm), about the least a printer leaves blank anyway.
 
-### *class* songleaf.render.DenseStyle(lyric_font='Helvetica', chord_font='Helvetica-Bold', label_font='Helvetica-Bold', title_font='Helvetica-Bold', lyric_color='#000000', chord_color='#3b73c4', label_color='#8c8c8c', separator_color='#a6a6a6', title_color='#595959', chord_scale=0.62, label_scale=0.5, title_scale=0.6, chord_rise=0.56, chord_halo='', chord_halo_width=0.16, ascent=0.72, descent=0.21, row_gap=0.06, paragraph_gap=0.3, separator=' / ', chord_gap=0.3, bare_chord_gap=0.9, label_gap=0.4, inline_chord_scale=0.7, inline_chord_rise=0.2, inline_chord_pad=0.15, before_marker='‹', column_gap=0.8, column_rule_color='#d9d9d9', chorus_shade='#f3efe4', bridge_shade='#e8eef6', band_pad=0.12, repeat_color='#4d4d4d', tonic_chord_color='#1c4a91', outside_chord_color='#c0602a')
+### *class* songleaf.render.DenseStyle(lyric_font='DejaVuSans', chord_font='DejaVuSans-Bold', label_font='DejaVuSans-Bold', title_font='DejaVuSans-Bold', lyric_color='#000000', chord_color='#3b73c4', label_color='#8c8c8c', separator_color='#a6a6a6', title_color='#595959', chord_scale=0.62, label_scale=0.5, title_scale=0.6, chord_rise=0.56, chord_halo='', chord_halo_width=0.16, ascent=0.72, descent=0.21, row_gap=0.06, paragraph_gap=0.3, separator=' / ', chord_gap=0.3, bare_chord_gap=0.9, label_gap=0.4, inline_chord_scale=0.7, inline_chord_rise=0.2, inline_chord_pad=0.15, before_marker='‹', column_gap=0.8, column_rule_color='#d9d9d9', chorus_shade='#f3efe4', bridge_shade='#e8eef6', band_pad=0.12, repeat_color='#4d4d4d', tonic_chord_color='#1c4a91', outside_chord_color='#c0602a')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Typography of the dense layouts. Lengths are fractions of the lyric font size.
+
+### songleaf.render.FONTS_DIR *= PosixPath('/home/runner/work/songleaf/songleaf/songleaf/data/fonts')*
+
+Where the bundled TrueType fonts live (with their licence).
 
 ### *class* songleaf.render.InlineChords(, snap_to_syllables=True)
 
@@ -1120,6 +1143,17 @@ Render `song` in `layout` (a [`SheetLayout`](_autosummary/songleaf.render.html.m
 ### songleaf.render.short_label(label)
 
 A compact section label: `"Verse 1"` -> `"V1"`, `"Chorus x2"` -> `"Ch x2"`.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### songleaf.render.usable_font(name)
+
+The reportlab font name to set `name` in, registering a bundled TTF once.
+
+A name in [`BUNDLED_FONTS`](_autosummary/songleaf.render.html.md#songleaf.render.BUNDLED_FONTS) is registered from [`FONTS_DIR`](_autosummary/songleaf.render.html.md#songleaf.render.FONTS_DIR) on first
+use; if its file cannot be loaded, the paired standard font is returned and a
+warning says so. Any other name is returned unchanged.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
@@ -1425,16 +1459,18 @@ The keys of the stored songs.
 
 # About this build
 
-This documentation was built on **2026-09-15 14:32 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/06072a61b4b607593aa9112031984da38e3f790d"><code>06072a6</code></a> on branch <code>main</code>, for **songleaf 0.0.4** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-13 21:05 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/0c1dfcca72491b1aff63649d8690534efbece853"><code>0c1dfcc</code></a> on branch <code>main</code>, for **songleaf 0.0.5** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.0.5) is behind the latest release on PyPI (0.0.6): `pip install songleaf` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/06072a61b4b607593aa9112031984da38e3f790d"><code>06072a61b4b607593aa9112031984da38e3f790d</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/0c1dfcca72491b1aff63649d8690534efbece853"><code>0c1dfcca72491b1aff63649d8690534efbece853</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -1445,18 +1481,18 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/34981945297">34981945297</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/38467583515">38467583515</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>06072a61b4b607593aa9112031984da38e3f790d</code> (in the history of the built commit) |
+| Event commit | <code>0c1dfcca72491b1aff63649d8690534efbece853</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.12  |
+| epythet  | 0.2.17  |
 | Sphinx   | 9.1.0   |
 | docutils | 0.22.4  |
-| Python   | 3.12.14 |
+| Python   | 3.12.15 |
 
 ## Configuration as resolved
 
@@ -1472,14 +1508,14 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.4/">0.0.4</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.6/">0.0.6</a>, newer than the documented version (0.0.5).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 06072a61b4b607593aa9112031984da38e3f790d
-pip install "epythet==0.2.12"
+git checkout 0c1dfcca72491b1aff63649d8690534efbece853
+pip install "epythet==0.2.17"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

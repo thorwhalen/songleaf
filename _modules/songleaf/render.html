@@ -284,7 +284,13 @@
 <span class="sd">- section labels are small grey prefixes (``V1``, ``Ch``) on a section's first row;</span>
 <span class="sd">- only a song that cannot fit at ``min_font_size`` spills onto more pages.</span>
 
-<span class="sd">Text is set in reportlab's built-in Helvetica, which covers Latin-1.</span>
+<span class="sd">Text is set in DejaVu Sans, a TrueType font bundled in ``songleaf/data/fonts``</span>
+<span class="sd">(Bitstream Vera licence, which allows embedding and redistribution; the licence</span>
+<span class="sd">text is beside the files) and embedded in each PDF. It covers Latin Extended</span>
+<span class="sd">(Turkish ş ğ ı), Greek, Cyrillic and more, where reportlab's built-in Helvetica</span>
+<span class="sd">stops at its single-byte cp1252 encoding (songleaf#9). If a bundled file cannot</span>
+<span class="sd">be loaded, the matching Helvetica is used instead, with a warning. Emoji are</span>
+<span class="sd">not covered by either.</span>
 
 <span class="sd">&gt;&gt;&gt; short_label("Verse 1"), short_label("Pre-Chorus"), short_label("Coda")</span>
 <span class="sd">('V1', 'Pre', 'Coda')</span>
@@ -301,9 +307,11 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">unicodedata</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">replace</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">lru_cache</span><span class="p">,</span> <span class="n">partial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Protocol</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.harmony</span><span class="w"> </span><span class="kn">import</span> <span class="n">chord_function</span><span class="p">,</span> <span class="n">estimate_key</span>
@@ -320,6 +328,16 @@
 <span class="n">_PROBE_STEP</span> <span class="o">=</span> <span class="mf">0.1</span>
 <span class="n">_VOWELS</span> <span class="o">=</span> <span class="s2">"aeiouy"</span>
 
+<span class="c1">#: Where the bundled TrueType fonts live (with their licence).</span>
+<span class="n">FONTS_DIR</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">"data"</span> <span class="o">/</span> <span class="s2">"fonts"</span>
+<span class="c1">#: Fonts songleaf ships: name -&gt; (file in :data:`FONTS_DIR`, standard font used</span>
+<span class="c1">#: when that file cannot be loaded). Any other name is passed to reportlab as is:</span>
+<span class="c1">#: one of its standard fonts, or a TTF the caller registered with ``pdfmetrics``.</span>
+<span class="n">BUNDLED_FONTS</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"DejaVuSans"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"DejaVuSans.ttf"</span><span class="p">,</span> <span class="s2">"Helvetica"</span><span class="p">),</span>
+    <span class="s2">"DejaVuSans-Bold"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"DejaVuSans-Bold.ttf"</span><span class="p">,</span> <span class="s2">"Helvetica-Bold"</span><span class="p">),</span>
+<span class="p">}</span>
+
 
 <div class="viewcode-block" id="DenseStyle">
 <a class="viewcode-back" href="../../_autosummary/songleaf.render.html#songleaf.DenseStyle">[docs]</a>
@@ -327,10 +345,10 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">DenseStyle</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Typography of the dense layouts. Lengths are fractions of the lyric font size."""</span>
 
-    <span class="n">lyric_font</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"Helvetica"</span>
-    <span class="n">chord_font</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"Helvetica-Bold"</span>
-    <span class="n">label_font</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"Helvetica-Bold"</span>
-    <span class="n">title_font</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"Helvetica-Bold"</span>
+    <span class="n">lyric_font</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"DejaVuSans"</span>  <span class="c1"># see BUNDLED_FONTS; "Helvetica" for the old look</span>
+    <span class="n">chord_font</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"DejaVuSans-Bold"</span>
+    <span class="n">label_font</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"DejaVuSans-Bold"</span>
+    <span class="n">title_font</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"DejaVuSans-Bold"</span>
     <span class="n">lyric_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"#000000"</span>
     <span class="n">chord_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"#3b73c4"</span>
     <span class="n">label_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"#8c8c8c"</span>
@@ -423,12 +441,52 @@
 
 
 
+<div class="viewcode-block" id="usable_font">
+<a class="viewcode-back" href="../../_autosummary/songleaf.render.html#songleaf.usable_font">[docs]</a>
+<span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">usable_font</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The reportlab font name to set ``name`` in, registering a bundled TTF once.</span>
+
+<span class="sd">    A name in :data:`BUNDLED_FONTS` is registered from :data:`FONTS_DIR` on first</span>
+<span class="sd">    use; if its file cannot be loaded, the paired standard font is returned and a</span>
+<span class="sd">    warning says so. Any other name is returned unchanged.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">reportlab.pdfbase</span><span class="w"> </span><span class="kn">import</span> <span class="n">pdfmetrics</span>
+
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">BUNDLED_FONTS</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">pdfmetrics</span><span class="o">.</span><span class="n">getFont</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Unknown font </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">: use one of </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">BUNDLED_FONTS</span><span class="p">)</span><span class="si">}</span><span class="s2">, a reportlab "</span>
+                <span class="sa">f</span><span class="s2">"standard font (e.g. 'Helvetica'), or register a TTF with "</span>
+                <span class="sa">f</span><span class="s2">"reportlab.pdfbase.pdfmetrics.registerFont first"</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+        <span class="k">return</span> <span class="n">name</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">reportlab.pdfbase.ttfonts</span><span class="w"> </span><span class="kn">import</span> <span class="n">TTFont</span>
+
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">pdfmetrics</span><span class="o">.</span><span class="n">getRegisteredFontNames</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">name</span>
+    <span class="n">filename</span><span class="p">,</span> <span class="n">fallback</span> <span class="o">=</span> <span class="n">BUNDLED_FONTS</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">pdfmetrics</span><span class="o">.</span><span class="n">registerFont</span><span class="p">(</span><span class="n">TTFont</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">FONTS_DIR</span> <span class="o">/</span> <span class="n">filename</span><span class="p">)))</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># missing or unreadable file: degrade, do not fail</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"songleaf: could not load the bundled font </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">); "</span>
+            <span class="sa">f</span><span class="s2">"using </span><span class="si">{</span><span class="n">fallback</span><span class="si">}</span><span class="s2">, which cannot draw text outside Latin-1"</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">fallback</span>
+    <span class="k">return</span> <span class="n">name</span></div>
+
+
+
 <span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">65536</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_width</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">font</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Width of ``text`` at font size 1 (widths scale linearly with the size)."""</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">reportlab.pdfbase.pdfmetrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">stringWidth</span>
 
-    <span class="k">return</span> <span class="n">stringWidth</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">font</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">stringWidth</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">usable_font</span><span class="p">(</span><span class="n">font</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
 
 
 <span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">4096</span><span class="p">)</span>
@@ -1351,7 +1409,7 @@
         <span class="p">):</span>  <span class="c1"># the render mode and line width would outlive the text: scope them</span>
             <span class="n">canvas</span><span class="o">.</span><span class="n">saveState</span><span class="p">()</span>
             <span class="n">outline</span> <span class="o">=</span> <span class="n">canvas</span><span class="o">.</span><span class="n">beginText</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-            <span class="n">outline</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">font</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+            <span class="n">outline</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">usable_font</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">font</span><span class="p">),</span> <span class="n">item</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
             <span class="n">outline</span><span class="o">.</span><span class="n">setTextRenderMode</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># stroke only</span>
             <span class="n">outline</span><span class="o">.</span><span class="n">setStrokeColor</span><span class="p">(</span><span class="n">HexColor</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">halo</span><span class="p">))</span>
             <span class="n">canvas</span><span class="o">.</span><span class="n">setLineWidth</span><span class="p">(</span><span class="n">style</span><span class="o">.</span><span class="n">chord_halo_width</span> <span class="o">*</span> <span class="n">item</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
@@ -1360,7 +1418,7 @@
             <span class="n">canvas</span><span class="o">.</span><span class="n">drawText</span><span class="p">(</span><span class="n">outline</span><span class="p">)</span>
             <span class="n">canvas</span><span class="o">.</span><span class="n">restoreState</span><span class="p">()</span>
         <span class="n">canvas</span><span class="o">.</span><span class="n">setFillColor</span><span class="p">(</span><span class="n">HexColor</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">color</span><span class="p">))</span>
-        <span class="n">canvas</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">font</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">canvas</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">usable_font</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">font</span><span class="p">),</span> <span class="n">item</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
         <span class="n">canvas</span><span class="o">.</span><span class="n">drawString</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
 
 
@@ -1535,7 +1593,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=94eb6667"></script>
+</div><script src="../../_static/documentation_options.js?v=3dab1201"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

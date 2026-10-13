@@ -2,16 +2,18 @@
 
 # About this build
 
-This documentation was built on **2026-09-15 14:32 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/06072a61b4b607593aa9112031984da38e3f790d"><code>06072a6</code></a> on branch <code>main</code>, for **songleaf 0.0.4** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-13 21:05 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/0c1dfcca72491b1aff63649d8690534efbece853"><code>0c1dfcc</code></a> on branch <code>main</code>, for **songleaf 0.0.5** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.0.5) is behind the latest release on PyPI (0.0.6): `pip install songleaf` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/06072a61b4b607593aa9112031984da38e3f790d"><code>06072a61b4b607593aa9112031984da38e3f790d</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/0c1dfcca72491b1aff63649d8690534efbece853"><code>0c1dfcca72491b1aff63649d8690534efbece853</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -22,18 +24,18 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/34981945297">34981945297</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/38467583515">38467583515</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>06072a61b4b607593aa9112031984da38e3f790d</code> (in the history of the built commit) |
+| Event commit | <code>0c1dfcca72491b1aff63649d8690534efbece853</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.12  |
+| epythet  | 0.2.17  |
 | Sphinx   | 9.1.0   |
 | docutils | 0.22.4  |
-| Python   | 3.12.14 |
+| Python   | 3.12.15 |
 
 ## Configuration as resolved
 
@@ -49,14 +51,14 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.4/">0.0.4</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.6/">0.0.6</a>, newer than the documented version (0.0.5).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 06072a61b4b607593aa9112031984da38e3f790d
-pip install "epythet==0.2.12"
+git checkout 0c1dfcca72491b1aff63649d8690534efbece853
+pip install "epythet==0.2.17"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

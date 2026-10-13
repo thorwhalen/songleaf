@@ -9,6 +9,8 @@ songleaf.render
    .. autosummary::
    
       DFLT_MARGIN
+      FONTS_DIR
+      BUNDLED_FONTS
       CHORD_PLACEMENTS
       PACKERS
       LAYOUT_OPTIONS
@@ -25,6 +27,7 @@ songleaf.render
       render_sheet
       section_family
       short_label
+      usable_font
    
    .. rubric:: Classes
 
