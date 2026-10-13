@@ -35,7 +35,13 @@ one page (:func:`fit_font_size`), then draws it:
 - section labels are small grey prefixes (``V1``, ``Ch``) on a section's first row;
 - only a song that cannot fit at ``min_font_size`` spills onto more pages.
 
-Text is set in reportlab's built-in Helvetica, which covers Latin-1.
+Text is set in DejaVu Sans, a TrueType font bundled in ``songleaf/data/fonts``
+(Bitstream Vera licence, which allows embedding and redistribution; the licence
+text is beside the files) and embedded in each PDF. It covers Latin Extended
+(Turkish ş ğ ı), Greek, Cyrillic and more, where reportlab's built-in Helvetica
+stops at its single-byte cp1252 encoding (songleaf#9). If a bundled file cannot
+be loaded, the matching Helvetica is used instead, with a warning. Emoji are
+not covered by either.
 
 >>> short_label("Verse 1"), short_label("Pre-Chorus"), short_label("Coda")
 ('V1', 'Pre', 'Coda')
@@ -52,9 +58,11 @@ import math
 import os
 import re
 import unicodedata
+import warnings
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field, replace
 from functools import lru_cache, partial
+from pathlib import Path
 from typing import Protocol
 
 from songleaf.harmony import chord_function, estimate_key
@@ -71,15 +79,25 @@ _PROBE_SPAN = 1.0
 _PROBE_STEP = 0.1
 _VOWELS = "aeiouy"
 
+#: Where the bundled TrueType fonts live (with their licence).
+FONTS_DIR = Path(__file__).parent / "data" / "fonts"
+#: Fonts songleaf ships: name -> (file in :data:`FONTS_DIR`, standard font used
+#: when that file cannot be loaded). Any other name is passed to reportlab as is:
+#: one of its standard fonts, or a TTF the caller registered with ``pdfmetrics``.
+BUNDLED_FONTS: dict[str, tuple[str, str]] = {
+    "DejaVuSans": ("DejaVuSans.ttf", "Helvetica"),
+    "DejaVuSans-Bold": ("DejaVuSans-Bold.ttf", "Helvetica-Bold"),
+}
+
 
 @dataclass(frozen=True)
 class DenseStyle:
     """Typography of the dense layouts. Lengths are fractions of the lyric font size."""
 
-    lyric_font: str = "Helvetica"
-    chord_font: str = "Helvetica-Bold"
-    label_font: str = "Helvetica-Bold"
-    title_font: str = "Helvetica-Bold"
+    lyric_font: str = "DejaVuSans"  # see BUNDLED_FONTS; "Helvetica" for the old look
+    chord_font: str = "DejaVuSans-Bold"
+    label_font: str = "DejaVuSans-Bold"
+    title_font: str = "DejaVuSans-Bold"
     lyric_color: str = "#000000"
     chord_color: str = "#3b73c4"
     label_color: str = "#8c8c8c"
@@ -165,12 +183,49 @@ def section_family(label: str) -> str:
     return "chorus" if _CHORUS_RE.search(label) else ""
 
 
+@lru_cache(maxsize=None)
+def usable_font(name: str) -> str:
+    """The reportlab font name to set ``name`` in, registering a bundled TTF once.
+
+    A name in :data:`BUNDLED_FONTS` is registered from :data:`FONTS_DIR` on first
+    use; if its file cannot be loaded, the paired standard font is returned and a
+    warning says so. Any other name is returned unchanged.
+    """
+    from reportlab.pdfbase import pdfmetrics
+
+    if name not in BUNDLED_FONTS:
+        try:
+            pdfmetrics.getFont(name)
+        except KeyError:
+            raise ValueError(
+                f"Unknown font {name!r}: use one of {sorted(BUNDLED_FONTS)}, a reportlab "
+                f"standard font (e.g. 'Helvetica'), or register a TTF with "
+                f"reportlab.pdfbase.pdfmetrics.registerFont first"
+            ) from None
+        return name
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    if name in pdfmetrics.getRegisteredFontNames():
+        return name
+    filename, fallback = BUNDLED_FONTS[name]
+    try:
+        pdfmetrics.registerFont(TTFont(name, str(FONTS_DIR / filename)))
+    except Exception as error:  # missing or unreadable file: degrade, do not fail
+        warnings.warn(
+            f"songleaf: could not load the bundled font {filename} ({error}); "
+            f"using {fallback}, which cannot draw text outside Latin-1",
+            stacklevel=2,
+        )
+        return fallback
+    return name
+
+
 @lru_cache(maxsize=65536)
 def _width(text: str, font: str) -> float:
     """Width of ``text`` at font size 1 (widths scale linearly with the size)."""
     from reportlab.pdfbase.pdfmetrics import stringWidth
 
-    return stringWidth(text, font, 1)
+    return stringWidth(text, usable_font(font), 1)
 
 
 @lru_cache(maxsize=4096)
@@ -1063,7 +1118,7 @@ def _draw_items(
         ):  # the render mode and line width would outlive the text: scope them
             canvas.saveState()
             outline = canvas.beginText(x, y)
-            outline.setFont(item.font, item.size)
+            outline.setFont(usable_font(item.font), item.size)
             outline.setTextRenderMode(1)  # stroke only
             outline.setStrokeColor(HexColor(item.halo))
             canvas.setLineWidth(style.chord_halo_width * item.size)
@@ -1072,7 +1127,7 @@ def _draw_items(
             canvas.drawText(outline)
             canvas.restoreState()
         canvas.setFillColor(HexColor(item.color))
-        canvas.setFont(item.font, item.size)
+        canvas.setFont(usable_font(item.font), item.size)
         canvas.drawString(x, y, item.text)
 
 

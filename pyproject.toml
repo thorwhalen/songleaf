@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "hatchling",
+    "hatchling>=1.27",
 ]
 build-backend = "hatchling.build"
 
@@ -11,6 +11,8 @@ description = "Dense, readable one-page song sheets (lyrics + chords + score sni
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
+# The bundled DejaVu fonts carry their own (Bitstream Vera) licence.
+license-files = ["LICENSE", "songleaf/data/fonts/LICENSE-DejaVu.txt"]
 keywords = [
     "music",
     "lyrics",
@@ -65,6 +67,7 @@ packages = ["songleaf"]
 [tool.hatch.build.targets.sdist]
 include = [
     "songleaf/**/*.py",
+    "songleaf/data/**",
     "tests/**/*.py",
     "README.md",
     "LICENSE",

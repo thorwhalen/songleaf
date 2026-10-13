@@ -139,21 +139,50 @@ def test_bad_layouts_are_refused_early():
         SheetLayout(columns=0)
 
 
+#: The typography v1 was measured in: reportlab's Helvetica (songleaf#9 made
+#: DejaVu Sans the default). Pinning it keeps the v1 numbers a guard on the
+#: layout logic itself, independent of the font.
+HELVETICA = DenseStyle(
+    lyric_font="Helvetica",
+    chord_font="Helvetica-Bold",
+    label_font="Helvetica-Bold",
+    title_font="Helvetica-Bold",
+)
+
+
+def _dense_numbers(chart, long_chart, lines, style):
+    text = chart if lines is None else long_chart(lines)
+    meta = {"title": "Paper Boats", "artist": "The Invented Band"}
+    song = parse_chords_over_lyrics(text, meta=meta)
+    return [
+        (info["font_size"], info["pages"], info["rows"])
+        for info in (
+            render_dense_a4(song, io.BytesIO(), style=style),
+            render_sheet(song, io.BytesIO(), layout=layout_named("dense", style=style)),
+        )
+    ]
+
+
 @pytest.mark.parametrize(
     "lines, font_size, rows", [(None, 68.49, 10), (60, 15.18, 37), (20, 29.78, 21)]
 )
 def test_the_dense_layout_keeps_the_numbers_of_v1(
     chart, long_chart, lines, font_size, rows
 ):
-    # measured with songleaf 0.0.2, before the layouts existed
-    text = chart if lines is None else long_chart(lines)
-    meta = {"title": "Paper Boats", "artist": "The Invented Band"}
-    song = parse_chords_over_lyrics(text, meta=meta)
-    for info in (
-        render_dense_a4(song, io.BytesIO()),
-        render_sheet(song, io.BytesIO(), layout="dense"),
-    ):
-        assert (info["font_size"], info["pages"], info["rows"]) == (font_size, 1, rows)
+    # measured with songleaf 0.0.2, before the layouts existed, in Helvetica
+    for numbers in _dense_numbers(chart, long_chart, lines, HELVETICA):
+        assert numbers == (font_size, 1, rows)
+
+
+@pytest.mark.parametrize(
+    "lines, font_size, rows", [(None, 64.23, 11), (60, 13.15, 37), (20, 26.95, 24)]
+)
+def test_the_dense_layout_numbers_in_the_bundled_font(
+    chart, long_chart, lines, font_size, rows
+):
+    # DejaVu Sans (songleaf#9) is wider than Helvetica, so the fitted sizes are smaller
+    for numbers in _dense_numbers(chart, long_chart, lines, DenseStyle()):
+        assert numbers == (font_size, 1, rows)
 
 
 def test_strategies_can_be_passed_as_objects(chart):
