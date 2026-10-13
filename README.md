@@ -12,6 +12,7 @@ The default source is the Kaggle *chords-and-lyrics* corpus (about 135,000 songs
 ## What the sheet looks like
 
 - **One page, largest type that fits.** The lyric font size is found by search for each song. On 2,000 randomly sampled corpus songs, the default layout's median came out around 23 pt, and 1,999 of the 2,000 fit on one page. A song that cannot fit at the minimum size spills onto a second page.
+- **Any script the font covers.** Text is set in DejaVu Sans, bundled with the package and embedded in each PDF (Bitstream Vera licence, beside the font files), so Turkish, Greek, Cyrillic and other non-Latin-1 text draws correctly. It is wider than Helvetica, so fitted sizes are somewhat smaller than the numbers above, which were measured in Helvetica; `DenseStyle(lyric_font="Helvetica", ...)` restores the old look.
 - **Chords take no line of their own.** They are smaller and blue, start over the syllable they land on, and overlap the tops of the letters of their lyric line.
 - **Lines share rows.** Consecutive lines of a paragraph are packed onto one row, separated by a light `/`. A blank line or a new section starts a new row.
 - **Small labels.** Sections are grey prefixes (`V1`, `Ch`, `Br`); title, artist, capo and key are one small line at the top.
