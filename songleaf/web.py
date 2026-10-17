@@ -5,11 +5,17 @@ apps.thorwhalen.com). Its routes:
 
 - ``GET /search?q=&artist=&lyrics=&limit=``: hits, best first (``tools.search``)
 - ``GET /songs``: the stored songs, with title and artist
-- ``GET /layouts``: the layout options a sheet can combine
-- ``GET /sheet?key=&layout=``: render the sheet; its title, artist, font size and pages
-- ``GET /sheet.pdf?key=&layout=``: the sheet itself
-- ``GET /sheet.png?key=&layout=&page=``: one page of it as an image, for browsers that
+- ``GET /layouts``: the layout options a sheet can combine, and the default colours
+- ``GET /song?key=``: the song as JSON (``tools.song``): text, chords, sections, its
+  key and a chord table for every key it can move to; the page draws it as text
+- ``GET /sheet?key=&...``: render the sheet; its title, artist, font size and pages
+- ``GET /sheet.pdf?key=&...``: the sheet itself
+- ``GET /sheet.png?key=&...&page=``: one page of it as an image, for browsers that
   show no PDF inline (Android's)
+
+The sheet routes take the parameters of :class:`SheetRequest`: ``layout``,
+``transpose`` (semitones), ``scale`` (of the size that fills the page), and the
+colours, opacities and chord size the page's reader uses.
 - ``GET /ui/app.js``, ``GET /ui/style.css``: the page's script and style
 
 The page is a two-path shell (:func:`page_shell`) that loads its script and
@@ -34,13 +40,22 @@ import io
 import json
 import os
 import tempfile
+import re
 import threading
+from dataclasses import asdict, dataclass, replace
 from functools import lru_cache
 from importlib.resources import files
 from urllib.parse import quote
 
 from songleaf import tools
-from songleaf.render import LAYOUT_OPTIONS, layout_spec
+from songleaf.render import (
+    LAYOUT_OPTIONS,
+    DenseStyle,
+    layout_named,
+    layout_spec,
+    make_renderer,
+    on_paper,
+)
 from songleaf.sources import SongNotFound, SourceUnavailable
 
 #: Failures a request can cause, and the HTTP status each becomes. Nothing broader:
@@ -49,6 +64,69 @@ ERROR_STATUS = {SongNotFound: 404, SourceUnavailable: 503}
 _UI_FILES = {"app.js": "text/javascript", "style.css": "text/css"}
 _MAX_LIMIT = 50
 _PRIVATE_CACHE = {"Cache-Control": "private, max-age=300"}
+_COLOR_RE = re.compile(r"#[0-9a-fA-F]{6}")
+#: Allowed ranges of the numeric sheet parameters: (low, high).
+SHEET_LIMITS = {
+    "transpose": (-11, 11),
+    "scale": (0.3, 3.0),
+    "lyric_alpha": (0.0, 1.0),
+    "chord_alpha": (0.0, 1.0),
+    "chord_scale": (0.3, 1.5),
+}
+
+
+@dataclass(frozen=True)
+class SheetRequest:
+    """What a sheet is made from: the song, its layout and the reader's look.
+
+    Empty colours and a zero ``chord_scale`` keep the layout's own. Opacities are
+    blended onto white paper. Frozen, so it is also the render cache's key.
+    """
+
+    key: str
+    layout: str = "dense"
+    transpose: int = 0
+    scale: float = 1.0
+    lyric_color: str = ""
+    lyric_alpha: float = 1.0
+    chord_color: str = ""
+    chord_alpha: float = 1.0
+    chord_scale: float = 0.0
+
+    def checked(self) -> SheetRequest:
+        """This request in its one spelling, or ``ValueError`` naming what is wrong."""
+        for name, (low, high) in SHEET_LIMITS.items():
+            value = getattr(self, name)
+            if name == "chord_scale" and value == 0:
+                continue
+            if not low <= value <= high:
+                raise ValueError(f"{name} goes from {low:g} to {high:g}, got {value:g}")
+        for name in ("lyric_color", "chord_color"):
+            if getattr(self, name) and not _COLOR_RE.fullmatch(getattr(self, name)):
+                raise ValueError(f"{name} is #rrggbb, got {getattr(self, name)!r}")
+        return replace(
+            self,
+            layout=layout_spec(self.layout),
+            lyric_color=self.lyric_color.lower(),
+            chord_color=self.chord_color.lower(),
+        )
+
+    def renderer(self):
+        """The ``(song, output) -> dict`` renderer this request describes."""
+        layout = layout_named(self.layout)
+        style, base = {}, DenseStyle()
+        if self.lyric_color or self.lyric_alpha < 1:
+            style["lyric_color"] = on_paper(
+                self.lyric_color or base.lyric_color, self.lyric_alpha
+            )
+        if self.chord_color or self.chord_alpha < 1:
+            style["chord_color"] = on_paper(
+                self.chord_color or base.chord_color, self.chord_alpha
+            )
+        if self.chord_scale:
+            style["chord_scale"] = self.chord_scale
+        layout = replace(layout, style=replace(layout.style, **style))
+        return make_renderer(layout, scale=self.scale)
 
 
 def mk_app(
@@ -57,6 +135,7 @@ def mk_app(
     store=None,
     title: str = "songleaf",
     sheet_cache_size: int = 32,
+    image_cache_size: int = 8,
     image_scale: float = 2.0,
 ):
     """The FastAPI app. ``sources`` and ``store`` are the seams of :mod:`songleaf.tools`.
@@ -64,13 +143,11 @@ def mk_app(
     ``image_scale`` is pixels per PDF point for ``/sheet.png`` (2: an A4 page is
     1190 pixels wide, sharp on a phone).
     """
-    from fastapi import FastAPI, HTTPException, Query
+    from fastapi import Depends, FastAPI, HTTPException, Query
     from fastapi.responses import JSONResponse, Response
 
     app = FastAPI(title=title)
-    pdfium_lock = (
-        threading.Lock()
-    )  # pdfium is not thread-safe; reportlab renders need none
+    pdfium_lock = threading.Lock()  # pdfium is not thread-safe; reportlab needs none
 
     for error_type, status in ERROR_STATUS.items():
 
@@ -106,49 +183,71 @@ def mk_app(
             for name, changes in LAYOUT_OPTIONS.items()
             if name != "dense"
         ]
-        return {"default": "dense", "options": options}
+        base = DenseStyle()
+        style = {
+            "lyric_color": base.lyric_color,
+            "chord_color": base.chord_color,
+            "chord_scale": base.chord_scale,
+        }
+        return {
+            "default": "dense",
+            "options": options,
+            "style": style,
+            "limits": SHEET_LIMITS,
+        }
+
+    @app.get("/song")
+    def song(key: str) -> dict:
+        return tools.song(key, sources=sources, store=store)
 
     @lru_cache(maxsize=sheet_cache_size)
-    def rendered(key: str, layout: str) -> tuple[bytes, dict]:
+    def rendered(request: SheetRequest) -> tuple[bytes, dict]:
         with tempfile.TemporaryDirectory() as tmp:
             output = os.path.join(tmp, "sheet.pdf")
             result = tools.sheet(
-                key, output=output, layout=layout, sources=sources, store=store
+                request.key,
+                output=output,
+                transpose=request.transpose,
+                renderer=request.renderer(),
+                sources=sources,
+                store=store,
             )
             with open(output, "rb") as file:
                 pdf = file.read()
         name = " - ".join(filter(None, (result["artist"], result["title"]))) or "sheet"
+        if request.transpose:
+            name += f" ({request.transpose:+d})"
         info = {
+            **asdict(request),
             "key": result["key"],
             "title": result["title"],
             "artist": result["artist"],
-            "layout": layout,
             "font_size": result.get("font_size"),
             "pages": result.get("pages", 1),
             "file_name": name + ".pdf",
         }
         return pdf, info
 
-    def sheet_of(key: str, layout: str) -> tuple[bytes, dict]:
+    def sheet_of(request: SheetRequest) -> tuple[bytes, dict]:
         try:
-            spec = layout_spec(layout)  # one spelling, so one cache entry, per layout
+            request = request.checked()  # one spelling, so one cache entry
         except ValueError as error:
             raise HTTPException(400, str(error)) from error
-        return rendered(key, spec)
+        return rendered(request)
 
-    @lru_cache(maxsize=sheet_cache_size)
-    def page_image(key: str, layout: str, page: int) -> bytes:
-        pdf, _ = rendered(key, layout)
+    @lru_cache(maxsize=image_cache_size)  # PNGs are ~10x a PDF's size: keep fewer
+    def page_image(request: SheetRequest, page: int) -> bytes:
+        pdf, _ = rendered(request)
         with pdfium_lock:
             return pdf_page_png(pdf, page, scale=image_scale)
 
     @app.get("/sheet")
-    def sheet(key: str, layout: str = "dense") -> dict:
-        return sheet_of(key, layout)[1]
+    def sheet(request: SheetRequest = Depends()) -> dict:
+        return sheet_of(request)[1]
 
     @app.get("/sheet.pdf")
-    def sheet_pdf(key: str, layout: str = "dense"):
-        pdf, info = sheet_of(key, layout)
+    def sheet_pdf(request: SheetRequest = Depends()):
+        pdf, info = sheet_of(request)
         disposition = f"inline; filename*=UTF-8''{quote(info['file_name'], safe='')}"
         return Response(
             pdf,
@@ -157,14 +256,14 @@ def mk_app(
         )
 
     @app.get("/sheet.png")
-    def sheet_png(key: str, layout: str = "dense", page: int = Query(1, ge=1)):
-        _, info = sheet_of(key, layout)
+    def sheet_png(request: SheetRequest = Depends(), page: int = Query(1, ge=1)):
+        _, info = sheet_of(request)
         if page > info["pages"]:
             raise HTTPException(
                 404, f"The sheet has {info['pages']} page(s), not {page}"
             )
         return Response(
-            page_image(key, info["layout"], page),
+            page_image(request.checked(), page),
             media_type="image/png",
             headers=_PRIVATE_CACHE,
         )

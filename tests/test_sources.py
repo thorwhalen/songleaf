@@ -3,11 +3,13 @@ import json
 import pandas as pd
 import pytest
 
+from songleaf.kaggle_index import KaggleChordsIndex, build_kaggle_index
 from songleaf.sources import KaggleChordsSource, get_song, search
 
 
-@pytest.fixture
-def kaggle(chart):
+@pytest.fixture(params=["dataframe", "index"])
+def kaggle(chart, request, tmp_path):
+    """The same corpus as a DataFrame source and as an index: every test runs on both."""
     corpus = pd.DataFrame(
         {
             "Unnamed: 0": [0, 1, 2],
@@ -22,7 +24,11 @@ def kaggle(chart):
             "popularity": [10, 90, 50],
         }
     )
-    return KaggleChordsSource(loader=lambda: corpus)
+    if request.param == "dataframe":
+        return KaggleChordsSource(loader=lambda: corpus)
+    path = str(tmp_path / "index.sqlite")
+    build_kaggle_index(path=path, loader=lambda: corpus)
+    return KaggleChordsIndex(path)
 
 
 def test_a_fuzzy_query_forgives_typos_and_word_order(kaggle):
@@ -90,3 +96,48 @@ def test_a_local_folder_id_never_leaves_the_folder(tmp_path):
     (tmp_path / "outside.txt").write_text("C\nnot yours")
     with pytest.raises(SongNotFound):
         LocalFolderSource(str(folder)).get("../outside.txt")
+
+
+def test_the_index_is_used_by_default_once_built(monkeypatch, tmp_path):
+    import songleaf.sources as sources_module
+    from songleaf.kaggle_index import kaggle_index_path
+
+    monkeypatch.setenv("SONGLEAF_DATA_DIR", str(tmp_path))
+    sources_module.default_sources.cache_clear()
+    try:
+        assert type(sources_module.default_sources()[0]) is KaggleChordsSource
+        corpus = pd.DataFrame(
+            {name: ["x"] for name in KaggleChordsSource.columns}
+        ).assign(**{"Unnamed: 0": [5], "popularity": [1]})
+        build_kaggle_index(loader=lambda: corpus)
+        sources_module.default_sources.cache_clear()
+        (source,) = sources_module.default_sources()
+        assert type(source) is KaggleChordsIndex and source.path == kaggle_index_path()
+    finally:
+        sources_module.default_sources.cache_clear()
+
+
+def test_a_rebuilt_index_is_picked_up_and_a_failed_build_leaves_nothing(
+    tmp_path, monkeypatch
+):
+    path = str(tmp_path / "index.sqlite")
+
+    def corpus(title):
+        return pd.DataFrame(
+            {name: ["x"] for name in KaggleChordsSource.columns}
+        ).assign(**{"Unnamed: 0": [1], "song_name": [title], "popularity": [1]})
+
+    build_kaggle_index(path=path, loader=lambda: corpus("First Title"))
+    source = KaggleChordsIndex(path)
+    assert source.search(title="first title")[0].title == "First Title"
+    build_kaggle_index(path=path, loader=lambda: corpus("Second Title"))
+    assert source.search(title="second title")[0].title == "Second Title"
+
+    def broken(conn, batch):  # fails mid-write, after the file exists
+        raise OSError("disk gone")
+
+    monkeypatch.setattr("songleaf.kaggle_index._insert", broken)
+    with pytest.raises(OSError):
+        build_kaggle_index(path=path, loader=lambda: corpus("Third"))
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["index.sqlite"]
+    assert source.search(title="second title")[0].title == "Second Title"

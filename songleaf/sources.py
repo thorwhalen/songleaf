@@ -162,8 +162,21 @@ class KaggleChordsSource:
         return self._df["popularity"].fillna(0).astype(float).tolist()
 
     @cached_property
+    def _ids(self) -> list[str]:
+        return [str(v) for v in self._df["Unnamed: 0"]]
+
+    @cached_property
+    def _langs(self) -> list[str]:
+        return self._df["lang"].astype(str).tolist()
+
+    @cached_property
     def _row_of_id(self) -> dict[str, int]:
-        return {str(v): i for i, v in enumerate(self._df["Unnamed: 0"])}
+        return {song_id: row for row, song_id in enumerate(self._ids)}
+
+    def _text(self, row: int) -> str:
+        """The chart (chords over lyrics) of one row."""
+        text = self._df.iloc[row]["chords&lyrics"]
+        return text if isinstance(text, str) else ""
 
     @cached_property
     def _plain_lyrics(self):
@@ -225,14 +238,13 @@ class KaggleChordsSource:
         return [self._hit(row, relevance(row)) for row in ranked[:limit]]
 
     def _hit(self, row: int, score: float) -> Hit:
-        record = self._df.iloc[row]
         return Hit(
             source=self.name,
-            id=str(record["Unnamed: 0"]),
+            id=self._ids[row],
             title=self._titles[row],
             artist=self._artists[row],
             score=round(score / 100, 4),
-            meta={"lang": str(record["lang"]), "popularity": self._popularity[row]},
+            meta={"lang": self._langs[row], "popularity": self._popularity[row]},
         )
 
     def get(self, song_id: str) -> Song:
@@ -243,14 +255,12 @@ class KaggleChordsSource:
             row = self._row_of_id[str(song_id)]
         except KeyError:
             raise SongNotFound(f"No song with id {song_id!r} in {self.name}") from None
-        record = self._df.iloc[row]
-        text = record["chords&lyrics"]
         return parse_chords_over_lyrics(
-            _KAGGLE_SITE_NOISE.sub("", text) if isinstance(text, str) else "",
+            _KAGGLE_SITE_NOISE.sub("", self._text(row)),
             meta={
                 "title": self._titles[row],
                 "artist": self._artists[row],
-                "lang": str(record["lang"]),
+                "lang": self._langs[row],
             },
             provenance={
                 "source": self.name,
@@ -421,7 +431,16 @@ class LocalFolderSource:
 
 @lru_cache(maxsize=1)
 def default_sources() -> tuple:
-    """The sources used when none are given, built once per process."""
+    """The sources used when none are given, built once per process.
+
+    The Kaggle corpus is read from its search index when one has been built
+    (``songleaf build-index``): the same songs and keys, in tens of MB rather
+    than the GB the whole corpus takes in memory.
+    """
+    from songleaf.kaggle_index import KaggleChordsIndex, kaggle_index_path
+
+    if os.path.isfile(kaggle_index_path()):
+        return (KaggleChordsIndex(),)
     return (KaggleChordsSource(),)
 
 

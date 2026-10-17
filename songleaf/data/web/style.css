@@ -130,3 +130,107 @@ button, .button {
 }
 @keyframes shimmer { to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .page.is-loading::after { animation: none; } }
+
+/* --- a song: header, toolbar, panels --------------------------------------------------- */
+:root {
+  --read-size: 20px;
+  --read-line: 1.25;
+  --read-font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --lyric-ink: var(--fg);
+  --chord-ink: #3b73c4;
+  --chord-scale: 0.75;
+  --panel-bg: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --panel-bg: #1f1f1d; }
+}
+.song-head h1 { margin-bottom: 0; }
+.toolbar-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg);
+  margin: 8px calc(-1 * var(--gutter)) 12px;
+  padding: 8px var(--gutter);
+  border-bottom: 1px solid var(--line);
+}
+.toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.92em; }
+.group { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--line); border-radius: var(--radius); padding: 2px; }
+.toolbar button, .panel button.text {
+  font: inherit; font-size: 0.95em;
+  min-height: 36px; min-width: 34px; padding: 2px 8px;
+  border: 0; border-radius: 8px; background: transparent; color: var(--fg); cursor: pointer;
+}
+.toolbar > button.text { border: 1px solid var(--line); border-radius: var(--radius); }
+.toolbar button:hover, .toolbar button[aria-expanded="true"] { background: var(--line); }
+.toolbar button.icon { font-weight: 600; }
+.toolbar button.big { font-size: 1.1em; }
+.size-value { min-width: 2.2em; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 0.9em; }
+.seg-switch button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+.panels:empty { display: none; }
+.panel {
+  margin-top: 8px; padding: 12px;
+  background: var(--panel-bg); border: 1px solid var(--line); border-radius: var(--radius);
+  max-height: 60vh; overflow-y: auto;
+}
+.panel .hint { margin: 0 0 8px; font-size: 0.9em; }
+.panel button.text { color: var(--accent); padding-left: 0; }
+
+.keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; margin-bottom: 10px; }
+.keys button {
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+  padding: 6px 4px; min-height: 48px;
+  font: inherit; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--fg); cursor: pointer;
+}
+.keys button[aria-checked="true"] { border-color: var(--accent); background: var(--accent); color: var(--accent-fg); }
+.keys .key-name { font-weight: 600; }
+.keys .shift { font-size: 0.8em; opacity: 0.75; }
+.chord-map { border-collapse: collapse; width: 100%; max-width: 360px; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+.chord-map th { text-align: left; font-weight: 600; color: var(--muted); font-size: 0.85em; padding: 2px 8px 6px 0; }
+.chord-map td { padding: 3px 8px 3px 0; border-top: 1px solid var(--line); font-weight: 600; }
+.chord-map td:last-child { color: var(--accent); }
+.chord-map tr.same td:last-child { color: inherit; }
+
+.look .row { display: flex; align-items: center; gap: 10px; margin: 8px 0; flex-wrap: wrap; }
+.look .row { flex-wrap: nowrap; }
+.look .label { flex: 0 0 5.2em; }
+.look input[type="range"] { flex: 1 1 60px; min-width: 0; accent-color: var(--accent); }
+.look input[type="color"] { width: 40px; height: 32px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: none; }
+.look output { flex: 0 0 2.8em; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.look select { font: inherit; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: inherit; }
+
+/* --- the reader: chords over the syllables they land on --------------------------------- */
+.reader {
+  font-family: var(--read-font);
+  font-size: var(--read-size);
+  line-height: var(--read-line);
+  color: var(--lyric-ink);
+  overflow-wrap: anywhere;
+}
+.reader .facts { font-size: 0.7em; color: var(--muted); margin: 0 0 0.6em; }
+.reader .section-label {
+  font-size: 0.6em; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--muted); margin: 0.9em 0 0.1em;
+}
+.reader .line { min-height: calc(var(--read-line) * 1em); white-space: pre-wrap; }
+.reader .line.blank { min-height: 0.6em; }
+.reader .line.with-chords { white-space: normal; margin-top: 0.15em; }
+.reader .w { display: inline-flex; white-space: nowrap; vertical-align: bottom; }
+.reader .p { display: inline-flex; flex-direction: column; }
+.reader .ch {
+  font-size: calc(var(--chord-scale) * 1em);
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--chord-ink);
+  white-space: pre;
+  padding-right: 0.35em; /* two chords close together never touch */
+}
+.reader .ly { white-space: pre; }
+.reader .line.chords-only { display: flex; flex-wrap: wrap; gap: 0 0.2em; }
+.reader .line.chords-only .ch { padding-right: 0.6em; }
+.print .layout { margin-top: 0; }
+@media print {
+  .toolbar-wrap, .song-head .back { display: none; }
+}
+.toolbar button.key small { font-size: 0.8em; color: var(--muted); }
+.toolbar button.key[aria-expanded="true"] small { color: inherit; }
