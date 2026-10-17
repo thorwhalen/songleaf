@@ -201,3 +201,9 @@ def test_layouts_carry_the_default_look(client):
         body["style"]["chord_color"].startswith("#")
         and 0 < body["style"]["chord_scale"] < 1
     )
+
+
+def test_sections_carry_the_family_the_sheet_shades(client):
+    sections = client.get("/song", params={"key": "memory:1"}).json()["sections"]
+    families = {s["label"]: s["family"] for s in sections}
+    assert families["Chorus"] == "chorus" and families["Verse 1"] == ""
