@@ -1140,8 +1140,13 @@ def render_sheet(
     margin: float = DFLT_MARGIN,
     min_font_size: float = 6.0,
     max_font_size: float = 72.0,
+    scale: float = 1.0,
 ) -> dict:
     """Render ``song`` in ``layout`` (a :class:`SheetLayout` or a spec) as a PDF to ``output``.
+
+    The lyric font size is the largest that fits the song on one page, times
+    ``scale``: ``1`` fills the page, ``0.8`` leaves room, ``1.2`` is larger type
+    that runs onto a second page.
 
     ``output`` is a path or a binary file object. Returns
     ``{"path", "font_size", "pages", "rows"}``; ``path`` is ``None`` when
@@ -1162,6 +1167,9 @@ def render_sheet(
         min_font_size=min_font_size,
         max_font_size=max_font_size,
     )
+    if scale <= 0:
+        raise ValueError(f"scale must be positive, got {scale!r}")
+    size *= scale
     heading = _heading(song)
     paint = _paint(song, style, layout.shading)
     flow = _flow(
@@ -1251,6 +1259,26 @@ def render_dense_a4(
         min_font_size=min_font_size,
         max_font_size=max_font_size,
     )
+
+
+def on_paper(color: str, alpha: float = 1.0, *, paper: str = "#ffffff") -> str:
+    """``color`` at opacity ``alpha`` over ``paper``, as one opaque colour: what ink at that opacity shows.
+
+    >>> on_paper("#000000", 0.5), on_paper("#3b73c4"), on_paper("#ff0000", 0)
+    ('#808080', '#3b73c4', '#ffffff')
+    """
+    if not 0 <= alpha <= 1:
+        raise ValueError(f"alpha goes from 0 to 1, got {alpha!r}")
+    ink, ground = _rgb(color), _rgb(paper)
+    mixed = (round(i * alpha + g * (1 - alpha)) for i, g in zip(ink, ground))
+    return "#" + "".join(f"{channel:02x}" for channel in mixed)
+
+
+def _rgb(color: str) -> tuple[int, int, int]:
+    digits = color.lstrip("#")
+    if len(digits) != 6 or any(c not in "0123456789abcdefABCDEF" for c in digits):
+        raise ValueError(f"A colour is #rrggbb, got {color!r}")
+    return tuple(int(digits[i : i + 2], 16) for i in (0, 2, 4))
 
 
 def make_renderer(layout: SheetLayout | str = "dense", **render_options) -> Callable:

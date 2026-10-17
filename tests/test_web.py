@@ -154,3 +154,50 @@ def test_the_zip_under_the_data_root_is_found(monkeypatch, tmp_path):
     assert sources_module.kaggle_chords_zip() == str(zip_path)
     monkeypatch.setenv("SUNG_CHORDS_AND_LYRICS_ZIP", "/elsewhere.zip")
     assert sources_module.kaggle_chords_zip() is None  # the explicit variable wins
+
+
+def test_the_song_comes_with_a_chord_table_for_every_key(client):
+    song = client.get("/song", params={"key": "memory:1"}).json()
+    assert song["title"] == "Paper Boats" and song["text"].startswith("")
+    assert song["chords"][:4] == ["G", "D", "Em", "C"] and song["song_key"] == "G"
+    tables = {t["semitones"]: t for t in song["transpositions"]}
+    assert sorted(tables) == list(range(-5, 7))
+    assert tables[2]["key"] == "A" and tables[2]["chords"]["Em"] == "F#m"
+    assert tables[3]["key"] == "Bb" and tables[3]["chords"]["D"] == "F"  # flats in Bb
+    assert tables[0]["chords"]["G"] == "G"
+
+
+def test_a_transposed_and_scaled_sheet(client):
+    plain = client.get("/sheet", params={"key": "memory:1"}).json()
+    moved = client.get(
+        "/sheet", params={"key": "memory:1", "transpose": 2, "scale": 0.5}
+    ).json()
+    assert moved["transpose"] == 2 and "(+2)" in moved["file_name"]
+    assert moved["font_size"] == pytest.approx(plain["font_size"] * 0.5, rel=0.01)
+    png = client.get("/sheet.png", params={"key": "memory:1", "transpose": 2})
+    assert png.status_code == 200
+
+
+def test_sheet_colours_and_ranges_are_checked(client):
+    ok = client.get(
+        "/sheet",
+        params={"key": "memory:1", "chord_color": "#ff0000", "chord_alpha": 0.5},
+    )
+    assert ok.status_code == 200
+    for bad in (
+        {"chord_color": "red"},
+        {"lyric_alpha": 2},
+        {"scale": 0},
+        {"transpose": 40},
+        {"chord_scale": 5},
+    ):
+        response = client.get("/sheet", params={"key": "memory:1", **bad})
+        assert response.status_code == 400, bad
+
+
+def test_layouts_carry_the_default_look(client):
+    body = client.get("/layouts").json()
+    assert (
+        body["style"]["chord_color"].startswith("#")
+        and 0 < body["style"]["chord_scale"] < 1
+    )

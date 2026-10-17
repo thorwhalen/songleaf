@@ -35,14 +35,15 @@ def _with_expected_errors(tool):
 
 def main(argv=None):
     """Run one songleaf command."""
-    config = {
-        tool.__name__: {
+    hidden = {
+        tool.__name__.replace("_", "-"): {  # cw keys commands as they are typed
             name: cw.HIDE
             for name in _SEAMS
             if name in inspect.signature(tool).parameters
         }
         for tool in tools.TOOLS
     }
+    config = {command: seams for command, seams in hidden.items() if seams}
     commands = [_with_expected_errors(tool) for tool in tools.TOOLS]
     raise SystemExit(
         cw.dispatch(
