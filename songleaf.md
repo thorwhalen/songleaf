@@ -1,4 +1,4 @@
-> built 2026-10-17 14:02 UTC from a24ef45 (main) · songleaf 0.0.10. Details: build_info.json
+> built 2026-10-17 23:41 UTC from 4fdcf7b (main) · songleaf 0.0.11. Details: build_info.json
 
 # index.html.md
 
@@ -123,7 +123,7 @@ Other sources surveyed, plus the Ultimate Guitar / MuseScore decisions, are in [
 
 ## Web app
 
-`songleaf.web.mk_app()` is a FastAPI app over the same functions: search, the stored songs, the layout options, and the sheet as JSON, PDF and a PNG per page (for phone browsers that show no PDF inline). It also serves its own page: a search box, and a song view with two modes. **Read** draws the song as text, with each chord over the syllable it lands on and lines wrapping between words, so it suits any screen. **Print** shows the PDF sheet with the layout options as toggles. Both share a size control (pixels when reading, a percentage of the page-filling size when printing), transposition (a key picker that lists every chord of the song beside what it becomes), and a “look” panel for the colour and opacity of lyrics and chords, chord size, line spacing and font. Opacity prints as the matching shade on white paper. The page is a two-line HTML shell that loads its script and style from the app, so it changes with the package.
+`songleaf.web.mk_app()` is a FastAPI app over the same functions: search, the stored songs, the layout options, and the sheet as JSON, PDF and a PNG per page (for phone browsers that show no PDF inline). It also serves its own page, built phone first: the song starts right under the title and one row of controls. That row holds the text size, the key (−1 / +1, and a key picker that lists every chord of the song beside what it becomes), **Aa** and **⋯**. **Aa** holds the reader’s settings: paper (auto, light, sepia, dark, black), where the chords go (above the words, in the line, or off), one or two columns, shaded choruses, and under *Fine tuning* the colour and opacity of lyrics and chords, chord size, line spacing and font. **⋯** leads to **Print**, which shows the one-page PDF sheet. Its layout starts from the reader’s settings and can be changed there in the same words (chords above, on the words or in the line; rows filled or broken at rhymes; one or two columns; shading). Opacity prints as the matching shade on white paper. The page is a two-line HTML shell that loads its script and style from the app, so it changes with the package.
 
 ```bash
 pip install "songleaf[web]"
@@ -141,9 +141,9 @@ site.get("/songleaf/", response_class=HTMLResponse)(
 )
 ```
 
-**Your songs** (the songs opened before) can be deleted, and grouped. Groups work like Gmail labels: a song can be in several groups, and a group can hold other groups. You can filter the list by a group or browse it as a tree, add a song to a group from the song’s page (type a name), or pick several songs and use **Group…**. Groups are shared by everyone using the app (one library). They are kept on the server as a [zodal-groups](https://github.com/i2mint/zodal-groups) snapshot with a revision (`songleaf.library`). A save made from an out-of-date revision is refused, and the page replays its changes on top of the newer groups, so two people editing at once don’t overwrite each other.
+**Your songs** (the songs opened before) can be deleted, and grouped. Groups work like Gmail labels: a song can be in several groups, and a group can hold other groups. Chips above the list narrow it to a group (All, each group, Ungrouped); choosing a group that holds groups shows them in a second row. The chosen group is in the URL, so Back, reload and a shared link keep it. To file songs, tap the “in …” line under a song’s title (or pick several songs with **Edit** and use **Group…**): both open the same menu, where you tick groups or create one, then Apply. On a wide screen, **Arrange groups** shows the groups as a tree, where you can drag a song or a group onto a group (that is how groups go inside groups). Groups are shared by everyone using the app (one library). They are kept on the server as a [zodal-groups](https://github.com/i2mint/zodal-groups) snapshot with a revision (`songleaf.library`). A save made from an out-of-date revision is refused, and the page replays its changes on top of the newer groups, so two people editing at once don’t overwrite each other.
 
-In Read view, the floating ▶ starts **auto-scroll**, with − and + for the speed. It is remembered per song, pauses when you touch the song, and keeps the screen awake while running.
+In Read view, the floating ▶ starts **auto-scroll**; while it runs, − and + set the speed. It is remembered per song, pauses when you touch the song, and keeps the screen awake while running.
 
 The app has no login of its own: put it behind whatever gates the host. It takes the same `sources=` and `store=` as `sheet`. A rendered sheet is kept in memory (`sheet_cache_size=`, default 32), so the page’s requests for one sheet render it once.
 
@@ -1878,18 +1878,18 @@ The keys of the stored songs.
 
 # About this build
 
-This documentation was built on **2026-10-17 14:02 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/a24ef454afe3f3562d0e5f925a1d549eb58d701d"><code>a24ef45</code></a> on branch <code>main</code>, for **songleaf 0.0.10** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-17 23:41 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/4fdcf7b2291ff1e692e4e2d9197ae09309424898"><code>4fdcf7b</code></a> on branch <code>main</code>, for **songleaf 0.0.11** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.10) is behind the latest release on PyPI (0.0.11): `pip install songleaf` gives newer code than these docs describe.
+- The documented version (0.0.11) is behind the latest release on PyPI (0.0.12): `pip install songleaf` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/a24ef454afe3f3562d0e5f925a1d549eb58d701d"><code>a24ef454afe3f3562d0e5f925a1d549eb58d701d</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/4fdcf7b2291ff1e692e4e2d9197ae09309424898"><code>4fdcf7b2291ff1e692e4e2d9197ae09309424898</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -1900,9 +1900,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39038872759">39038872759</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39079877714">39079877714</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>a24ef454afe3f3562d0e5f925a1d549eb58d701d</code> (in the history of the built commit) |
+| Event commit | <code>4fdcf7b2291ff1e692e4e2d9197ae09309424898</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -1927,13 +1927,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.11/">0.0.11</a>, newer than the documented version (0.0.10).
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.12/">0.0.12</a>, newer than the documented version (0.0.11).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout a24ef454afe3f3562d0e5f925a1d549eb58d701d
+git checkout 4fdcf7b2291ff1e692e4e2d9197ae09309424898
 pip install "epythet==0.2.17"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
