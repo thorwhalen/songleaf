@@ -7,6 +7,7 @@ apps.thorwhalen.com). Its routes:
 
 - `GET /search?q=&artist=&lyrics=&limit=`: hits, best first (`tools.search`)
 - `GET /songs`: the stored songs, with title and artist
+- `DELETE /songs?key=`: remove one from them (`tools.forget`)
 - `GET /layouts`: the layout options a sheet can combine, and the default colours
 - `GET /song?key=`: the song as JSON (`tools.song`): text, chords, sections, its
   key and a chord table for every key it can move to; the page draws it as text

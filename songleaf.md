@@ -1,4 +1,4 @@
-> built 2026-10-17 12:50 UTC from 5dd17a9 (main) · songleaf 0.0.8. Details: build_info.json
+> built 2026-10-17 13:33 UTC from 262da47 (main) · songleaf 0.0.9. Details: build_info.json
 
 # index.html.md
 
@@ -1671,12 +1671,13 @@ than dicts uses [`songleaf.sources`](_autosummary/songleaf.sources.html.md#modul
 
 | [`build_index`](_autosummary/songleaf.tools.html.md#songleaf.tools.build_index)(\*[, path])                        | Build the search index of the Kaggle corpus, once, where the corpus zip is.                      |
 |-------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| [`forget`](_autosummary/songleaf.tools.html.md#songleaf.tools.forget)(key, \*[, store])                       | Remove a song from the stored songs.                                                             |
 | [`search`](_autosummary/songleaf.tools.html.md#songleaf.tools.search)([query, title, artist, lyrics, ...])    | Find songs: fuzzy title and artist (`query`), or by title, artist, or whole words of the lyrics. |
 | [`sheet`](_autosummary/songleaf.tools.html.md#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...]) | Make a one-page song sheet (PDF) for the best match of `query`.                                  |
 | [`song`](_autosummary/songleaf.tools.html.md#songleaf.tools.song)(query, \*[, pick, refresh, ...])          | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.         |
 | [`songs`](_autosummary/songleaf.tools.html.md#songleaf.tools.songs)(\*[, store])                             | The keys of the stored songs.                                                                    |
 
-### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function song>, <function songs>, <function build_index>)*
+### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function song>, <function songs>, <function forget>, <function build_index>)*
 
 Every operation, in the order the CLI lists them.
 
@@ -1687,6 +1688,15 @@ Build the search index of the Kaggle corpus, once, where the corpus zip is.
 Searching then reads the index instead of loading the whole corpus into
 memory (tens of MB instead of over a GB per process). Run it again after
 replacing the zip. `path` defaults to beside the zip under the data root.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.forget(key, , store=None)
+
+Remove a song from the stored songs. It can be found and stored again by searching.
+
+Returns `{"key", "deleted"}`; `deleted` is False when it was not stored.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -1760,6 +1770,7 @@ apps.thorwhalen.com). Its routes:
 
 - `GET /search?q=&artist=&lyrics=&limit=`: hits, best first (`tools.search`)
 - `GET /songs`: the stored songs, with title and artist
+- `DELETE /songs?key=`: remove one from them (`tools.forget`)
 - `GET /layouts`: the layout options a sheet can combine, and the default colours
 - `GET /song?key=`: the song as JSON (`tools.song`): text, chords, sections, its
   key and a chord table for every key it can move to; the page draws it as text
@@ -1879,16 +1890,18 @@ Every stored song as `{key, title, artist}`, by artist then title.
 
 # About this build
 
-This documentation was built on **2026-10-17 12:50 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/5dd17a94c62b075a8e65bce388da2a0ec86de21f"><code>5dd17a9</code></a> on branch <code>main</code>, for **songleaf 0.0.8** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-17 13:33 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/262da47abdf08f6464a2ad5f1f51d699cf2267aa"><code>262da47</code></a> on branch <code>main</code>, for **songleaf 0.0.9** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.0.9) is behind the latest release on PyPI (0.0.10): `pip install songleaf` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/5dd17a94c62b075a8e65bce388da2a0ec86de21f"><code>5dd17a94c62b075a8e65bce388da2a0ec86de21f</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/262da47abdf08f6464a2ad5f1f51d699cf2267aa"><code>262da47abdf08f6464a2ad5f1f51d699cf2267aa</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -1899,9 +1912,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39033991411">39033991411</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39036933264">39036933264</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>5dd17a94c62b075a8e65bce388da2a0ec86de21f</code> (in the history of the built commit) |
+| Event commit | <code>262da47abdf08f6464a2ad5f1f51d699cf2267aa</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -1926,13 +1939,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.8/">0.0.8</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.10/">0.0.10</a>, newer than the documented version (0.0.9).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 5dd17a94c62b075a8e65bce388da2a0ec86de21f
+git checkout 262da47abdf08f6464a2ad5f1f51d699cf2267aa
 pip install "epythet==0.2.17"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

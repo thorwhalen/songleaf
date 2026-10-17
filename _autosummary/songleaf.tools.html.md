@@ -17,12 +17,13 @@ than dicts uses [`songleaf.sources`](songleaf.sources.html.md#module-songleaf.so
 
 | [`build_index`](#songleaf.tools.build_index)(\*[, path])                        | Build the search index of the Kaggle corpus, once, where the corpus zip is.                      |
 |-------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| [`forget`](#songleaf.tools.forget)(key, \*[, store])                       | Remove a song from the stored songs.                                                             |
 | [`search`](#songleaf.tools.search)([query, title, artist, lyrics, ...])    | Find songs: fuzzy title and artist (`query`), or by title, artist, or whole words of the lyrics. |
 | [`sheet`](#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...]) | Make a one-page song sheet (PDF) for the best match of `query`.                                  |
 | [`song`](#songleaf.tools.song)(query, \*[, pick, refresh, ...])          | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.         |
 | [`songs`](#songleaf.tools.songs)(\*[, store])                             | The keys of the stored songs.                                                                    |
 
-### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function song>, <function songs>, <function build_index>)*
+### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function song>, <function songs>, <function forget>, <function build_index>)*
 
 Every operation, in the order the CLI lists them.
 
@@ -33,6 +34,15 @@ Build the search index of the Kaggle corpus, once, where the corpus zip is.
 Searching then reads the index instead of loading the whole corpus into
 memory (tens of MB instead of over a GB per process). Run it again after
 replacing the zip. `path` defaults to beside the zip under the data root.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.forget(key, , store=None)
+
+Remove a song from the stored songs. It can be found and stored again by searching.
+
+Returns `{"key", "deleted"}`; `deleted` is False when it was not stored.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

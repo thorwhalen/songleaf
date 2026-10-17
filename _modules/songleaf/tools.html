@@ -428,6 +428,23 @@
     <span class="k">return</span> <span class="n">key</span><span class="p">,</span> <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
 
+<div class="viewcode-block" id="forget">
+<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.forget">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">forget</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Remove a song from the stored songs. It can be found and stored again by searching.</span>
+
+<span class="sd">    Returns ``{"key", "deleted"}``; ``deleted`` is False when it was not stored.</span>
+<span class="sd">    """</span>
+    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>  <span class="c1"># one step: two deletes at once cannot both find it</span>
+        <span class="n">deleted</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+        <span class="n">deleted</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"key"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span> <span class="s2">"deleted"</span><span class="p">:</span> <span class="n">deleted</span><span class="p">}</span></div>
+
+
+
 <div class="viewcode-block" id="songs">
 <a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.songs">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">songs</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
@@ -481,7 +498,7 @@
 
 
 <span class="c1">#: Every operation, in the order the CLI lists them.</span>
-<span class="n">TOOLS</span> <span class="o">=</span> <span class="p">(</span><span class="n">search</span><span class="p">,</span> <span class="n">sheet</span><span class="p">,</span> <span class="n">song</span><span class="p">,</span> <span class="n">songs</span><span class="p">,</span> <span class="n">build_index</span><span class="p">)</span>
+<span class="n">TOOLS</span> <span class="o">=</span> <span class="p">(</span><span class="n">search</span><span class="p">,</span> <span class="n">sheet</span><span class="p">,</span> <span class="n">song</span><span class="p">,</span> <span class="n">songs</span><span class="p">,</span> <span class="n">forget</span><span class="p">,</span> <span class="n">build_index</span><span class="p">)</span>
 </pre></div>
         </article>
       </div>
@@ -510,7 +527,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=162d0dcb"></script>
+</div><script src="../../_static/documentation_options.js?v=bf6d79ad"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

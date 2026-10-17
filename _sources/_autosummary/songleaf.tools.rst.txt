@@ -15,6 +15,7 @@ songleaf.tools
    .. autosummary::
    
       build_index
+      forget
       search
       sheet
       song
