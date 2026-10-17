@@ -9,7 +9,8 @@ apps.thorwhalen.com). Its routes:
 - ``GET /groups``, ``PUT /groups``: the library's groups, a zodal-groups snapshot with a
   revision (:mod:`songleaf.library`); a save from a stale revision is a 409 carrying the
   current groups
-- ``GET /layouts``: the layout options a sheet can combine, and the default colours
+- ``GET /layouts``: the layout options a sheet can combine, the controls that choose them
+  in plain words (:data:`LAYOUT_CONTROLS`), and the default colours
 - ``GET /song?key=``: the song as JSON (``tools.song``): text, chords, sections, its
   key and a chord table for every key it can move to; the page draws it as text
 - ``GET /sheet?key=&...``: render the sheet; its title, artist, font size and pages
@@ -76,6 +77,20 @@ _UI_FILES = {
     "vendor/zodal-groups.js": "text/javascript",
     "vendor/zodal-groups.css": "text/css",
 }
+#: How the page offers the layout options, in plain words: one control per thing an option
+#: sets, each a list of ``(option, label)`` choices, ``""`` being the default layout's own.
+#: Every option of :data:`songleaf.render.LAYOUT_OPTIONS` but ``dense`` is in exactly one
+#: control, so the page holds no copy and a new option shows up as soon as it is named here.
+LAYOUT_CONTROLS: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
+    (
+        "chords",
+        "Chords",
+        (("", "Above"), ("overlap", "On the words"), ("inline", "In the line")),
+    ),
+    ("packing", "Rows", (("", "Fill each row"), ("packed", "Break at rhymes"))),
+    ("columns", "Columns", (("", "One"), ("two-column", "Two"))),
+    ("shading", "Shade sections", (("", "Off"), ("shaded", "On"))),
+)
 _MAX_LIMIT = 50
 _PRIVATE_CACHE = {"Cache-Control": "private, max-age=300"}
 _COLOR_RE = re.compile(r"#[0-9a-fA-F]{6}")
@@ -202,10 +217,24 @@ def mk_app(
     @app.get("/layouts")
     def layouts() -> dict:
         # ``sets``: what an option changes; two that change the same thing exclude each other
+        labels = {
+            option: label
+            for _, _, choices in LAYOUT_CONTROLS
+            for option, label in choices
+            if option
+        }
         options = [
-            {"name": name, "sets": sorted(changes)}
+            {"name": name, "sets": sorted(changes), "label": labels.get(name, name)}
             for name, changes in LAYOUT_OPTIONS.items()
             if name != "dense"
+        ]
+        controls = [
+            {
+                "name": name,
+                "label": label,
+                "choices": [{"option": o, "label": text} for o, text in choices],
+            }
+            for name, label, choices in LAYOUT_CONTROLS
         ]
         base = DenseStyle()
         style = {
@@ -216,6 +245,7 @@ def mk_app(
         return {
             "default": "dense",
             "options": options,
+            "controls": controls,
             "style": style,
             "limits": SHEET_LIMITS,
         }
