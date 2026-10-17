@@ -47,15 +47,15 @@ right before or after a rhyming pair costs no more than
 between two lines that rhyme costs `rhyme` more, and one between a line
 and its repeat `repeat` more.
 
-* **Return type:**
-  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`float`](https://docs.python.org/3/builtins/functions.html#float)]
-
 ```pycon
 >>> line_break_costs(["a stream", "a dream", "go slow", "go low"])
 [2.0, 0.3, 2.0]
 >>> line_break_costs(["well", "a stream", "a dream", "go slow", "go slow"])
 [0.3, 1.3, 0.3, 1.5]
 ```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`float`](https://docs.python.org/3/builtins/functions.html#float)]
 
 ### songleaf.packing.pack_greedy(widths, , width, separator, break_costs=())
 
@@ -82,10 +82,10 @@ The sound a line ends on, as letters: the last vowel group of its last word and 
 A silent final `e` is dropped first, so `love` and `above` share
 `"ov"`. Accents are ignored, and a trailing note such as `(x2)` is skipped.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> rhyme_key("sing it low (x2)"), rhyme_key("Coração"), rhyme_key("")
 ('ow', 'ao', '')
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)

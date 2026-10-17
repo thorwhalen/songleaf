@@ -4,12 +4,19 @@ songleaf.sources
 .. automodule:: songleaf.sources
 
    
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      KAGGLE_CHORDS_ZIP
+   
    .. rubric:: Functions
 
    .. autosummary::
    
       default_sources
       get_song
+      kaggle_chords_zip
       search
    
    .. rubric:: Classes
@@ -19,4 +26,11 @@ songleaf.sources
       Hit
       KaggleChordsSource
       LocalFolderSource
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      SongNotFound
+      SourceUnavailable
    

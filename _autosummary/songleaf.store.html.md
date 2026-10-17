@@ -48,13 +48,13 @@ Every byte but lowercase ASCII letters, digits and `-_.` is percent-encoded
 (uppercase letters included), so the name is safe everywhere and distinct from
 every other key’s name even when letter case is ignored.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> file_name_of_key("kaggle_chords:0"), file_name_of_key("src:Abc")
 ('kaggle_chords%3A0.json', 'src%3A%41bc.json')
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### songleaf.store.song_store(rootdir=None)
 

@@ -10,6 +10,7 @@
         <title>songleaf.sources - songleaf</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d75fae25" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=8dab3a3b" />
     
@@ -209,6 +210,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.tools.html">songleaf.tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.web.html">songleaf.web</a></li>
 </ul>
 </li>
 </ul>
@@ -251,7 +253,9 @@
 
 <span class="sd">A *source* is any object with a ``name``, a</span>
 <span class="sd">``search(query, *, title, artist, lyrics, limit) -&gt; list[Hit]`` method and a</span>
-<span class="sd">``get(song_id) -&gt; Song`` method. :func:`search` and :func:`get_song` take</span>
+<span class="sd">``get(song_id) -&gt; Song`` method that raises ``KeyError`` for an id it does not</span>
+<span class="sd">have (:func:`get_song` reports that as :class:`SongNotFound`; a source that cannot</span>
+<span class="sd">load its data at all raises :class:`SourceUnavailable`). :func:`search` and :func:`get_song` take</span>
 <span class="sd">several through ``sources=``; the default is the Kaggle chords-and-lyrics</span>
 <span class="sd">corpus, read through ``sung``.</span>
 
@@ -263,6 +267,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">cached_property</span><span class="p">,</span> <span class="n">lru_cache</span>
@@ -308,16 +313,56 @@
 
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_load_kaggle_corpus</span><span class="p">():</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">sung.chords_and_lyrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_lyrics_and_chords_dataset</span>
+<span class="c1">#: Where a copy of the corpus zip is found under the data root, before sung looks.</span>
+<span class="n">KAGGLE_CHORDS_ZIP</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">"chords-and-lyrics"</span><span class="p">,</span> <span class="s2">"chords-and-lyrics-dataset.zip"</span><span class="p">)</span>
+<span class="n">_SUNG_ZIP_ENVVAR</span> <span class="o">=</span> <span class="s2">"SUNG_CHORDS_AND_LYRICS_ZIP"</span>
 
+
+<div class="viewcode-block" id="SourceUnavailable">
+<a class="viewcode-back" href="../../_autosummary/songleaf.sources.html#songleaf.SourceUnavailable">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SourceUnavailable</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""A source's data cannot be loaded here (a corpus that is not on this machine, say)."""</span></div>
+
+
+
+<div class="viewcode-block" id="SongNotFound">
+<a class="viewcode-back" href="../../_autosummary/songleaf.sources.html#songleaf.SongNotFound">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SongNotFound</span><span class="p">(</span><span class="ne">KeyError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""No song by that key, id or query. A ``KeyError``, so ``except KeyError`` still catches it."""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>  <span class="c1"># KeyError's own str() quotes the message</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="k">else</span> <span class="s2">""</span></div>
+
+
+
+<div class="viewcode-block" id="kaggle_chords_zip">
+<a class="viewcode-back" href="../../_autosummary/songleaf.sources.html#songleaf.kaggle_chords_zip">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">kaggle_chords_zip</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The corpus zip under the data root (``datasets/`` + :data:`KAGGLE_CHORDS_ZIP`), if there is one.</span>
+
+<span class="sd">    ``$SUNG_CHORDS_AND_LYRICS_ZIP``, when set, wins: then this is ``None`` and</span>
+<span class="sd">    sung reads the variable itself.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_SUNG_ZIP_ENVVAR</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">(</span><span class="s2">"datasets"</span><span class="p">),</span> <span class="n">KAGGLE_CHORDS_ZIP</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">path</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_load_kaggle_corpus</span><span class="p">():</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">get_lyrics_and_chords_dataset</span><span class="p">(</span><span class="n">usecols</span><span class="o">=</span><span class="n">KaggleChordsSource</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
-    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-            <span class="s2">"Could not load the Kaggle chords-and-lyrics corpus. Point "</span>
-            <span class="s2">"SUNG_CHORDS_AND_LYRICS_ZIP at a local copy of "</span>
-            <span class="sa">f</span><span class="s2">"chords-and-lyrics-dataset.zip (from </span><span class="si">{</span><span class="n">KAGGLE_CHORDS_URL</span><span class="si">}</span><span class="s2">). Without "</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sung.chords_and_lyrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_lyrics_and_chords_dataset</span>
+
+        <span class="k">return</span> <span class="n">get_lyrics_and_chords_dataset</span><span class="p">(</span>
+            <span class="n">zip_path</span><span class="o">=</span><span class="n">kaggle_chords_zip</span><span class="p">(),</span> <span class="n">usecols</span><span class="o">=</span><span class="n">KaggleChordsSource</span><span class="o">.</span><span class="n">columns</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># no sung, no zip, no Kaggle access</span>
+        <span class="n">in_data_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">(</span><span class="s2">"datasets"</span><span class="p">),</span> <span class="n">KAGGLE_CHORDS_ZIP</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SourceUnavailable</span><span class="p">(</span>
+            <span class="s2">"Could not load the Kaggle chords-and-lyrics corpus. Put a copy of "</span>
+            <span class="sa">f</span><span class="s2">"chords-and-lyrics-dataset.zip (from </span><span class="si">{</span><span class="n">KAGGLE_CHORDS_URL</span><span class="si">}</span><span class="s2">) at "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">in_data_root</span><span class="si">}</span><span class="s2">, or point </span><span class="si">{</span><span class="n">_SUNG_ZIP_ENVVAR</span><span class="si">}</span><span class="s2"> at one. Without "</span>
             <span class="s2">"one, sung downloads it through haggle, which needs `pip install haggle` "</span>
             <span class="sa">f</span><span class="s2">"and Kaggle credentials. (The loader said: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">)"</span>
         <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
@@ -356,10 +401,17 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">loader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_score</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">70</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_loader</span> <span class="o">=</span> <span class="n">loader</span> <span class="ow">or</span> <span class="n">_load_kaggle_corpus</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">min_score</span> <span class="o">=</span> <span class="n">min_score</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_load_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loaded</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="nd">@cached_property</span>
+    <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_df</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loader</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">"""The corpus, loaded once even when several threads ask for it first."""</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loaded</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_lock</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loaded</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_loaded</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loader</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loaded</span>
 
     <span class="nd">@cached_property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_titles</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
@@ -463,7 +515,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_row_of_id</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">song_id</span><span class="p">)]</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No song with id </span><span class="si">{</span><span class="n">song_id</span><span class="si">!r}</span><span class="s2"> in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+            <span class="k">raise</span> <span class="n">SongNotFound</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No song with id </span><span class="si">{</span><span class="n">song_id</span><span class="si">!r}</span><span class="s2"> in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
         <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">row</span><span class="p">]</span>
         <span class="n">text</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="s2">"chords&amp;lyrics"</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">parse_chords_over_lyrics</span><span class="p">(</span>
@@ -619,9 +671,10 @@
 <span class="w">        </span><span class="sd">"""The song at this relative path, parsed if it's a chart, else score-linked."""</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_chords_over_lyrics</span>
 
-        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">song_id</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No file at </span><span class="si">{</span><span class="n">song_id</span><span class="si">!r}</span><span class="s2"> under </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">song_id</span><span class="p">))</span>
+        <span class="n">inside</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">inside</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">)):</span>  <span class="c1"># an id never leaves the folder</span>
+            <span class="k">raise</span> <span class="n">SongNotFound</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No file at </span><span class="si">{</span><span class="n">song_id</span><span class="si">!r}</span><span class="s2"> under </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">stem</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">song_id</span><span class="p">))</span>
         <span class="n">title</span><span class="p">,</span> <span class="n">artist</span> <span class="o">=</span> <span class="n">_title_and_artist</span><span class="p">(</span><span class="n">stem</span><span class="p">)</span>
         <span class="n">provenance</span> <span class="o">=</span> <span class="p">{</span>
@@ -694,11 +747,18 @@
     <span class="n">sources</span> <span class="o">=</span> <span class="n">default_sources</span><span class="p">()</span> <span class="k">if</span> <span class="n">sources</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">sources</span>
     <span class="n">name</span><span class="p">,</span> <span class="n">sep</span><span class="p">,</span> <span class="n">song_id</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">sep</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"A song key looks like '&lt;source&gt;:&lt;id&gt;', got </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SongNotFound</span><span class="p">(</span><span class="sa">f</span><span class="s2">"A song key looks like '&lt;source&gt;:&lt;id&gt;', got </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">song_id</span><span class="p">)</span>
-    <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No source named </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> (sources: </span><span class="si">{</span><span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">sources</span><span class="p">]</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span></div>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">song_id</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">SongNotFound</span><span class="p">:</span>
+                <span class="k">raise</span>
+            <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># the protocol: a source's get raises KeyError</span>
+                <span class="k">raise</span> <span class="n">SongNotFound</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No song with id </span><span class="si">{</span><span class="n">song_id</span><span class="si">!r}</span><span class="s2"> in </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+    <span class="k">raise</span> <span class="n">SongNotFound</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"No source named </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> (sources: </span><span class="si">{</span><span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">sources</span><span class="p">]</span><span class="si">}</span><span class="s2">)"</span>
+    <span class="p">)</span></div>
 
 </pre></div>
         </article>
@@ -728,7 +788,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=3dab1201"></script>
+</div><script src="../../_static/documentation_options.js?v=1d1a88ea"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

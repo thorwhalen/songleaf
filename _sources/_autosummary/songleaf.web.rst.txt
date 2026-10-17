@@ -1,0 +1,21 @@
+songleaf.web
+============
+
+.. automodule:: songleaf.web
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      ERROR_STATUS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      mk_app
+      page_shell
+      pdf_page_png
+      stored_songs
+   

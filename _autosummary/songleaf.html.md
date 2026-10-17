@@ -50,7 +50,7 @@ or `python -m songleaf sheet "wonderwall oasis"`.
 | [`SheetLayout`](#songleaf.SheetLayout)([chords, packing, columns, ...])  | One way to lay a song out on a page.                                       |
 | [`Song`](#songleaf.Song)(text[, annotations, meta, provenance])   | Lyrics text plus annotations, metadata and provenance.                     |
 
-### *class* songleaf.Annotation(kind, start, end, body=<factory>)
+### *class* songleaf.Annotation(kind, start, end, body=dict())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -69,7 +69,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Typography of the dense layouts. Lengths are fractions of the lyric font size.
 
-### *class* songleaf.Hit(source, id, title, artist='', score=0.0, meta=<factory>)
+### *class* songleaf.Hit(source, id, title, artist='', score=0.0, meta=dict())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -119,7 +119,7 @@ Songs matching every given constraint, best first.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](songleaf.sources.html.md#songleaf.sources.Hit)]
 
-### *class* songleaf.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, style=<factory>)
+### *class* songleaf.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, style=DenseStyle())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -143,7 +143,7 @@ The line packer.
 
 The chord placement strategy.
 
-### *class* songleaf.Song(text, annotations=<factory>, meta=<factory>, provenance=<factory>)
+### *class* songleaf.Song(text, annotations=list(), meta=dict(), provenance=dict())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -221,13 +221,13 @@ Options apply in order, over the v1 layout and `style` (default
 
 The one spelling of a layout spec, for names: `"Dense"` -> `"dense"`.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> layout_spec("2col + INLINE"), layout_spec("dense+"), layout_spec("inline+2col+inline")
 ('two-column+inline', 'dense', 'two-column+inline')
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### songleaf.make_renderer(layout='dense', \*\*render_options)
 
@@ -236,13 +236,13 @@ A `(song, output) -> dict` renderer for `layout`, the shape `sheet`’s `rendere
 `render_options` are passed to [`render_sheet()`](#songleaf.render_sheet) (`page_size`,
 `margin`, …). A bad spec fails here, not at render time.
 
-* **Return type:**
-  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)
-
 ```pycon
 >>> make_renderer("packed+shaded").keywords["layout"].packing
 'structured'
 ```
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)
 
 ### songleaf.parse_chords_over_lyrics(raw, , meta=None, provenance=None)
 
@@ -289,13 +289,13 @@ A link from `[start, end)` to a score snippet held by a source.
 
 Search every source and merge the hits, best first.
 
-* **Return type:**
-  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](songleaf.sources.html.md#songleaf.sources.Hit)]
-
 ```pycon
 >>> search("paper boats", sources=[])
 []
 ```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](songleaf.sources.html.md#songleaf.sources.Hit)]
 
 ### songleaf.section(start, end, label)
 
@@ -341,12 +341,13 @@ The keys of the stored songs.
 
 ### Modules
 
-| [`harmony`](songleaf.harmony.html.md#module-songleaf.harmony)   | What a chord does in its song's key, so that sheets can shade chords by function.                               |
-|------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
-| [`model`](songleaf.model.html.md#module-songleaf.model)       | The linked-artifact model: a song is lyrics text plus standoff annotations.                                     |
-| [`packing`](songleaf.packing.html.md#module-songleaf.packing)   | Line packing: which consecutive lines of a paragraph share a row.                                               |
-| [`parse`](songleaf.parse.html.md#module-songleaf.parse)       | Parse chords-over-lyrics text into a [`Song`](songleaf.model.html.md#songleaf.model.Song). |
-| [`render`](songleaf.render.html.md#module-songleaf.render)     | Render a song onto one dense page, with the lyrics as large as will fit.                                        |
-| [`sources`](songleaf.sources.html.md#module-songleaf.sources)   | Where songs are found: sources, and a search that composes them.                                                |
-| [`store`](songleaf.store.html.md#module-songleaf.store)       | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                        |
-| [`tools`](songleaf.tools.html.md#module-songleaf.tools)       | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.              |
+| [`harmony`](songleaf.harmony.html.md#module-songleaf.harmony)   | What a chord does in its song's key, so that sheets can shade chords by function.                                                                         |
+|------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`model`](songleaf.model.html.md#module-songleaf.model)       | The linked-artifact model: a song is lyrics text plus standoff annotations.                                                                               |
+| [`packing`](songleaf.packing.html.md#module-songleaf.packing)   | Line packing: which consecutive lines of a paragraph share a row.                                                                                         |
+| [`parse`](songleaf.parse.html.md#module-songleaf.parse)       | Parse chords-over-lyrics text into a [`Song`](songleaf.model.html.md#songleaf.model.Song).                                           |
+| [`render`](songleaf.render.html.md#module-songleaf.render)     | Render a song onto one dense page, with the lyrics as large as will fit.                                                                                  |
+| [`sources`](songleaf.sources.html.md#module-songleaf.sources)   | Where songs are found: sources, and a search that composes them.                                                                                          |
+| [`store`](songleaf.store.html.md#module-songleaf.store)       | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                                                                  |
+| [`tools`](songleaf.tools.html.md#module-songleaf.tools)       | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.                                                        |
+| [`web`](songleaf.web.html.md#module-songleaf.web)           | The web surface: a JSON API over [`songleaf.tools`](songleaf.tools.html.md#module-songleaf.tools), the sheet as a PDF, and the page. |

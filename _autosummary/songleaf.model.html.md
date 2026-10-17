@@ -49,7 +49,7 @@ True
 | [`Line`](#songleaf.model.Line)(start, end, text)                      | One line of a song's text: `text == song.text[start:end]`.                 |
 | [`Song`](#songleaf.model.Song)(text[, annotations, meta, provenance]) | Lyrics text plus annotations, metadata and provenance.                     |
 
-### *class* songleaf.model.Annotation(kind, start, end, body=<factory>)
+### *class* songleaf.model.Annotation(kind, start, end, body=dict())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -72,7 +72,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 One line of a song’s text: `text == song.text[start:end]`.
 
-### *class* songleaf.model.Song(text, annotations=<factory>, meta=<factory>, provenance=<factory>)
+### *class* songleaf.model.Song(text, annotations=list(), meta=dict(), provenance=dict())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 

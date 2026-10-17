@@ -164,7 +164,7 @@ Chords above their syllables, smaller and lighter, overlapping the lyric row by 
 
 The line packers a [`SheetLayout`](#songleaf.render.SheetLayout) can name (see [`songleaf.packing`](songleaf.packing.html.md#module-songleaf.packing)).
 
-### *class* songleaf.render.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, style=<factory>)
+### *class* songleaf.render.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, style=DenseStyle())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -212,13 +212,13 @@ Options apply in order, over the v1 layout and `style` (default
 
 The one spelling of a layout spec, for names: `"Dense"` -> `"dense"`.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> layout_spec("2col + INLINE"), layout_spec("dense+"), layout_spec("inline+2col+inline")
 ('two-column+inline', 'dense', 'two-column+inline')
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### songleaf.render.make_renderer(layout='dense', \*\*render_options)
 
@@ -227,13 +227,13 @@ A `(song, output) -> dict` renderer for `layout`, the shape `sheet`’s `rendere
 `render_options` are passed to [`render_sheet()`](#songleaf.render.render_sheet) (`page_size`,
 `margin`, …). A bad spec fails here, not at render time.
 
-* **Return type:**
-  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)
-
 ```pycon
 >>> make_renderer("packed+shaded").keywords["layout"].packing
 'structured'
 ```
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)
 
 ### songleaf.render.render_dense_a4(song, output, , page_size='A4', margin=14.0, style=None, min_font_size=6.0, max_font_size=72.0)
 
@@ -261,13 +261,13 @@ Render `song` in `layout` (a [`SheetLayout`](#songleaf.render.SheetLayout) or a 
 
 `"chorus"` for a chorus or refrain, `"bridge"` for a pre-chorus or bridge, else `""`.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> section_family("Pre-Chorus"), section_family("Refrão 2"), section_family("Verse")
 ('bridge', 'chorus', '')
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### songleaf.render.short_label(label)
 

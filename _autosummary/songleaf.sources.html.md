@@ -4,19 +4,27 @@ Where songs are found: sources, and a search that composes them.
 
 A *source* is any object with a `name`, a
 `search(query, *, title, artist, lyrics, limit) -> list[Hit]` method and a
-`get(song_id) -> Song` method. [`search()`](#songleaf.sources.search) and [`get_song()`](#songleaf.sources.get_song) take
+`get(song_id) -> Song` method that raises `KeyError` for an id it does not
+have ([`get_song()`](#songleaf.sources.get_song) reports that as [`SongNotFound`](#songleaf.sources.SongNotFound); a source that cannot
+load its data at all raises [`SourceUnavailable`](#songleaf.sources.SourceUnavailable)). [`search()`](#songleaf.sources.search) and [`get_song()`](#songleaf.sources.get_song) take
 several through `sources=`; the default is the Kaggle chords-and-lyrics
 corpus, read through `sung`.
 
 A hit’s [`Hit.key`](#songleaf.sources.Hit.key) (`"<source>:<id>"`) names the song everywhere: it is
 what [`get_song()`](#songleaf.sources.get_song) resolves and what the store is keyed by.
 
+### Module Attributes
+
+| [`KAGGLE_CHORDS_ZIP`](#songleaf.sources.KAGGLE_CHORDS_ZIP)   | Where a copy of the corpus zip is found under the data root, before sung looks.   |
+|----------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+
 ### Functions
 
-| [`default_sources`](#songleaf.sources.default_sources)()                           | The sources used when none are given, built once per process.              |
-|----------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
-| [`get_song`](#songleaf.sources.get_song)(key, \*[, sources])                | The song named by `key` (`"<source>:<id>"`), from the source of that name. |
-| [`search`](#songleaf.sources.search)([query, title, artist, lyrics, ...]) | Search every source and merge the hits, best first.                        |
+| [`default_sources`](#songleaf.sources.default_sources)()                           | The sources used when none are given, built once per process.                                                                           |
+|----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| [`get_song`](#songleaf.sources.get_song)(key, \*[, sources])                | The song named by `key` (`"<source>:<id>"`), from the source of that name.                                                              |
+| [`kaggle_chords_zip`](#songleaf.sources.kaggle_chords_zip)()                         | The corpus zip under the data root (`datasets/` + [`KAGGLE_CHORDS_ZIP`](#songleaf.sources.KAGGLE_CHORDS_ZIP)), if there is one. |
+| [`search`](#songleaf.sources.search)([query, title, artist, lyrics, ...]) | Search every source and merge the hits, best first.                                                                                     |
 
 ### Classes
 
@@ -25,7 +33,13 @@ what [`get_song()`](#songleaf.sources.get_song) resolves and what the store is k
 | [`KaggleChordsSource`](#songleaf.sources.KaggleChordsSource)(\*[, loader, min_score])     | The Kaggle *chords-and-lyrics* corpus (~135K songs, chords over lyrics). |
 | [`LocalFolderSource`](#songleaf.sources.LocalFolderSource)([root, name])                 | A folder of files you exported yourself, indexed and searched by name.   |
 
-### *class* songleaf.sources.Hit(source, id, title, artist='', score=0.0, meta=<factory>)
+### Exceptions
+
+| [`SongNotFound`](#songleaf.sources.SongNotFound)      | No song by that key, id or query.                                                  |
+|--------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| [`SourceUnavailable`](#songleaf.sources.SourceUnavailable) | A source's data cannot be loaded here (a corpus that is not on this machine, say). |
+
+### *class* songleaf.sources.Hit(source, id, title, artist='', score=0.0, meta=dict())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -41,6 +55,10 @@ The JSON-ready form.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.sources.KAGGLE_CHORDS_ZIP *= 'chords-and-lyrics/chords-and-lyrics-dataset.zip'*
+
+Where a copy of the corpus zip is found under the data root, before sung looks.
 
 ### *class* songleaf.sources.KaggleChordsSource(, loader=None, min_score=70)
 
@@ -131,6 +149,18 @@ Substring-match the query/title/artist against each file’s name.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](#songleaf.sources.Hit)]
 
+### *exception* songleaf.sources.SongNotFound
+
+Bases: [`KeyError`](https://docs.python.org/3/builtins/exceptions.html#KeyError)
+
+No song by that key, id or query. A `KeyError`, so `except KeyError` still catches it.
+
+### *exception* songleaf.sources.SourceUnavailable
+
+Bases: [`RuntimeError`](https://docs.python.org/3/builtins/exceptions.html#RuntimeError)
+
+A source’s data cannot be loaded here (a corpus that is not on this machine, say).
+
 ### songleaf.sources.default_sources()
 
 The sources used when none are given, built once per process.
@@ -145,14 +175,24 @@ The song named by `key` (`"<source>:<id>"`), from the source of that name.
 * **Return type:**
   [`Song`](songleaf.model.html.md#songleaf.model.Song)
 
+### songleaf.sources.kaggle_chords_zip()
+
+The corpus zip under the data root (`datasets/` + [`KAGGLE_CHORDS_ZIP`](#songleaf.sources.KAGGLE_CHORDS_ZIP)), if there is one.
+
+`$SUNG_CHORDS_AND_LYRICS_ZIP`, when set, wins: then this is `None` and
+sung reads the variable itself.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
 ### songleaf.sources.search(query='', , title='', artist='', lyrics='', limit=10, sources=None)
 
 Search every source and merge the hits, best first.
-
-* **Return type:**
-  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](#songleaf.sources.Hit)]
 
 ```pycon
 >>> search("paper boats", sources=[])
 []
 ```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](#songleaf.sources.Hit)]

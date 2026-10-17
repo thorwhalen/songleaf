@@ -1,4 +1,4 @@
-> built 2026-10-13 21:05 UTC from 0c1dfcc (main) · songleaf 0.0.5. Details: build_info.json
+> built 2026-10-17 10:54 UTC from ef7f63a (main) · songleaf 0.0.6. Details: build_info.json
 
 # index.html.md
 
@@ -109,13 +109,35 @@ Songs are kept in a `MutableMapping` (`songleaf.song_store()`): one JSON file pe
 
 ## Sources
 
-`KaggleChordsSource` reads the [chords-and-lyrics dataset](https://www.kaggle.com/datasets/eitanbentora/chords-and-lyrics-dataset) through `sung`. It needs a local copy of the zip: point `SUNG_CHORDS_AND_LYRICS_ZIP` at it, or keep it where `haggle` downloads it (`$HAGGLE_ROOTDIR/zips/eitanbentora/chords-and-lyrics-dataset.zip`). Without a local copy, `sung` downloads it from Kaggle, which needs Kaggle credentials. The corpus was scraped from a chords site, so keep it to personal use.
+`KaggleChordsSource` reads the [chords-and-lyrics dataset](https://www.kaggle.com/datasets/eitanbentora/chords-and-lyrics-dataset) through `sung`. It needs a local copy of the zip: put it at `~/.local/share/songleaf/datasets/chords-and-lyrics/chords-and-lyrics-dataset.zip` (under the data root, so `SONGLEAF_DATA_DIR` moves it too), point `SUNG_CHORDS_AND_LYRICS_ZIP` at it, or keep it where `haggle` downloads it (`$HAGGLE_ROOTDIR/zips/eitanbentora/chords-and-lyrics-dataset.zip`). Without a local copy, `sung` downloads it from Kaggle, which needs Kaggle credentials. The corpus was scraped from a chords site, so keep it to personal use.
 
 Loading the corpus takes about five seconds on the first search in a process.
 
 Other sources surveyed, plus the Ultimate Guitar / MuseScore decisions, are in [`misc/docs/sources.md`]().
 
 `LocalFolderSource` indexes a folder of files you exported yourself from a paid chords/tab or score site (Ultimate Guitar, MuseScore, …) — text charts are parsed like the Kaggle corpus, score/tab files (Guitar Pro, MusicXML, MSCZ, MIDI, PDF) are attached as a score link. Default folder: `~/.local/share/songleaf/imports/` (moved by `SONGLEAF_DATA_DIR`).
+
+## Web app
+
+`songleaf.web.mk_app()` is a FastAPI app over the same functions: search, the stored songs, the layout options, and the sheet as JSON, PDF and a PNG per page (for phone browsers that show no PDF inline). It also serves its own page, a search box and a sheet view with the layout options as toggles. The page is a two-line HTML shell that loads its script and style from the app, so it changes with the package.
+
+```bash
+pip install "songleaf[web]"
+```
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+from songleaf.web import mk_app, page_shell
+
+site = FastAPI()
+site.mount("/api/songleaf", mk_app())
+site.get("/songleaf/", response_class=HTMLResponse)(
+    lambda: page_shell(api="/api/songleaf", base="/songleaf")
+)
+```
+
+The app has no login of its own: put it behind whatever gates the host. It takes the same `sources=` and `store=` as `sheet`. A rendered sheet is kept in memory (`sheet_cache_size=`, default 32), so the page’s requests for one sheet render it once.
 
 ## Extending
 
@@ -197,15 +219,15 @@ The quality is `"major"`, `"minor"`, `"diminished"`, or `"open"` (a
 suspended or power chord, which has no third). A bass note is ignored. What
 the chart parser would not read as a chord (`is_chord_token`) is not one.
 
-* **Return type:**
-  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)] | [`None`](https://docs.python.org/3/builtins/constants.html#None)
-
 ```pycon
 >>> parse_chord("F#m7"), parse_chord("Bbmaj7/D"), parse_chord("A7sus4"), parse_chord("Bm7b5")
 ((6, 'minor'), (10, 'major'), (9, 'open'), (11, 'diminished'))
 >>> parse_chord("C-7"), parse_chord("Bridge")
 ((0, 'minor'), None)
 ```
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)] | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
 
 # _autosummary/songleaf.html.md
@@ -262,7 +284,7 @@ or `python -m songleaf sheet "wonderwall oasis"`.
 | [`SheetLayout`](_autosummary/songleaf.html.md#songleaf.SheetLayout)([chords, packing, columns, ...])  | One way to lay a song out on a page.                                       |
 | [`Song`](_autosummary/songleaf.html.md#songleaf.Song)(text[, annotations, meta, provenance])   | Lyrics text plus annotations, metadata and provenance.                     |
 
-### *class* songleaf.Annotation(kind, start, end, body=<factory>)
+### *class* songleaf.Annotation(kind, start, end, body=dict())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -281,7 +303,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Typography of the dense layouts. Lengths are fractions of the lyric font size.
 
-### *class* songleaf.Hit(source, id, title, artist='', score=0.0, meta=<factory>)
+### *class* songleaf.Hit(source, id, title, artist='', score=0.0, meta=dict())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -331,7 +353,7 @@ Songs matching every given constraint, best first.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)]
 
-### *class* songleaf.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, style=<factory>)
+### *class* songleaf.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, style=DenseStyle())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -355,7 +377,7 @@ The line packer.
 
 The chord placement strategy.
 
-### *class* songleaf.Song(text, annotations=<factory>, meta=<factory>, provenance=<factory>)
+### *class* songleaf.Song(text, annotations=list(), meta=dict(), provenance=dict())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -433,13 +455,13 @@ Options apply in order, over the v1 layout and `style` (default
 
 The one spelling of a layout spec, for names: `"Dense"` -> `"dense"`.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> layout_spec("2col + INLINE"), layout_spec("dense+"), layout_spec("inline+2col+inline")
 ('two-column+inline', 'dense', 'two-column+inline')
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### songleaf.make_renderer(layout='dense', \*\*render_options)
 
@@ -448,13 +470,13 @@ A `(song, output) -> dict` renderer for `layout`, the shape `sheet`’s `rendere
 `render_options` are passed to [`render_sheet()`](_autosummary/songleaf.html.md#songleaf.render_sheet) (`page_size`,
 `margin`, …). A bad spec fails here, not at render time.
 
-* **Return type:**
-  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)
-
 ```pycon
 >>> make_renderer("packed+shaded").keywords["layout"].packing
 'structured'
 ```
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)
 
 ### songleaf.parse_chords_over_lyrics(raw, , meta=None, provenance=None)
 
@@ -501,13 +523,13 @@ A link from `[start, end)` to a score snippet held by a source.
 
 Search every source and merge the hits, best first.
 
-* **Return type:**
-  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)]
-
 ```pycon
 >>> search("paper boats", sources=[])
 []
 ```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)]
 
 ### songleaf.section(start, end, label)
 
@@ -553,15 +575,16 @@ The keys of the stored songs.
 
 ### Modules
 
-| [`harmony`](_autosummary/songleaf.harmony.html.md#module-songleaf.harmony)   | What a chord does in its song's key, so that sheets can shade chords by function.                               |
-|------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
-| [`model`](_autosummary/songleaf.model.html.md#module-songleaf.model)       | The linked-artifact model: a song is lyrics text plus standoff annotations.                                     |
-| [`packing`](_autosummary/songleaf.packing.html.md#module-songleaf.packing)   | Line packing: which consecutive lines of a paragraph share a row.                                               |
-| [`parse`](_autosummary/songleaf.parse.html.md#module-songleaf.parse)       | Parse chords-over-lyrics text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song). |
-| [`render`](_autosummary/songleaf.render.html.md#module-songleaf.render)     | Render a song onto one dense page, with the lyrics as large as will fit.                                        |
-| [`sources`](_autosummary/songleaf.sources.html.md#module-songleaf.sources)   | Where songs are found: sources, and a search that composes them.                                                |
-| [`store`](_autosummary/songleaf.store.html.md#module-songleaf.store)       | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                        |
-| [`tools`](_autosummary/songleaf.tools.html.md#module-songleaf.tools)       | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.              |
+| [`harmony`](_autosummary/songleaf.harmony.html.md#module-songleaf.harmony)   | What a chord does in its song's key, so that sheets can shade chords by function.                                                                         |
+|------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`model`](_autosummary/songleaf.model.html.md#module-songleaf.model)       | The linked-artifact model: a song is lyrics text plus standoff annotations.                                                                               |
+| [`packing`](_autosummary/songleaf.packing.html.md#module-songleaf.packing)   | Line packing: which consecutive lines of a paragraph share a row.                                                                                         |
+| [`parse`](_autosummary/songleaf.parse.html.md#module-songleaf.parse)       | Parse chords-over-lyrics text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song).                                           |
+| [`render`](_autosummary/songleaf.render.html.md#module-songleaf.render)     | Render a song onto one dense page, with the lyrics as large as will fit.                                                                                  |
+| [`sources`](_autosummary/songleaf.sources.html.md#module-songleaf.sources)   | Where songs are found: sources, and a search that composes them.                                                                                          |
+| [`store`](_autosummary/songleaf.store.html.md#module-songleaf.store)       | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                                                                  |
+| [`tools`](_autosummary/songleaf.tools.html.md#module-songleaf.tools)       | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.                                                        |
+| [`web`](_autosummary/songleaf.web.html.md#module-songleaf.web)           | The web surface: a JSON API over [`songleaf.tools`](_autosummary/songleaf.tools.html.md#module-songleaf.tools), the sheet as a PDF, and the page. |
 
 
 # _autosummary/songleaf.model.html.md
@@ -617,7 +640,7 @@ True
 | [`Line`](_autosummary/songleaf.model.html.md#songleaf.model.Line)(start, end, text)                      | One line of a song's text: `text == song.text[start:end]`.                 |
 | [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song)(text[, annotations, meta, provenance]) | Lyrics text plus annotations, metadata and provenance.                     |
 
-### *class* songleaf.model.Annotation(kind, start, end, body=<factory>)
+### *class* songleaf.model.Annotation(kind, start, end, body=dict())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -640,7 +663,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 One line of a song’s text: `text == song.text[start:end]`.
 
-### *class* songleaf.model.Song(text, annotations=<factory>, meta=<factory>, provenance=<factory>)
+### *class* songleaf.model.Song(text, annotations=list(), meta=dict(), provenance=dict())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -753,15 +776,15 @@ right before or after a rhyming pair costs no more than
 between two lines that rhyme costs `rhyme` more, and one between a line
 and its repeat `repeat` more.
 
-* **Return type:**
-  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`float`](https://docs.python.org/3/builtins/functions.html#float)]
-
 ```pycon
 >>> line_break_costs(["a stream", "a dream", "go slow", "go low"])
 [2.0, 0.3, 2.0]
 >>> line_break_costs(["well", "a stream", "a dream", "go slow", "go slow"])
 [0.3, 1.3, 0.3, 1.5]
 ```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`float`](https://docs.python.org/3/builtins/functions.html#float)]
 
 ### songleaf.packing.pack_greedy(widths, , width, separator, break_costs=())
 
@@ -788,13 +811,13 @@ The sound a line ends on, as letters: the last vowel group of its last word and 
 A silent final `e` is dropped first, so `love` and `above` share
 `"ov"`. Accents are ignored, and a trailing note such as `(x2)` is skipped.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> rhyme_key("sing it low (x2)"), rhyme_key("Coração"), rhyme_key("")
 ('ow', 'ao', '')
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 
 # _autosummary/songleaf.parse.html.md
@@ -837,15 +860,15 @@ line of chord symbols, column-aligned over the lyric line it belongs to.
 
 True if every token is a chord or chord-line filler, and at least one is a chord.
 
-* **Return type:**
-  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
-
 ```pycon
 >>> is_chord_line("G   D/F#   Em  (x2)")
 True
 >>> is_chord_line("Bad Dad")
 False
 ```
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
 ### songleaf.parse.is_chord_token(token)
 
@@ -1035,7 +1058,7 @@ Chords above their syllables, smaller and lighter, overlapping the lyric row by 
 
 The line packers a [`SheetLayout`](_autosummary/songleaf.render.html.md#songleaf.render.SheetLayout) can name (see [`songleaf.packing`](_autosummary/songleaf.packing.html.md#module-songleaf.packing)).
 
-### *class* songleaf.render.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, style=<factory>)
+### *class* songleaf.render.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, style=DenseStyle())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -1083,13 +1106,13 @@ Options apply in order, over the v1 layout and `style` (default
 
 The one spelling of a layout spec, for names: `"Dense"` -> `"dense"`.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> layout_spec("2col + INLINE"), layout_spec("dense+"), layout_spec("inline+2col+inline")
 ('two-column+inline', 'dense', 'two-column+inline')
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### songleaf.render.make_renderer(layout='dense', \*\*render_options)
 
@@ -1098,13 +1121,13 @@ A `(song, output) -> dict` renderer for `layout`, the shape `sheet`’s `rendere
 `render_options` are passed to [`render_sheet()`](_autosummary/songleaf.render.html.md#songleaf.render.render_sheet) (`page_size`,
 `margin`, …). A bad spec fails here, not at render time.
 
-* **Return type:**
-  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)
-
 ```pycon
 >>> make_renderer("packed+shaded").keywords["layout"].packing
 'structured'
 ```
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)
 
 ### songleaf.render.render_dense_a4(song, output, , page_size='A4', margin=14.0, style=None, min_font_size=6.0, max_font_size=72.0)
 
@@ -1132,13 +1155,13 @@ Render `song` in `layout` (a [`SheetLayout`](_autosummary/songleaf.render.html.m
 
 `"chorus"` for a chorus or refrain, `"bridge"` for a pre-chorus or bridge, else `""`.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> section_family("Pre-Chorus"), section_family("Refrão 2"), section_family("Verse")
 ('bridge', 'chorus', '')
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### songleaf.render.short_label(label)
 
@@ -1167,19 +1190,27 @@ Where songs are found: sources, and a search that composes them.
 
 A *source* is any object with a `name`, a
 `search(query, *, title, artist, lyrics, limit) -> list[Hit]` method and a
-`get(song_id) -> Song` method. [`search()`](_autosummary/songleaf.sources.html.md#songleaf.sources.search) and [`get_song()`](_autosummary/songleaf.sources.html.md#songleaf.sources.get_song) take
+`get(song_id) -> Song` method that raises `KeyError` for an id it does not
+have ([`get_song()`](_autosummary/songleaf.sources.html.md#songleaf.sources.get_song) reports that as [`SongNotFound`](_autosummary/songleaf.sources.html.md#songleaf.sources.SongNotFound); a source that cannot
+load its data at all raises [`SourceUnavailable`](_autosummary/songleaf.sources.html.md#songleaf.sources.SourceUnavailable)). [`search()`](_autosummary/songleaf.sources.html.md#songleaf.sources.search) and [`get_song()`](_autosummary/songleaf.sources.html.md#songleaf.sources.get_song) take
 several through `sources=`; the default is the Kaggle chords-and-lyrics
 corpus, read through `sung`.
 
 A hit’s [`Hit.key`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit.key) (`"<source>:<id>"`) names the song everywhere: it is
 what [`get_song()`](_autosummary/songleaf.sources.html.md#songleaf.sources.get_song) resolves and what the store is keyed by.
 
+### Module Attributes
+
+| [`KAGGLE_CHORDS_ZIP`](_autosummary/songleaf.sources.html.md#songleaf.sources.KAGGLE_CHORDS_ZIP)   | Where a copy of the corpus zip is found under the data root, before sung looks.   |
+|----------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+
 ### Functions
 
-| [`default_sources`](_autosummary/songleaf.sources.html.md#songleaf.sources.default_sources)()                           | The sources used when none are given, built once per process.              |
-|----------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
-| [`get_song`](_autosummary/songleaf.sources.html.md#songleaf.sources.get_song)(key, \*[, sources])                | The song named by `key` (`"<source>:<id>"`), from the source of that name. |
-| [`search`](_autosummary/songleaf.sources.html.md#songleaf.sources.search)([query, title, artist, lyrics, ...]) | Search every source and merge the hits, best first.                        |
+| [`default_sources`](_autosummary/songleaf.sources.html.md#songleaf.sources.default_sources)()                           | The sources used when none are given, built once per process.                                                                           |
+|----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| [`get_song`](_autosummary/songleaf.sources.html.md#songleaf.sources.get_song)(key, \*[, sources])                | The song named by `key` (`"<source>:<id>"`), from the source of that name.                                                              |
+| [`kaggle_chords_zip`](_autosummary/songleaf.sources.html.md#songleaf.sources.kaggle_chords_zip)()                         | The corpus zip under the data root (`datasets/` + [`KAGGLE_CHORDS_ZIP`](_autosummary/songleaf.sources.html.md#songleaf.sources.KAGGLE_CHORDS_ZIP)), if there is one. |
+| [`search`](_autosummary/songleaf.sources.html.md#songleaf.sources.search)([query, title, artist, lyrics, ...]) | Search every source and merge the hits, best first.                                                                                     |
 
 ### Classes
 
@@ -1188,7 +1219,13 @@ what [`get_song()`](_autosummary/songleaf.sources.html.md#songleaf.sources.get_s
 | [`KaggleChordsSource`](_autosummary/songleaf.sources.html.md#songleaf.sources.KaggleChordsSource)(\*[, loader, min_score])     | The Kaggle *chords-and-lyrics* corpus (~135K songs, chords over lyrics). |
 | [`LocalFolderSource`](_autosummary/songleaf.sources.html.md#songleaf.sources.LocalFolderSource)([root, name])                 | A folder of files you exported yourself, indexed and searched by name.   |
 
-### *class* songleaf.sources.Hit(source, id, title, artist='', score=0.0, meta=<factory>)
+### Exceptions
+
+| [`SongNotFound`](_autosummary/songleaf.sources.html.md#songleaf.sources.SongNotFound)      | No song by that key, id or query.                                                  |
+|--------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| [`SourceUnavailable`](_autosummary/songleaf.sources.html.md#songleaf.sources.SourceUnavailable) | A source's data cannot be loaded here (a corpus that is not on this machine, say). |
+
+### *class* songleaf.sources.Hit(source, id, title, artist='', score=0.0, meta=dict())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -1204,6 +1241,10 @@ The JSON-ready form.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.sources.KAGGLE_CHORDS_ZIP *= 'chords-and-lyrics/chords-and-lyrics-dataset.zip'*
+
+Where a copy of the corpus zip is found under the data root, before sung looks.
 
 ### *class* songleaf.sources.KaggleChordsSource(, loader=None, min_score=70)
 
@@ -1294,6 +1335,18 @@ Substring-match the query/title/artist against each file’s name.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)]
 
+### *exception* songleaf.sources.SongNotFound
+
+Bases: [`KeyError`](https://docs.python.org/3/builtins/exceptions.html#KeyError)
+
+No song by that key, id or query. A `KeyError`, so `except KeyError` still catches it.
+
+### *exception* songleaf.sources.SourceUnavailable
+
+Bases: [`RuntimeError`](https://docs.python.org/3/builtins/exceptions.html#RuntimeError)
+
+A source’s data cannot be loaded here (a corpus that is not on this machine, say).
+
 ### songleaf.sources.default_sources()
 
 The sources used when none are given, built once per process.
@@ -1308,17 +1361,27 @@ The song named by `key` (`"<source>:<id>"`), from the source of that name.
 * **Return type:**
   [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song)
 
+### songleaf.sources.kaggle_chords_zip()
+
+The corpus zip under the data root (`datasets/` + [`KAGGLE_CHORDS_ZIP`](_autosummary/songleaf.sources.html.md#songleaf.sources.KAGGLE_CHORDS_ZIP)), if there is one.
+
+`$SUNG_CHORDS_AND_LYRICS_ZIP`, when set, wins: then this is `None` and
+sung reads the variable itself.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
 ### songleaf.sources.search(query='', , title='', artist='', lyrics='', limit=10, sources=None)
 
 Search every source and merge the hits, best first.
-
-* **Return type:**
-  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)]
 
 ```pycon
 >>> search("paper boats", sources=[])
 []
 ```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)]
 
 
 # _autosummary/songleaf.store.html.md
@@ -1373,13 +1436,13 @@ Every byte but lowercase ASCII letters, digits and `-_.` is percent-encoded
 (uppercase letters included), so the name is safe everywhere and distinct from
 every other key’s name even when letter case is ignored.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> file_name_of_key("kaggle_chords:0"), file_name_of_key("src:Abc")
 ('kaggle_chords%3A0.json', 'src%3A%41bc.json')
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### songleaf.store.song_store(rootdir=None)
 
@@ -1453,24 +1516,108 @@ The keys of the stored songs.
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 
+# _autosummary/songleaf.web.html.md
+
+# songleaf.web
+
+The web surface: a JSON API over [`songleaf.tools`](_autosummary/songleaf.tools.html.md#module-songleaf.tools), the sheet as a PDF, and the page.
+
+`mk_app()` is a FastAPI app; mount it anywhere (`/api/songleaf` on
+apps.thorwhalen.com). Its routes:
+
+- `GET /search?q=&artist=&lyrics=&limit=`: hits, best first (`tools.search`)
+- `GET /songs`: the stored songs, with title and artist
+- `GET /layouts`: the layout options a sheet can combine
+- `GET /sheet?key=&layout=`: render the sheet; its title, artist, font size and pages
+- `GET /sheet.pdf?key=&layout=`: the sheet itself
+- `GET /sheet.png?key=&layout=&page=`: one page of it as an image, for browsers that
+  show no PDF inline (Android’s)
+- `GET /ui/app.js`, `GET /ui/style.css`: the page’s script and style
+
+The page is a two-path shell ([`page_shell()`](_autosummary/songleaf.web.html.md#songleaf.web.page_shell)) that loads its script and
+style from `/ui/`, so it changes with this package, not with the host. The app
+carries no authentication: the host gates it.
+
+A rendered sheet and its page images are kept in memory (the last
+`sheet_cache_size` of each), so the page’s requests for one sheet render it once.
+
+Only what a request can get wrong becomes a 4xx: an unknown song (404), a bad
+layout or page (400, 404). A corpus that is not on the machine is a 503 saying
+where to put it. Anything else is a bug and stays a 500.
+
+Requires `pip install songleaf[web]` (FastAPI, pypdfium2). Importing [`songleaf`](_autosummary/songleaf.html.md#module-songleaf) does
+not import this module.
+
+### Module Attributes
+
+| [`ERROR_STATUS`](_autosummary/songleaf.web.html.md#songleaf.web.ERROR_STATUS)   | Failures a request can cause, and the HTTP status each becomes.   |
+|-----------------------------------------------------------------|-------------------------------------------------------------------|
+
+### Functions
+
+| [`mk_app`](_autosummary/songleaf.web.html.md#songleaf.web.mk_app)(\*[, sources, store, title, ...])   | The FastAPI app.                                                                                                                       |
+|---------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| [`page_shell`](_autosummary/songleaf.web.html.md#songleaf.web.page_shell)(\*, api[, base, title])         | The page's HTML: where the page lives (`base`) and where [`mk_app()`](_autosummary/songleaf.web.html.md#songleaf.web.mk_app) is mounted (`api`). |
+| [`pdf_page_png`](_autosummary/songleaf.web.html.md#songleaf.web.pdf_page_png)(pdf[, page, scale])           | One page (from 1) of a PDF as PNG bytes, `scale` pixels per point.                                                                     |
+| [`stored_songs`](_autosummary/songleaf.web.html.md#songleaf.web.stored_songs)(\*[, store])                  | Every stored song as `{key, title, artist}`, by artist then title.                                                                     |
+
+### songleaf.web.ERROR_STATUS *= {<class 'songleaf.sources.SongNotFound'>: 404, <class 'songleaf.sources.SourceUnavailable'>: 503}*
+
+Failures a request can cause, and the HTTP status each becomes. Nothing broader:
+a KeyError or ValueError from a bug must not read as “not found” or “your fault”.
+
+### songleaf.web.mk_app(, sources=None, store=None, title='songleaf', sheet_cache_size=32, image_scale=2.0)
+
+The FastAPI app. `sources` and `store` are the seams of [`songleaf.tools`](_autosummary/songleaf.tools.html.md#module-songleaf.tools).
+
+`image_scale` is pixels per PDF point for `/sheet.png` (2: an A4 page is
+1190 pixels wide, sharp on a phone).
+
+### songleaf.web.page_shell(, api, base='', title='songleaf')
+
+The page’s HTML: where the page lives (`base`) and where [`mk_app()`](_autosummary/songleaf.web.html.md#songleaf.web.mk_app) is mounted (`api`).
+
+```pycon
+>>> "/api/songleaf/ui/app.js" in page_shell(api="/api/songleaf", base="/songleaf")
+True
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### songleaf.web.pdf_page_png(pdf, page=1, , scale=2.0)
+
+One page (from 1) of a PDF as PNG bytes, `scale` pixels per point.
+
+* **Return type:**
+  [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)
+
+### songleaf.web.stored_songs(, store=None)
+
+Every stored song as `{key, title, artist}`, by artist then title.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+
 # about-this-build.html.md
 
 <!-- generated by epythet -->
 
 # About this build
 
-This documentation was built on **2026-10-13 21:05 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/0c1dfcca72491b1aff63649d8690534efbece853"><code>0c1dfcc</code></a> on branch <code>main</code>, for **songleaf 0.0.5** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-17 10:54 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/ef7f63ab3c8283023066a25a7aac4e86ccbae196"><code>ef7f63a</code></a> on branch <code>main</code>, for **songleaf 0.0.6** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.5) is behind the latest release on PyPI (0.0.6): `pip install songleaf` gives newer code than these docs describe.
+- The documented version (0.0.6) is behind the latest release on PyPI (0.0.7): `pip install songleaf` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/0c1dfcca72491b1aff63649d8690534efbece853"><code>0c1dfcca72491b1aff63649d8690534efbece853</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/ef7f63ab3c8283023066a25a7aac4e86ccbae196"><code>ef7f63ab3c8283023066a25a7aac4e86ccbae196</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -1481,9 +1628,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/38467583515">38467583515</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39026547862">39026547862</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>0c1dfcca72491b1aff63649d8690534efbece853</code> (in the history of the built commit) |
+| Event commit | <code>ef7f63ab3c8283023066a25a7aac4e86ccbae196</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -1508,13 +1655,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.6/">0.0.6</a>, newer than the documented version (0.0.5).
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.7/">0.0.7</a>, newer than the documented version (0.0.6).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 0c1dfcca72491b1aff63649d8690534efbece853
+git checkout ef7f63ab3c8283023066a25a7aac4e86ccbae196
 pip install "epythet==0.2.17"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

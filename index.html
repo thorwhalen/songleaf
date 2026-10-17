@@ -13,6 +13,7 @@
         <title>songleaf</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d75fae25" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
     
@@ -212,6 +213,7 @@
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.tools.html">songleaf.tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.web.html">songleaf.web</a></li>
 </ul>
 </li>
 </ul>
@@ -373,10 +375,29 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 </section>
 <section id="sources">
 <h2>Sources<a class="headerlink" href="#sources" title="Link to this heading">¶</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">KaggleChordsSource</span></code> reads the <a class="reference external" href="https://www.kaggle.com/datasets/eitanbentora/chords-and-lyrics-dataset">chords-and-lyrics dataset</a> through <code class="docutils literal notranslate"><span class="pre">sung</span></code>. It needs a local copy of the zip: point <code class="docutils literal notranslate"><span class="pre">SUNG_CHORDS_AND_LYRICS_ZIP</span></code> at it, or keep it where <code class="docutils literal notranslate"><span class="pre">haggle</span></code> downloads it (<code class="docutils literal notranslate"><span class="pre">$HAGGLE_ROOTDIR/zips/eitanbentora/chords-and-lyrics-dataset.zip</span></code>). Without a local copy, <code class="docutils literal notranslate"><span class="pre">sung</span></code> downloads it from Kaggle, which needs Kaggle credentials. The corpus was scraped from a chords site, so keep it to personal use.</p>
+<p><code class="docutils literal notranslate"><span class="pre">KaggleChordsSource</span></code> reads the <a class="reference external" href="https://www.kaggle.com/datasets/eitanbentora/chords-and-lyrics-dataset">chords-and-lyrics dataset</a> through <code class="docutils literal notranslate"><span class="pre">sung</span></code>. It needs a local copy of the zip: put it at <code class="docutils literal notranslate"><span class="pre">~/.local/share/songleaf/datasets/chords-and-lyrics/chords-and-lyrics-dataset.zip</span></code> (under the data root, so <code class="docutils literal notranslate"><span class="pre">SONGLEAF_DATA_DIR</span></code> moves it too), point <code class="docutils literal notranslate"><span class="pre">SUNG_CHORDS_AND_LYRICS_ZIP</span></code> at it, or keep it where <code class="docutils literal notranslate"><span class="pre">haggle</span></code> downloads it (<code class="docutils literal notranslate"><span class="pre">$HAGGLE_ROOTDIR/zips/eitanbentora/chords-and-lyrics-dataset.zip</span></code>). Without a local copy, <code class="docutils literal notranslate"><span class="pre">sung</span></code> downloads it from Kaggle, which needs Kaggle credentials. The corpus was scraped from a chords site, so keep it to personal use.</p>
 <p>Loading the corpus takes about five seconds on the first search in a process.</p>
 <p>Other sources surveyed, plus the Ultimate Guitar / MuseScore decisions, are in <a class="reference internal" href="#misc/docs/sources.md"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">misc/docs/sources.md</span></code></span></a>.</p>
 <p><code class="docutils literal notranslate"><span class="pre">LocalFolderSource</span></code> indexes a folder of files you exported yourself from a paid chords/tab or score site (Ultimate Guitar, MuseScore, …) — text charts are parsed like the Kaggle corpus, score/tab files (Guitar Pro, MusicXML, MSCZ, MIDI, PDF) are attached as a score link. Default folder: <code class="docutils literal notranslate"><span class="pre">~/.local/share/songleaf/imports/</span></code> (moved by <code class="docutils literal notranslate"><span class="pre">SONGLEAF_DATA_DIR</span></code>).</p>
+</section>
+<section id="web-app">
+<h2>Web app<a class="headerlink" href="#web-app" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">songleaf.web.mk_app()</span></code> is a FastAPI app over the same functions: search, the stored songs, the layout options, and the sheet as JSON, PDF and a PNG per page (for phone browsers that show no PDF inline). It also serves its own page, a search box and a sheet view with the layout options as toggles. The page is a two-line HTML shell that loads its script and style from the app, so it changes with the package.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"songleaf[web]"</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi.responses</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTMLResponse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.web</span><span class="w"> </span><span class="kn">import</span> <span class="n">mk_app</span><span class="p">,</span> <span class="n">page_shell</span>
+
+<span class="n">site</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">()</span>
+<span class="n">site</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">"/api/songleaf"</span><span class="p">,</span> <span class="n">mk_app</span><span class="p">())</span>
+<span class="n">site</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"/songleaf/"</span><span class="p">,</span> <span class="n">response_class</span><span class="o">=</span><span class="n">HTMLResponse</span><span class="p">)(</span>
+    <span class="k">lambda</span><span class="p">:</span> <span class="n">page_shell</span><span class="p">(</span><span class="n">api</span><span class="o">=</span><span class="s2">"/api/songleaf"</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="s2">"/songleaf"</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The app has no login of its own: put it behind whatever gates the host. It takes the same <code class="docutils literal notranslate"><span class="pre">sources=</span></code> and <code class="docutils literal notranslate"><span class="pre">store=</span></code> as <code class="docutils literal notranslate"><span class="pre">sheet</span></code>. A rendered sheet is kept in memory (<code class="docutils literal notranslate"><span class="pre">sheet_cache_size=</span></code>, default 32), so the page’s requests for one sheet render it once.</p>
 </section>
 <section id="extending">
 <h2>Extending<a class="headerlink" href="#extending" title="Link to this heading">¶</a></h2>
@@ -395,7 +416,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-13 21:05 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/0c1dfcca72491b1aff63649d8690534efbece853">0c1dfcc</a> (main) · songleaf 0.0.5 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-17 10:54 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/ef7f63ab3c8283023066a25a7aac4e86ccbae196">ef7f63a</a> (main) · songleaf 0.0.6 · <a href="about-this-build.html">about this build</a></p>
         </article>
       </div>
       <footer>
@@ -445,6 +466,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 <li><a class="reference internal" href="#the-song-model">The song model</a></li>
 <li><a class="reference internal" href="#storage">Storage</a></li>
 <li><a class="reference internal" href="#sources">Sources</a></li>
+<li><a class="reference internal" href="#web-app">Web app</a></li>
 <li><a class="reference internal" href="#extending">Extending</a></li>
 </ul>
 </li>
@@ -457,7 +479,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=3dab1201"></script>
+</div><script src="_static/documentation_options.js?v=1d1a88ea"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

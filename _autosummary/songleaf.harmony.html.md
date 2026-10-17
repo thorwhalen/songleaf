@@ -61,12 +61,12 @@ The quality is `"major"`, `"minor"`, `"diminished"`, or `"open"` (a
 suspended or power chord, which has no third). A bass note is ignored. What
 the chart parser would not read as a chord (`is_chord_token`) is not one.
 
-* **Return type:**
-  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)] | [`None`](https://docs.python.org/3/builtins/constants.html#None)
-
 ```pycon
 >>> parse_chord("F#m7"), parse_chord("Bbmaj7/D"), parse_chord("A7sus4"), parse_chord("Bm7b5")
 ((6, 'minor'), (10, 'major'), (9, 'open'), (11, 'diminished'))
 >>> parse_chord("C-7"), parse_chord("Bridge")
 ((0, 'minor'), None)
 ```
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)] | [`None`](https://docs.python.org/3/builtins/constants.html#None)

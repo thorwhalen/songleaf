@@ -13,6 +13,7 @@
         <title>songleaf.render - songleaf</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d75fae25" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
     
@@ -212,6 +213,7 @@
 <li class="toctree-l3"><a class="reference internal" href="songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.tools.html">songleaf.tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="songleaf.web.html">songleaf.web</a></li>
 </ul>
 </li>
 </ul>
@@ -504,7 +506,7 @@ annotations are not changed.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="songleaf.render.SheetLayout">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.render.</span></span><span class="sig-name descname"><span class="pre">SheetLayout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'over'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">packing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'greedy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/render.html#SheetLayout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.render.SheetLayout" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.render.</span></span><span class="sig-name descname"><span class="pre">SheetLayout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'over'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">packing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'greedy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">DenseStyle()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/render.html#SheetLayout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.render.SheetLayout" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>One way to lay a song out on a page.</p>
 <dl class="field-list simple">
@@ -565,15 +567,15 @@ if even that does not fit (the song then needs more pages).</p>
 <dt class="sig sig-object py" id="songleaf.render.layout_spec">
 <span class="sig-prename descclassname"><span class="pre">songleaf.render.</span></span><span class="sig-name descname"><span class="pre">layout_spec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/render.html#layout_spec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.render.layout_spec" title="Link to this definition">¶</a></dt>
 <dd><p>The one spelling of a layout spec, for names: <code class="docutils literal notranslate"><span class="pre">&quot;Dense&quot;</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">&quot;dense&quot;</span></code>.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">layout_spec</span><span class="p">(</span><span class="s2">"2col + INLINE"</span><span class="p">),</span> <span class="n">layout_spec</span><span class="p">(</span><span class="s2">"dense+"</span><span class="p">),</span> <span class="n">layout_spec</span><span class="p">(</span><span class="s2">"inline+2col+inline"</span><span class="p">)</span>
+<span class="go">('two-column+inline', 'dense', 'two-column+inline')</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">layout_spec</span><span class="p">(</span><span class="s2">"2col + INLINE"</span><span class="p">),</span> <span class="n">layout_spec</span><span class="p">(</span><span class="s2">"dense+"</span><span class="p">),</span> <span class="n">layout_spec</span><span class="p">(</span><span class="s2">"inline+2col+inline"</span><span class="p">)</span>
-<span class="go">('two-column+inline', 'dense', 'two-column+inline')</span>
-</pre></div>
-</div>
 </dd></dl>
 
 <dl class="py function">
@@ -582,15 +584,15 @@ if even that does not fit (the song then needs more pages).</p>
 <dd><p>A <code class="docutils literal notranslate"><span class="pre">(song,</span> <span class="pre">output)</span> <span class="pre">-&gt;</span> <span class="pre">dict</span></code> renderer for <code class="docutils literal notranslate"><span class="pre">layout</span></code>, the shape <code class="docutils literal notranslate"><span class="pre">sheet</span></code>’s <code class="docutils literal notranslate"><span class="pre">renderer=</span></code> takes.</p>
 <p><code class="docutils literal notranslate"><span class="pre">render_options</span></code> are passed to <a class="reference internal" href="#songleaf.render.render_sheet" title="songleaf.render.render_sheet"><code class="xref py py-func docutils literal notranslate"><span class="pre">render_sheet()</span></code></a> (<code class="docutils literal notranslate"><span class="pre">page_size</span></code>,
 <code class="docutils literal notranslate"><span class="pre">margin</span></code>, …). A bad spec fails here, not at render time.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">make_renderer</span><span class="p">(</span><span class="s2">"packed+shaded"</span><span class="p">)</span><span class="o">.</span><span class="n">keywords</span><span class="p">[</span><span class="s2">"layout"</span><span class="p">]</span><span class="o">.</span><span class="n">packing</span>
+<span class="go">'structured'</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code></a></span></p>
 </dd>
 </dl>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">make_renderer</span><span class="p">(</span><span class="s2">"packed+shaded"</span><span class="p">)</span><span class="o">.</span><span class="n">keywords</span><span class="p">[</span><span class="s2">"layout"</span><span class="p">]</span><span class="o">.</span><span class="n">packing</span>
-<span class="go">'structured'</span>
-</pre></div>
-</div>
 </dd></dl>
 
 <dl class="py function">
@@ -625,15 +627,15 @@ if even that does not fit (the song then needs more pages).</p>
 <dt class="sig sig-object py" id="songleaf.render.section_family">
 <span class="sig-prename descclassname"><span class="pre">songleaf.render.</span></span><span class="sig-name descname"><span class="pre">section_family</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/render.html#section_family"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.render.section_family" title="Link to this definition">¶</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">&quot;chorus&quot;</span></code> for a chorus or refrain, <code class="docutils literal notranslate"><span class="pre">&quot;bridge&quot;</span></code> for a pre-chorus or bridge, else <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">section_family</span><span class="p">(</span><span class="s2">"Pre-Chorus"</span><span class="p">),</span> <span class="n">section_family</span><span class="p">(</span><span class="s2">"Refrão 2"</span><span class="p">),</span> <span class="n">section_family</span><span class="p">(</span><span class="s2">"Verse"</span><span class="p">)</span>
+<span class="go">('bridge', 'chorus', '')</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">section_family</span><span class="p">(</span><span class="s2">"Pre-Chorus"</span><span class="p">),</span> <span class="n">section_family</span><span class="p">(</span><span class="s2">"Refrão 2"</span><span class="p">),</span> <span class="n">section_family</span><span class="p">(</span><span class="s2">"Verse"</span><span class="p">)</span>
-<span class="go">('bridge', 'chorus', '')</span>
-</pre></div>
-</div>
 </dd></dl>
 
 <dl class="py function">
@@ -755,7 +757,7 @@ warning says so. Any other name is returned unchanged.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=3dab1201"></script>
+</div><script src="../_static/documentation_options.js?v=1d1a88ea"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

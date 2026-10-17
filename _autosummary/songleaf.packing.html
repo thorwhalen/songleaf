@@ -13,6 +13,7 @@
         <title>songleaf.packing - songleaf</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d75fae25" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
     
@@ -212,6 +213,7 @@
 <li class="toctree-l3"><a class="reference internal" href="songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.tools.html">songleaf.tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="songleaf.web.html">songleaf.web</a></li>
 </ul>
 </li>
 </ul>
@@ -311,17 +313,17 @@ right before or after a rhyming pair costs no more than
 <code class="docutils literal notranslate"><span class="pre">between_couplets</span></code> (so a pickup line shifts the couplets), a break
 between two lines that rhyme costs <code class="docutils literal notranslate"><span class="pre">rhyme</span></code> more, and one between a line
 and its repeat <code class="docutils literal notranslate"><span class="pre">repeat</span></code> more.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>]</span></p>
-</dd>
-</dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">line_break_costs</span><span class="p">([</span><span class="s2">"a stream"</span><span class="p">,</span> <span class="s2">"a dream"</span><span class="p">,</span> <span class="s2">"go slow"</span><span class="p">,</span> <span class="s2">"go low"</span><span class="p">])</span>
 <span class="go">[2.0, 0.3, 2.0]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">line_break_costs</span><span class="p">([</span><span class="s2">"well"</span><span class="p">,</span> <span class="s2">"a stream"</span><span class="p">,</span> <span class="s2">"a dream"</span><span class="p">,</span> <span class="s2">"go slow"</span><span class="p">,</span> <span class="s2">"go slow"</span><span class="p">])</span>
 <span class="go">[0.3, 1.3, 0.3, 1.5]</span>
 </pre></div>
 </div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>]</span></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -355,15 +357,15 @@ as <a class="reference internal" href="#songleaf.packing.pack_greedy" title="son
 <dd><p>The sound a line ends on, as letters: the last vowel group of its last word and what follows.</p>
 <p>A silent final <code class="docutils literal notranslate"><span class="pre">e</span></code> is dropped first, so <code class="docutils literal notranslate"><span class="pre">love</span></code> and <code class="docutils literal notranslate"><span class="pre">above</span></code> share
 <code class="docutils literal notranslate"><span class="pre">&quot;ov&quot;</span></code>. Accents are ignored, and a trailing note such as <code class="docutils literal notranslate"><span class="pre">(x2)</span></code> is skipped.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rhyme_key</span><span class="p">(</span><span class="s2">"sing it low (x2)"</span><span class="p">),</span> <span class="n">rhyme_key</span><span class="p">(</span><span class="s2">"Coração"</span><span class="p">),</span> <span class="n">rhyme_key</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
+<span class="go">('ow', 'ao', '')</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rhyme_key</span><span class="p">(</span><span class="s2">"sing it low (x2)"</span><span class="p">),</span> <span class="n">rhyme_key</span><span class="p">(</span><span class="s2">"Coração"</span><span class="p">),</span> <span class="n">rhyme_key</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
-<span class="go">('ow', 'ao', '')</span>
-</pre></div>
-</div>
 </dd></dl>
 
 </section>
@@ -435,7 +437,7 @@ as <a class="reference internal" href="#songleaf.packing.pack_greedy" title="son
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=3dab1201"></script>
+</div><script src="../_static/documentation_options.js?v=1d1a88ea"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

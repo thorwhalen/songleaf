@@ -36,15 +36,15 @@ line of chord symbols, column-aligned over the lyric line it belongs to.
 
 True if every token is a chord or chord-line filler, and at least one is a chord.
 
-* **Return type:**
-  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
-
 ```pycon
 >>> is_chord_line("G   D/F#   Em  (x2)")
 True
 >>> is_chord_line("Bad Dad")
 False
 ```
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
 ### songleaf.parse.is_chord_token(token)
 

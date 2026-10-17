@@ -14,6 +14,7 @@
 - [songleaf.sources](songleaf.sources.html.md): Where songs are found: sources, and a search that composes them.
 - [songleaf.store](songleaf.store.html.md): Where songs persist: a &#96;MutableMapping&#96; of songs, JSON files by default.
 - [songleaf.tools](songleaf.tools.html.md): The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.
+- [songleaf.web](songleaf.web.html.md): The web surface: a JSON API over &#96;songleaf.tools&#96;, the sheet as a PDF, and the page.
 
 ## Optional
 
