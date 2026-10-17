@@ -1,6 +1,10 @@
 /* songleaf page: phone first, light and dark.
    The page follows the phone's mode until the reader picks a paper: the script then sets
    data-theme on <html> (light or dark) and --bg (the paper), and those win. */
+
+/* `hidden` always hides, whatever display a class gives (a button, a flex row). */
+[hidden] { display: none !important; }
+
 :root {
   --bg: #fbfaf7;
   --fg: #1d1d1b;
@@ -13,10 +17,13 @@
   --radius: 10px;
   --gutter: 16px;
   --panel-bg: #ffffff;
+  --skeleton: rgba(0, 0, 0, 0.07);
   --chorus-band: #f3efe4; /* the printed sheet's shades */
   --bridge-band: #e8eef6;
+  --tap: 36px; /* the smallest control; 44px on a touch screen (below) */
   color-scheme: light;
 }
+@media (pointer: coarse) { :root { --tap: 44px; } }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #161615;
@@ -28,6 +35,7 @@
     --error-bg: #3a1714;
     --error-fg: #f5b7ae;
     --panel-bg: #1f1f1d;
+    --skeleton: rgba(255, 255, 255, 0.08);
     --chorus-band: rgba(255, 196, 120, 0.10);
     --bridge-band: rgba(130, 170, 255, 0.12);
     color-scheme: dark;
@@ -43,6 +51,7 @@
   --error-bg: #3a1714;
   --error-fg: #f5b7ae;
   --panel-bg: #1f1f1d;
+  --skeleton: rgba(255, 255, 255, 0.08);
   --chorus-band: rgba(255, 196, 120, 0.10);
   --bridge-band: rgba(130, 170, 255, 0.12);
   color-scheme: dark;
@@ -64,8 +73,8 @@ h1 { font-size: 1.5rem; margin: 0.2em 0; }
 h1:focus { outline: none; }
 h2 { font-size: 1rem; color: var(--muted); font-weight: 600; margin: 1.2em 0 0.4em; }
 .muted { color: var(--muted); }
-.back { display: inline-block; padding: 6px 0; color: var(--accent); text-decoration: none; }
-header .artist { margin: 0; color: var(--muted); }
+/* Never under 16px: iOS zooms the page into a smaller field on focus, and stays zoomed. */
+input, select, textarea { font-size: max(16px, 1em); }
 
 .search { display: grid; gap: 8px; margin: 12px 0 8px; }
 input[type="search"] {
@@ -91,9 +100,19 @@ input[type="search"]:focus { outline: 2px solid var(--accent); outline-offset: -
   text-decoration: none;
   min-height: 44px;
 }
-.songs a:active, .songs a:hover { color: var(--accent); }
+.songs a:active { color: var(--accent); }
+@media (hover: hover) { .songs a:hover { color: var(--accent); } }
 .songs .title { font-weight: 600; }
 .songs .artist { color: var(--muted); font-size: 0.92em; }
+.songs .in-groups { flex-basis: 100%; font-size: 0.82em; color: var(--muted); }
+
+/* The library while it loads: rows of its own shape, so nothing jumps when it arrives. */
+.songs.skeleton li { display: flex; flex-direction: column; gap: 8px; padding: 14px 2px; }
+.songs.skeleton .bar { display: block; height: 0.9em; border-radius: 4px; background: var(--skeleton); }
+.songs.skeleton .bar.short { width: 28%; height: 0.7em; }
+.songs.skeleton .bar { animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) { .songs.skeleton .bar { animation: none; } }
 
 .loading { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 20px 2px; color: var(--muted); }
 .loading .slow { flex-basis: 100%; margin: 0; font-size: 0.92em; }
@@ -107,10 +126,13 @@ input[type="search"]:focus { outline: 2px solid var(--accent); outline-offset: -
 
 .error { background: var(--error-bg); color: var(--error-fg); border-radius: var(--radius); padding: 12px 14px; margin: 12px 0; }
 .error p { margin: 0 0 8px; overflow-wrap: anywhere; }
+.empty { padding: 8px 0; }
+.empty p { margin: 8px 0; }
 
 button, .button {
   font: inherit;
   display: inline-block;
+  min-height: var(--tap);
   padding: 9px 16px;
   border-radius: var(--radius);
   border: 1px solid var(--accent);
@@ -120,18 +142,21 @@ button, .button {
   cursor: pointer;
 }
 .button.secondary, .error button { background: transparent; color: var(--accent); }
+/* a text button: a link-like action, still a full-size target */
+button.text { background: none; border: 0; color: var(--accent); padding: 6px 0; min-height: var(--tap); }
 
-.layout { border: 0; padding: 0; margin: 12px 0; display: flex; flex-wrap: wrap; gap: 8px; }
-.layout legend { color: var(--muted); font-size: 0.92em; margin-bottom: 6px; padding: 0; }
+/* Chips: one choice of several (role="radio"), in a row that wraps. */
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 12px; min-height: 36px;
-  border: 1px solid var(--line); border-radius: 999px; cursor: pointer; font-size: 0.95em;
+  padding: 6px 12px; min-height: var(--tap);
+  border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
+  font: inherit; font-size: 0.92em; background: transparent; color: var(--fg); white-space: nowrap;
 }
-.chip:has(input:checked) { border-color: var(--accent); color: var(--accent); }
-.chip input { accent-color: var(--accent); margin: 0; }
+.chip[aria-checked="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; box-shadow: inset 0 0 0 1px var(--accent); }
+.chip .count { color: var(--muted); font-weight: 400; font-size: 0.85em; }
+.chip[aria-checked="true"] .count { color: inherit; }
 
-.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 8px 0 12px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 4px 0 12px; }
 .page {
   display: block;
   position: relative;
@@ -154,46 +179,85 @@ button, .button {
 @keyframes shimmer { to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .page.is-loading::after { animation: none; } }
 
-/* --- a song: header, toolbar, panels --------------------------------------------------- */
+/* --- a song: header, one row of tools, panels ------------------------------------------ */
 :root {
   --read-size: 20px;
   --read-line: 1.25;
   --read-font: system-ui, -apple-system, "Segoe UI", sans-serif;
   --lyric-ink: var(--fg);
   --chord-ink: #3b73c4;
-  --chord-scale: 0.75;
+  --chord-scale: 0.8;
 }
-.song-head h1 { margin-bottom: 0; }
+/* Content first: back, title, one line of byline, one row of tools, then the song. The back
+   link and the groups line keep a full-size target by reaching into the space around them. */
+.song-head .back {
+  display: inline-flex; align-items: center; min-height: 44px;
+  margin: -8px 0 -6px; padding: 0 12px 0 0;
+  color: var(--accent); text-decoration: none;
+}
+.song-head h1 { margin: 0; line-height: 1.2; }
+.byline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.5em; margin: 0; color: var(--muted); font-size: 0.92em; min-height: 1.45em; }
+.byline > span:empty { display: none; }
+.byline .capo::before, .byline .in-groups-button::before { content: "·"; display: inline-block; margin-right: 0.5em; color: var(--muted); text-decoration: none; }
+.byline > :first-child::before,
+.byline .artist:empty + .capo::before,
+.byline .artist:empty + .capo:empty + .in-groups-button::before { content: none; }
+.in-groups-button {
+  font: inherit; color: var(--muted); background: none; border: 0; border-radius: 0;
+  padding: 12px 0; margin: -12px 0; min-height: 0; /* a 44px target over a line of text */
+  text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; text-align: left;
+}
+.in-groups-button.none { color: var(--accent); text-decoration: none; }
+.in-groups-button[aria-expanded="true"] { color: var(--fg); }
+
 .toolbar-wrap {
   position: relative;
   top: 0;
   z-index: 2;
   background: var(--bg);
-  margin: 8px calc(-1 * var(--gutter)) 12px;
-  padding: 8px var(--gutter);
+  margin: 6px calc(-1 * var(--gutter)) 10px;
+  padding: 6px 12px;
   border-bottom: 1px solid var(--line);
 }
-.toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.92em; }
-.group { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--line); border-radius: var(--radius); padding: 2px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 0.92em; }
+.group { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: var(--radius); }
 .toolbar button, .panel button.text {
   font: inherit; font-size: 0.95em;
-  min-height: 36px; min-width: 34px; padding: 2px 8px;
+  min-height: var(--tap); min-width: var(--tap); padding: 2px 8px;
   border: 0; border-radius: 8px; background: transparent; color: var(--fg); cursor: pointer;
 }
-.toolbar > button.text { border: 1px solid var(--line); border-radius: var(--radius); }
-.toolbar button:hover, .toolbar button[aria-expanded="true"] { background: var(--line); }
-.toolbar button.icon { font-weight: 600; }
+.toolbar button.tool { border: 1px solid var(--line); border-radius: var(--radius); font-weight: 600; }
+.toolbar button[aria-expanded="true"] { background: var(--line); }
+@media (hover: hover) { .toolbar button:hover { background: var(--line); } }
+.toolbar button.icon { font-weight: 600; padding: 2px 4px; font-variant-numeric: tabular-nums; }
 .toolbar button.big { font-size: 1.1em; }
-.size-value { min-width: 2.2em; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 0.9em; }
-.seg-switch button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+.toolbar button.key { font-weight: 600; padding: 2px 6px; }
+.toolbar button.key small { font-size: 0.8em; color: var(--muted); font-weight: 400; }
+.toolbar button.key[aria-expanded="true"] small { color: inherit; }
+/* One row down to 360px: tighter spacing, never smaller targets. */
+@media (max-width: 379px) {
+  .toolbar-wrap { padding-left: 6px; padding-right: 6px; }
+  .toolbar { gap: 2px; }
+  .toolbar .size-value { min-width: 1.4em; }
+}
+.size-value { min-width: 1.8em; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 0.9em; }
 .panels:empty { display: none; }
 .panel {
   margin-top: 8px; padding: 12px;
   background: var(--panel-bg); border: 1px solid var(--line); border-radius: var(--radius);
-  max-height: 60vh; overflow-y: auto;
+  max-height: 65vh; overflow-y: auto; overscroll-behavior: contain;
 }
 .panel .hint { margin: 0 0 8px; font-size: 0.9em; }
 .panel button.text { color: var(--accent); padding-left: 0; }
+
+/* the ⋯ panel: a short list of actions */
+.panel.more { padding: 4px; }
+.menu-item {
+  display: flex; flex-direction: column; align-items: flex-start; width: 100%; min-height: 48px;
+  padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--fg); text-align: left;
+}
+.menu-item small { color: var(--muted); font-size: 0.82em; }
+@media (hover: hover) { .menu-item:hover { background: var(--line); } }
 
 .keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; margin-bottom: 10px; }
 .keys button {
@@ -210,13 +274,44 @@ button, .button {
 .chord-map td:last-child { color: var(--accent); }
 .chord-map tr.same td:last-child { color: inherit; }
 
-.look .row { display: flex; align-items: center; gap: 10px; margin: 8px 0; flex-wrap: wrap; }
-.look .row { flex-wrap: nowrap; }
-.look .label { flex: 0 0 5.2em; }
-.look input[type="range"] { flex: 1 1 60px; min-width: 0; accent-color: var(--accent); }
-.look input[type="color"] { width: 40px; height: 32px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: none; }
-.look output { flex: 0 0 2.8em; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
-.look select { font: inherit; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: inherit; }
+/* --- the look (Aa) and the print layout: rows of settings ------------------------------- */
+.look .row, .layout .row { display: flex; align-items: center; gap: 6px 10px; margin: 6px 0; }
+.row.choice { align-items: flex-start; }
+.row .label { flex: 0 0 7.4em; color: var(--muted); font-size: 0.9em; padding-top: 0; }
+.row.choice .label { padding-top: calc((var(--tap) - 1.3em) / 2); }
+.row .chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 auto; min-width: 0; }
+.row.switch { cursor: pointer; min-height: var(--tap); }
+.row.switch input { width: 22px; height: 22px; margin: 0 4px 0 0; accent-color: var(--accent); }
+.look output { flex: 0 0 3em; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.look input[type="color"] { width: 52px; height: var(--tap); padding: 2px; border: 1px solid var(--line); border-radius: 8px; background: none; }
+.look .fine { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 4px; }
+.look .fine summary { min-height: var(--tap); display: flex; align-items: center; cursor: pointer; color: var(--accent); }
+.swatch { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--line); }
+.swatch.auto { background: linear-gradient(135deg, #fbfaf7 50%, #161615 50%); }
+.layout { margin: 0 0 12px; }
+/* On a phone a choice's label goes above its chips, which then have the full width. */
+@media (max-width: 520px) {
+  .row.choice { flex-direction: column; align-items: stretch; gap: 4px; margin: 10px 0; }
+  .row.choice .label { flex: none; padding-top: 0; }
+}
+
+/* Sliders: one look in both themes, with a thumb big enough for a thumb on a touch screen. */
+input[type="range"] {
+  -webkit-appearance: none; appearance: none; flex: 1 1 60px; min-width: 0;
+  height: var(--tap); background: transparent; margin: 0;
+}
+input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--line); }
+input[type="range"]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--line); }
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 20px; height: 20px; margin-top: -8px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--panel-bg);
+}
+input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); border: 2px solid var(--panel-bg); }
+@media (pointer: coarse) {
+  input[type="range"]::-webkit-slider-thumb { width: 28px; height: 28px; margin-top: -12px; }
+  input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; }
+}
+input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 
 /* --- the reader: chords over the syllables they land on --------------------------------- */
 .reader {
@@ -226,11 +321,11 @@ button, .button {
   color: var(--lyric-ink);
   overflow-wrap: anywhere;
 }
-.reader .facts { font-size: 0.7em; color: var(--muted); margin: 0 0 0.6em; }
 .reader .section-label {
   font-size: 0.6em; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--muted); margin: 0.9em 0 0.1em;
 }
+.reader > .section-label:first-child { margin-top: 0; }
 .reader .line { min-height: calc(var(--read-line) * 1em); white-space: pre-wrap; }
 .reader .line.blank { min-height: 0.6em; }
 .reader .line.with-chords { white-space: normal; padding-top: 0.15em; }
@@ -247,23 +342,9 @@ button, .button {
 .reader .ly { white-space: pre-wrap; }
 .reader .line.chords-only { display: flex; flex-wrap: wrap; gap: 0 0.2em; }
 .reader .line.chords-only .ch { padding-right: 0.6em; }
-.print .layout { margin-top: 0; }
 @media print {
-  .toolbar-wrap, .song-head .back { display: none; }
+  .toolbar-wrap, .song-head .back, .scroll-pill, .in-groups-button, .toast { display: none; }
 }
-.toolbar button.key small { font-size: 0.8em; color: var(--muted); }
-.toolbar button.key[aria-expanded="true"] small { color: inherit; }
-
-/* --- the reader's display: paper, chords, columns, sections ---------------------------- */
-.display { border: 0; padding: 0; margin: 0 0 14px; }
-.display legend { color: var(--muted); font-size: 0.92em; margin-bottom: 4px; padding: 0; }
-.display .row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0; }
-.display .label { flex: 0 0 4.6em; color: var(--muted); font-size: 0.9em; }
-.display button.chip { font: inherit; font-size: 0.92em; background: transparent; color: var(--fg); }
-.display button.chip[aria-checked="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
-.swatch { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--line); }
-.swatch.auto { background: linear-gradient(135deg, #fbfaf7 50%, #161615 50%); }
-
 .reader .ch.in {
   display: inline;
   padding: 0 0.25em 0 0;
@@ -272,23 +353,62 @@ button, .button {
 }
 .reader.chords-inline .line { white-space: normal; }
 .reader.two-columns { column-count: 2; column-gap: 1.6em; column-rule: 1px solid var(--line); }
-.reader.two-columns .facts { column-span: all; }
 .reader .line, .reader .section-label { break-inside: avoid; }
 .reader.shaded .fam-chorus { background: var(--chorus-band); }
 .reader.shaded .fam-bridge { background: var(--bridge-band); }
 .reader.shaded [class*="fam-"] { margin-left: -0.3em; margin-right: -0.3em; padding-left: 0.3em; padding-right: 0.3em; }
 .reader.shaded .section-label[class*="fam-"] { margin-top: 0.9em; margin-bottom: 0; padding-top: 0.2em; }
+.reader.shaded > .section-label[class*="fam-"]:first-child { margin-top: 0; }
 
-/* --- the library: your songs, an edit mode ----------------------------------------------- */
+/* --- the library: your songs, the group chips, an edit mode ------------------------------ */
 .library-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .library-head h2 { margin-bottom: 0.2em; }
-.library-head .text, .edit-actions .text { font: inherit; background: none; border: 0; color: var(--accent); cursor: pointer; padding: 6px 0; }
+.library-head button.text { min-width: var(--tap); padding: 6px 4px; }
 .edit-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 6px; }
-.edit-actions[hidden] { display: none; }
 button.danger { background: #b3261e; border-color: #b3261e; color: #fff; }
 button.danger:disabled { opacity: 0.4; cursor: default; }
 .songs.picking label { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.6em; padding: 12px 2px; min-height: 44px; cursor: pointer; }
-.songs.picking input { width: 20px; height: 20px; align-self: center; accent-color: var(--accent); margin: 0 4px 0 0; }
+.songs.picking input { width: 22px; height: 22px; align-self: center; accent-color: var(--accent); margin: 0 4px 0 0; }
+.edit-buttons { display: flex; gap: 8px; }
+.secondary-button { font: inherit; padding: 9px 14px; border-radius: var(--radius); border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; }
+.secondary-button:disabled { opacity: 0.4; cursor: default; }
+
+/* The group chips (zodal-groups renderGroupChips): one scrolling row per level, edge to edge. */
+.group-nav { margin: 2px 0 6px; }
+.group-nav .zg-group-chips-row { margin: 0 calc(-1 * var(--gutter)); padding: 2px var(--gutter) 4px; scrollbar-width: none; }
+.group-nav .zg-group-chips-row::-webkit-scrollbar { display: none; }
+.group-nav .zg-group-chip { font-size: 0.92em; border-color: var(--line); }
+.group-nav .zg-group-chip[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.group-nav .zg-group-chip.is-on-path { color: var(--accent); }
+.group-menu { margin: 6px 0 10px; }
+
+/* "Arrange groups" (wide screens): the zodal-groups tree, for dragging into groups. */
+.arrange { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 4px; }
+.arrange summary { min-height: var(--tap); display: flex; align-items: center; cursor: pointer; color: var(--accent); }
+.group-tree .zg-tree { padding-left: 0; }
+
+/* --- auto-scroll: a ▶ that floats over the song, opening while it runs -------------------- */
+.scroll-pill {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 3;
+  display: flex; align-items: center; gap: 2px;
+  padding: 3px;
+  background: color-mix(in srgb, var(--panel-bg) 78%, transparent);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+  font-size: 0.95em;
+}
+.scroll-pill button {
+  font: inherit; min-width: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 999px;
+  background: transparent; color: var(--fg); cursor: pointer;
+}
+.scroll-pill button.play[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+.scroll-pill .size-value { min-width: 1.6em; }
+.read { padding-bottom: 72px; } /* the end of the song clears the pill */
 
 /* On a wide screen the toolbar stays in view; on a phone it scrolls away, leaving the song
    the whole screen, and the scroll controls float. */
@@ -296,53 +416,18 @@ button.danger:disabled { opacity: 0.4; cursor: default; }
   .toolbar-wrap { position: sticky; }
 }
 
-/* --- auto-scroll: a pill that floats over the song ----------------------------------------- */
-.scroll-pill {
-  position: fixed;
-  right: max(16px, env(safe-area-inset-right));
-  bottom: max(16px, env(safe-area-inset-bottom));
-  z-index: 3;
-  display: flex; align-items: center; gap: 2px;
-  padding: 4px;
-  background: var(--panel-bg);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
-  font-size: 0.95em;
-}
-.scroll-pill button {
-  font: inherit; min-width: 40px; min-height: 40px; border: 0; border-radius: 999px;
-  background: transparent; color: var(--fg); cursor: pointer;
-}
-.scroll-pill button.play[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
-.scroll-pill .size-value { min-width: 1.6em; }
-.read { padding-bottom: 72px; } /* the end of the song clears the pill */
-
-/* --- groups ---------------------------------------------------------------------------------- */
-.library-head .head-tools { display: flex; align-items: center; gap: 10px; }
-.seg-switch.small { font-size: 0.85em; }
-.seg-switch.small button { font: inherit; border: 0; background: transparent; color: var(--fg); padding: 4px 10px; border-radius: 8px; cursor: pointer; min-height: 32px; }
-.seg-switch.small button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
-.group-filter { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0 8px; scrollbar-width: none; }
-.group-filter[hidden] { display: none; }
-.group-filter button.chip { font: inherit; font-size: 0.9em; background: transparent; color: var(--fg); white-space: nowrap; flex: 0 0 auto; }
-.group-filter button.chip[aria-checked="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
-.group-filter .count { margin-left: 6px; color: var(--muted); font-weight: 400; font-size: 0.85em; }
-.edit-buttons { display: flex; gap: 8px; }
-.secondary-button { font: inherit; padding: 9px 14px; border-radius: var(--radius); border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; }
-.secondary-button:disabled { opacity: 0.4; cursor: default; }
-.songs .in-groups { flex-basis: 100%; font-size: 0.82em; color: var(--muted); }
-.group-menu { margin: 6px 0 10px; }
-.group-tree { font-size: 1.02em; }
-.group-tree .zg-tree { padding-left: 0; }
-.song-groups { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; font-size: 0.92em; }
-.song-groups:empty { display: none; }
-.song-groups .label { color: var(--muted); }
-.song-groups .chips-host { flex: 1 1 200px; }
-.song-groups input { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: inherit; min-width: 9em; }
 .toast {
   position: fixed; left: 50%; bottom: max(80px, env(safe-area-inset-bottom)); transform: translateX(-50%);
   z-index: 4; max-width: min(90vw, 480px); padding: 10px 14px; border-radius: var(--radius);
   background: var(--fg); color: var(--bg); font-size: 0.92em; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
 }
-.unfiled h3 { font-size: 0.9rem; color: var(--muted); font-weight: 600; margin: 1.2em 0 0.2em; }
+
+/* --- zodal-groups, themed ---------------------------------------------------------------
+   The vendored styles take the page's type and keep 44px targets on touch; this sets the
+   desktop row height to the page's and themes the tag menu. Its stylesheet loads after this
+   one, so these rules start with `body` to win. */
+:root { --zg-row-min: var(--tap); }
+body .zg-tagmenu-list { max-height: 45vh; }
+/* the keyboard's highlight only while the menu has focus: on a phone it reads as "selected" */
+body .zg-tagmenu:not(:focus-within) .zg-tagmenu-option.is-active { background: none; outline: none; }
+body .zg-tagmenu-apply[aria-disabled="false"] { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }

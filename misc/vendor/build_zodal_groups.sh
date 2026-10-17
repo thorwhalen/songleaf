@@ -8,7 +8,7 @@
 # Needs git, node and npm. Builds in a temporary directory; touches nothing but the two
 # vendored files. Once zodal-groups >= 0.2.0 is on npm, build from the npm packages instead.
 set -euo pipefail
-REF="${1:-59f8688}"   # i2mint/zodal-groups, the commit the vendored files were built from
+REF="${1:-094a74e}"   # i2mint/zodal-groups, the commit the vendored files were built from
 REPO="https://github.com/i2mint/zodal-groups.git"
 HERE="$(cd "$(dirname "$0")/../.." && pwd)"
 OUT="$HERE/songleaf/data/web/vendor"
@@ -21,9 +21,9 @@ cd "$WORK"
 npm init -y >/dev/null
 npm install --silent --no-audit --no-fund esbuild@0.25 zod@4
 cat > entry.js <<'JS'
-// What the songleaf page uses from zodal-groups: the model, its snapshot, three renderers.
+// What the songleaf page uses from zodal-groups: the model, its snapshot, four renderers.
 export { defineGroups, toSnapshot } from "@zodal/groups-core";
-export { renderTree, renderTagInput, renderTagMenu } from "@zodal/groups-ui-vanilla";
+export { renderTree, renderTagInput, renderTagMenu, renderGroupChips } from "@zodal/groups-ui-vanilla";
 JS
 P="$WORK/src/packages"
 node_modules/.bin/esbuild entry.js --bundle --format=esm --minify --target=es2020 --legal-comments=none \

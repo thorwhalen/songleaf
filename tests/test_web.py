@@ -286,3 +286,49 @@ def test_the_vendored_groups_bundle_is_served(client):
     assert "defineGroups" in js.text and "renderTagMenu" in js.text
     assert client.get("/ui/vendor/other.js").status_code == 404
     assert client.get("/ui/vendor%2F..%2Fapp.js").status_code == 404
+
+
+def test_layout_controls_name_every_option_once_in_plain_words(client):
+    from songleaf.render import LAYOUT_OPTIONS
+
+    body = client.get("/layouts").json()
+    offered = [
+        choice["option"]
+        for control in body["controls"]
+        for choice in control["choices"]
+        if choice["option"]
+    ]
+    assert sorted(offered) == sorted(set(LAYOUT_OPTIONS) - {"dense"})
+    for control in body["controls"]:
+        assert control["label"] and all(c["label"] for c in control["choices"])
+        # each control offers the default layout's own choice first
+        assert control["choices"][0]["option"] == ""
+    labels = {o["name"]: o["label"] for o in body["options"]}
+    assert labels["packed"] == "Break at rhymes" and labels["two-column"] == "Two"
+
+
+def test_options_in_one_control_set_the_same_thing(client):
+    body = client.get("/layouts").json()
+    sets = {o["name"]: set(o["sets"]) for o in body["options"]}
+    for control in body["controls"]:
+        names = [c["option"] for c in control["choices"] if c["option"]]
+        common = set.intersection(*(sets[n] for n in names))
+        assert common, control["name"]  # so the page's choices exclude each other
+
+
+def test_every_ui_file_is_served(client):
+    from songleaf.web import _UI_FILES
+
+    for name, media_type in _UI_FILES.items():
+        response = client.get(f"/ui/{name}")
+        assert response.status_code == 200, name
+        assert response.headers["content-type"].startswith(media_type)
+
+
+def test_the_reader_settings_map_onto_real_layout_options(client):
+    from songleaf.render import LAYOUT_OPTIONS
+
+    mapping = client.get("/layouts").json()["from_reader"]
+    assert set(mapping) == {"chordMode", "columns", "shade"}
+    for by_value in mapping.values():
+        assert set(by_value.values()) <= set(LAYOUT_OPTIONS) - {"dense"}
