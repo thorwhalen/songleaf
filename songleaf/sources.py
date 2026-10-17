@@ -53,16 +53,40 @@ class Hit:
         return {"key": self.key, **asdict(self)}
 
 
-def _load_kaggle_corpus():
-    from sung.chords_and_lyrics import get_lyrics_and_chords_dataset
+#: Where a copy of the corpus zip is found under the data root, before sung looks.
+KAGGLE_CHORDS_ZIP = os.path.join("chords-and-lyrics", "chords-and-lyrics-dataset.zip")
+_SUNG_ZIP_ENVVAR = "SUNG_CHORDS_AND_LYRICS_ZIP"
 
+
+class SourceUnavailable(RuntimeError):
+    """A source's data cannot be loaded here (a corpus that is not on this machine, say)."""
+
+
+def kaggle_chords_zip() -> str | None:
+    """The corpus zip under the data root (``datasets/`` + :data:`KAGGLE_CHORDS_ZIP`), if there is one.
+
+    ``$SUNG_CHORDS_AND_LYRICS_ZIP``, when set, wins: then this is ``None`` and
+    sung reads the variable itself.
+    """
+    if os.environ.get(_SUNG_ZIP_ENVVAR):
+        return None
+    path = os.path.join(data_dir("datasets"), KAGGLE_CHORDS_ZIP)
+    return path if os.path.isfile(path) else None
+
+
+def _load_kaggle_corpus():
     try:
-        return get_lyrics_and_chords_dataset(usecols=KaggleChordsSource.columns)
+        from sung.chords_and_lyrics import get_lyrics_and_chords_dataset
+
+        return get_lyrics_and_chords_dataset(
+            zip_path=kaggle_chords_zip(), usecols=KaggleChordsSource.columns
+        )
     except Exception as error:
-        raise RuntimeError(
-            "Could not load the Kaggle chords-and-lyrics corpus. Point "
-            "SUNG_CHORDS_AND_LYRICS_ZIP at a local copy of "
-            f"chords-and-lyrics-dataset.zip (from {KAGGLE_CHORDS_URL}). Without "
+        in_data_root = os.path.join(data_dir("datasets"), KAGGLE_CHORDS_ZIP)
+        raise SourceUnavailable(
+            "Could not load the Kaggle chords-and-lyrics corpus. Put a copy of "
+            f"chords-and-lyrics-dataset.zip (from {KAGGLE_CHORDS_URL}) at "
+            f"{in_data_root}, or point {_SUNG_ZIP_ENVVAR} at one. Without "
             "one, sung downloads it through haggle, which needs `pip install haggle` "
             f"and Kaggle credentials. (The loader said: {error})"
         ) from error

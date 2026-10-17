@@ -104,13 +104,35 @@ Songs are kept in a `MutableMapping` (`songleaf.song_store()`): one JSON file pe
 
 ## Sources
 
-`KaggleChordsSource` reads the [chords-and-lyrics dataset](https://www.kaggle.com/datasets/eitanbentora/chords-and-lyrics-dataset) through `sung`. It needs a local copy of the zip: point `SUNG_CHORDS_AND_LYRICS_ZIP` at it, or keep it where `haggle` downloads it (`$HAGGLE_ROOTDIR/zips/eitanbentora/chords-and-lyrics-dataset.zip`). Without a local copy, `sung` downloads it from Kaggle, which needs Kaggle credentials. The corpus was scraped from a chords site, so keep it to personal use.
+`KaggleChordsSource` reads the [chords-and-lyrics dataset](https://www.kaggle.com/datasets/eitanbentora/chords-and-lyrics-dataset) through `sung`. It needs a local copy of the zip: put it at `~/.local/share/songleaf/datasets/chords-and-lyrics/chords-and-lyrics-dataset.zip` (under the data root, so `SONGLEAF_DATA_DIR` moves it too), point `SUNG_CHORDS_AND_LYRICS_ZIP` at it, or keep it where `haggle` downloads it (`$HAGGLE_ROOTDIR/zips/eitanbentora/chords-and-lyrics-dataset.zip`). Without a local copy, `sung` downloads it from Kaggle, which needs Kaggle credentials. The corpus was scraped from a chords site, so keep it to personal use.
 
 Loading the corpus takes about five seconds on the first search in a process.
 
 Other sources surveyed, plus the Ultimate Guitar / MuseScore decisions, are in [`misc/docs/sources.md`](misc/docs/sources.md).
 
 `LocalFolderSource` indexes a folder of files you exported yourself from a paid chords/tab or score site (Ultimate Guitar, MuseScore, ...) — text charts are parsed like the Kaggle corpus, score/tab files (Guitar Pro, MusicXML, MSCZ, MIDI, PDF) are attached as a score link. Default folder: `~/.local/share/songleaf/imports/` (moved by `SONGLEAF_DATA_DIR`).
+
+## Web app
+
+`songleaf.web.mk_app()` is a FastAPI app over the same functions: search, the stored songs, the layout options, and the sheet as JSON, PDF and a PNG per page (for phone browsers that show no PDF inline). It also serves its own page, a search box and a sheet view with the layout options as toggles. The page is a two-line HTML shell that loads its script and style from the app, so it changes with the package.
+
+```bash
+pip install "songleaf[web]"
+```
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+from songleaf.web import mk_app, page_shell
+
+site = FastAPI()
+site.mount("/api/songleaf", mk_app())
+site.get("/songleaf/", response_class=HTMLResponse)(
+    lambda: page_shell(api="/api/songleaf", base="/songleaf")
+)
+```
+
+The app has no login of its own: put it behind whatever gates the host. It takes the same `sources=` and `store=` as `sheet`. A rendered sheet is kept in memory (`sheet_cache_size=`, default 32), so the page's requests for one sheet render it once.
 
 ## Extending
 
