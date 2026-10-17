@@ -206,6 +206,216 @@
     };
   })();
 
+  // --- groups: the library's groups, a zodal-groups space shared through the server ----
+
+  // Songs and groups are nodes; a membership is an edge (zodal-groups, profile "labels": a
+  // song can be in several groups, and groups can hold groups). The page edits a local space
+  // and saves its snapshot in the background, from the revision it was loaded at.
+  //
+  // What is kept until saved is not the deltas but the *intents* they carry: "S into G",
+  // "S out of G". When someone else saved first (409), or a reload brings newer groups, the
+  // page starts from those and replays its intents one by one: one already true is skipped,
+  // one about a song deleted meanwhile is dropped, and one the profile refuses is counted.
+  // Song nodes exist here only for their titles (labels); they are never saved.
+  const groups = (function () {
+    let zg = null; // the zodal-groups module, loaded on first use
+    let space = null; // the live Groups handle
+    let revision = 0;
+    let intents = []; // [{op: "add" | "remove", parent, child}] not yet saved, oldest first
+    let edgesById = new Map(); // id -> {parent, child}: what a "removed" edge id meant
+    let saveTimer = null;
+    let saving = null; // the save in flight (a promise)
+    let retryDelay = 0;
+    let blocked = ""; // why saving stopped ("" while it works)
+    let rebuilds = 0; // bumps when the space is replaced: a save in flight then re-saves
+    let unsubscribe = null;
+    let labels = new Map(); // stored song key -> "Title · Artist"
+    const listeners = new Set();
+    const notify = (event) => listeners.forEach((f) => f(event));
+
+    async function library() {
+      if (!zg) {
+        document.head.append(h("link", { rel: "stylesheet", href: CONFIG.api + "/ui/vendor/zodal-groups.css" }));
+        zg = await import(CONFIG.api + "/ui/vendor/zodal-groups.js");
+      }
+      return zg;
+    }
+    function setSongs(songs) {
+      labels = new Map(songs.map((s) => [s.key, [s.title, s.artist].filter(Boolean).join(" · ") || s.key]));
+    }
+    // A new space from a snapshot, or an Error: the current one is untouched until it works.
+    function build(snapshot) {
+      const nodes = snapshot.nodes.map((n) => (labels.has(n.id) ? { ...n, label: labels.get(n.id) } : n));
+      const present = new Set(nodes.map((n) => n.id));
+      for (const [key, label] of labels) if (!present.has(key)) nodes.push({ id: key, label });
+      return zg.defineGroups({ profile: "labels", nodes, edges: snapshot.edges });
+    }
+    function swap(next) {
+      if (unsubscribe) unsubscribe();
+      space = next;
+      edgesById = new Map([...space.space.edges.values()].map((e) => [e.id, { parent: e.parent, child: e.child }]));
+      unsubscribe = space.subscribe(({ delta }) => {
+        for (const e of delta.added || []) {
+          intents.push({ op: "add", parent: e.parent, child: e.child });
+          edgesById.set(e.id, { parent: e.parent, child: e.child });
+        }
+        for (const id of delta.removed || []) {
+          const e = edgesById.get(id);
+          if (e) intents.push({ op: "remove", parent: e.parent, child: e.child });
+          edgesById.delete(id);
+        }
+        schedule();
+        notify({ type: "change" });
+      });
+    }
+    const isIn = (child, parent) => space.parents(child).includes(parent);
+    const known = (id, snapshot) => labels.has(id) || snapshot.nodes.some((n) => n.id === id) || snapshot.edges.some((e) => e.parent === id);
+    // Start from `doc` and replay what this page did that it has not saved.
+    function adopt(doc) {
+      let next;
+      try {
+        next = build(doc.snapshot);
+      } catch (error) {
+        notify({ type: "error", message: `The saved groups could not be read (${error.message}).`, fatal: true });
+        return false;
+      }
+      const mine = intents;
+      intents = [];
+      revision = doc.revision;
+      rebuilds += 1;
+      swap(next);
+      let refused = 0;
+      for (const it of mine) {
+        if (!known(it.child, doc.snapshot)) { refused += 1; continue; } // a song deleted meanwhile
+        if (it.op === "add") {
+          if (!isIn(it.child, it.parent) && !space.add(it.child, it.parent).ok) refused += 1;
+        } else if (isIn(it.child, it.parent) && !space.remove(it.child, it.parent).ok) {
+          refused += 1;
+        }
+      }
+      notify({ type: "rebuilt" });
+      return { replayed: mine.length, refused };
+    }
+    // (Re)load: on every library view and song page, so the other person's changes show.
+    async function load(songs) {
+      await library();
+      const before = [...labels.keys()].join("\n");
+      setSongs(songs);
+      const asked = revision;
+      const doc = await getJSON("/groups");
+      if (space && doc.revision < revision) return space; // our own newer save landed meanwhile
+      const sameSongs = before === [...labels.keys()].join("\n");
+      if (space && doc.revision === asked && doc.revision === revision && sameSongs) return space; // nothing new
+      if (blocked && blocked !== "session") { intents = []; blocked = ""; } // a refused change is not replayed forever
+      const outcome = adopt(doc);
+      if (outcome && outcome.replayed) schedule(0);
+      return space;
+    }
+    function schedule(delay = 400) {
+      if (blocked) return;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(save, delay);
+    }
+    function snapshotToSave() {
+      const snapshot = zg.toSnapshot(space.space);
+      return { nodes: snapshot.nodes.filter((n) => !labels.has(n.id)), edges: snapshot.edges }; // songs: labels only
+    }
+    async function save({ keepalive = false } = {}) {
+      if (saving) { await saving; if (intents.length) schedule(); return; }
+      if (!intents.length || blocked) return;
+      const sent = intents.length;
+      const epoch = rebuilds;
+      const body = JSON.stringify({ revision, snapshot: snapshotToSave() });
+      saving = (async () => {
+        let response;
+        try {
+          response = await fetch(CONFIG.api + "/groups", {
+            method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body,
+            keepalive: keepalive && body.length < 60000, // a save as the page goes away
+          });
+        } catch (_) {
+          return retry("The groups could not be saved: no connection. Trying again…");
+        }
+        if (response.status === 409) {
+          const current = (await response.json()).current;
+          try { setSongs(await getJSON("/songs")); } catch (_) { /* titles may lag; the server drops deleted songs */ }
+          const outcome = adopt(current);
+          if (outcome) {
+            notify({ type: "merged", refused: outcome.refused });
+            if (intents.length) schedule(0);
+          }
+          return;
+        }
+        if (response.ok) {
+          revision = (await response.json()).revision;
+          if (epoch === rebuilds) intents = intents.slice(sent); // what changed during the save is saved next
+          // else the space was rebuilt meanwhile: keep the replayed intents and save once more
+          retryDelay = 0;
+          notify({ type: "saved" });
+          if (intents.length) schedule();
+          return;
+        }
+        const detail = await errorText(response);
+        if (response.status >= 500) return retry(`The groups could not be saved (${detail}). Trying again…`);
+        blocked = response.status === 401 || response.status === 403 ? "session" : "refused";
+        notify({
+          type: "error",
+          message: blocked === "session"
+            ? "Your sign-in has expired: reload the page to keep changing groups."
+            : `That change to the groups was refused (${detail}); it will be undone when the groups reload.`,
+        });
+      })();
+      try { await saving; } finally { saving = null; }
+    }
+    function retry(message) {
+      retryDelay = Math.min(retryDelay ? retryDelay * 2 : 5000, 60000);
+      notify({ type: "error", message });
+      schedule(retryDelay);
+    }
+    function songsIn(group) {
+      return space ? space.members(group, { expand: "closure" }).filter((id) => labels.has(id)) : [];
+    }
+    return {
+      load,
+      get space() { return space; },
+      get zg() { return zg; },
+      // The groups (nodes that are not songs and hold something), with how many songs each
+      // holds, nested groups included.
+      list() {
+        if (!space) return [];
+        return [...space.space.nodes.keys()]
+          .filter((id) => !labels.has(id) && space.children(id).length)
+          .map((id) => ({ id, label: (space.space.nodes.get(id) || {}).label || id, count: songsIn(id).length }))
+          .sort((a, b) => a.label.localeCompare(b.label));
+      },
+      songsIn,
+      groupsOf(key) { return space ? space.parents(key).filter((id) => !labels.has(id)) : []; },
+      isSong(id) { return labels.has(id); },
+      onChange(f) { listeners.add(f); return () => listeners.delete(f); },
+      flush() { if (intents.length && !blocked) { clearTimeout(saveTimer); save({ keepalive: true }); } },
+    };
+  })();
+  window.addEventListener("pagehide", () => groups.flush()); // last chance to save
+
+  // A small message at the bottom of the screen: a save that failed, a merge.
+  function toast(text) {
+    const old = document.querySelector(".toast");
+    if (old) old.remove();
+    const el = h("div", { class: "toast", role: "status" }, text);
+    document.body.append(el);
+    setTimeout(() => el.remove(), 5000);
+  }
+  let lastToast = "";
+  groups.onChange((event) => {
+    if (event.type === "error" && event.message !== lastToast) { lastToast = event.message; toast(event.message); }
+    else if (event.type === "saved") lastToast = "";
+    else if (event.type === "merged") {
+      toast(event.refused
+        ? `The groups were changed elsewhere; ${event.refused} of your changes no longer applied.`
+        : "The groups were changed elsewhere; your changes were added to them.");
+    }
+  });
+
   // --- the route: one module owns history ------------------------------------------------
 
   function readRoute() {
@@ -392,12 +602,21 @@
   }
 
   // The stored songs, with an Edit mode: pick songs, then act on them (delete).
+  let libraryFilter = ""; // the group the list is narrowed to ("" for all), for this page's lifetime
+  let libraryView = "list"; // "list" or "tree"
+
+  // Your songs: the list (or the groups tree), a group filter, and an Edit mode to pick songs
+  // and group or delete them. A change to the groups redraws the counts and the list; a
+  // rebuilt space (a reload, a merge) re-binds everything to the new one.
   function library(songs, refresh) {
     const selected = new Set();
     let editing = false;
-    const listHost = h("div");
-    const count = h("span", { class: "muted" });
     let busy = false;
+    let tree = null; // the tree renderer, kept across data redraws so expanded groups stay open
+    const listHost = h("div");
+    const filterHost = h("div", { class: "group-filter", role: "radiogroup", "aria-label": "Show" });
+    const menuHost = h("div", { class: "group-menu-host" });
+    const count = h("span", { class: "muted" });
     const remove = h("button", {
       type: "button", class: "danger", disabled: true,
       onclick: async () => {
@@ -408,7 +627,7 @@
         if (!window.confirm(`Delete ${what} from your songs? Search finds ${one ? "it" : "them"} again.`)) return;
         busy = true;
         listHost.inert = true; edit.disabled = true; // nothing changes while deleting
-        remove.disabled = true;
+        remove.disabled = true; label.disabled = true;
         remove.textContent = "Deleting…";
         let failed = 0;
         for (const key of keys) {
@@ -424,25 +643,96 @@
         refresh();
       },
     }, "Delete");
-    const actions = h("div", { class: "edit-actions", hidden: true }, count, remove);
+    const label = h("button", { type: "button", class: "secondary-button", disabled: true, onclick: () => openGroupMenu() }, "Group…");
+    const actions = h("div", { class: "edit-actions", hidden: true }, count, h("div", { class: "edit-buttons" }, label, remove));
     const edit = h("button", {
       type: "button", class: "text",
       onclick: () => { editing = !editing; selected.clear(); draw(); },
     });
+    const viewSwitch = h("div", { class: "group seg-switch small", role: "group", "aria-label": "View" });
+
+    function openGroupMenu() {
+      if (!groups.space || !selected.size) return;
+      const panel = h("div", { class: "panel group-menu" });
+      menuHost.replaceChildren(panel);
+      groups.zg.renderTagMenu(panel, groups.space, {
+        selection: [...selected],
+        candidates: () => groups.list().map((g) => g.id), // groups only: never a song
+        onClose: () => { menuHost.replaceChildren(); redraw(); },
+      });
+    }
     const sync = () => {
       count.textContent = selected.size ? `${selected.size} selected` : "Pick songs";
-      remove.disabled = !selected.size;
+      remove.disabled = busy || !selected.size;
+      label.disabled = busy || !selected.size || !groups.space;
     };
+    function shown() { // the songs the filter lets through, in library order
+      if (!libraryFilter || !groups.space) return songs;
+      const keep = new Set(groups.songsIn(libraryFilter));
+      return songs.filter((s) => keep.has(s.key));
+    }
+    function drawFilter() {
+      const list = groups.list();
+      if (libraryFilter && !list.some((g) => g.id === libraryFilter)) libraryFilter = "";
+      filterHost.hidden = !list.length || libraryView === "tree";
+      const chip = (id, text, n) => h("button", {
+        type: "button", role: "radio", class: "chip", "aria-checked": String(libraryFilter === id),
+        onclick: () => { libraryFilter = id; redraw(); },
+      }, text, h("span", { class: "count" }, String(n)));
+      filterHost.replaceChildren(chip("", "All", songs.length), ...list.map((g) => chip(g.id, g.label, g.count)));
+      viewSwitch.hidden = !list.length && libraryView === "list";
+      viewSwitch.replaceChildren(...[["list", "List"], ["tree", "Groups"]].map(([value, text]) => h("button", {
+        type: "button", "aria-pressed": String(libraryView === value),
+        onclick: () => { libraryView = value; editing = false; selected.clear(); draw(); },
+      }, text)));
+    }
+    function openSong(song) {
+      navigate({ song: song.key, t: prefs.transposeOf(song.key) }, { state: { from: "search", title: song.title, artist: song.artist } });
+    }
+    function drawTree() {
+      if (!tree || tree.space !== groups.space) { // a new space (or none yet): a new tree
+        const host = h("div", { class: "group-tree" });
+        const unfiled = h("div", { class: "unfiled" });
+        const renderer = groups.zg.renderTree(host, groups.space, {
+          onSelect: (id) => { const song = songs.find((s) => s.key === id); if (song) openSong(song); },
+          onChange: () => {},
+        });
+        tree = { space: groups.space, renderer, host, unfiled };
+        listHost.replaceChildren(host, unfiled,
+          h("p", { class: "muted hint" }, "Tap a song to open it. On a computer, drag a song or a group onto a group to add it there. To file songs from a phone, use Edit → Group… in the list."));
+      } else {
+        tree.renderer.render();
+      }
+      const filed = new Set(songs.filter((s) => groups.groupsOf(s.key).length).map((s) => s.key));
+      const loose = songs.filter((s) => !filed.has(s.key));
+      tree.unfiled.replaceChildren(...(loose.length ? [h("h3", {}, "Not in a group"), songList(loose)] : []));
+    }
+    // Counts, filter and list (or tree): after any change to the groups. The menu stays.
+    function redraw() {
+      drawFilter();
+      if (libraryView === "tree" && groups.space) drawTree();
+      else { tree = null; listHost.replaceChildren(editing ? pickList(shown(), selected, sync) : songList(shown())); }
+      sync();
+    }
+    // Everything: after a mode or view switch, and when the space is rebuilt.
     function draw() {
       edit.textContent = editing ? "Done" : "Edit";
       actions.hidden = !editing;
-      listHost.replaceChildren(editing ? pickList(songs, selected, sync) : songList(songs));
-      sync();
+      edit.hidden = libraryView === "tree";
+      menuHost.replaceChildren();
+      tree = null;
+      redraw();
     }
     draw();
+    groups.load(songs).then(() => draw()).catch((error) => toast(`The groups could not be loaded: ${error.message}`));
+    const unsubscribe = groups.onChange((event) => {
+      if (!listHost.isConnected) { unsubscribe(); return; } // this view is gone
+      if (event.type === "rebuilt") draw();
+      else if (event.type === "change" && !menuHost.hasChildNodes()) redraw(); // the menu redraws itself; we follow on close
+    });
     return h("div", { class: "library" },
-      h("div", { class: "library-head" }, h("h2", {}, "Your songs"), edit),
-      actions, listHost);
+      h("div", { class: "library-head" }, h("h2", {}, "Your songs"), h("div", { class: "head-tools" }, viewSwitch, edit)),
+      filterHost, actions, menuHost, listHost);
   }
 
   function pickList(songs, selected, onChange) {
@@ -465,8 +755,14 @@
           e.preventDefault();
           navigate(route, { state: { from: "search", title: song.title, artist: song.artist } });
         },
-      }, h("span", { class: "title" }, song.title || song.key), song.artist && h("span", { class: "artist" }, song.artist)));
+      }, h("span", { class: "title" }, song.title || song.key), song.artist && h("span", { class: "artist" }, song.artist),
+        groupLine(song.key)));
     }));
+  }
+
+  function groupLine(key) {
+    const names = groups.groupsOf(key).map((id) => (groups.space.space.nodes.get(id) || {}).label || id);
+    return names.length ? h("span", { class: "in-groups" }, names.join(" · ")) : null;
   }
 
   // ----- a song: reader and print views share the header and the toolbar -----------------
@@ -491,7 +787,9 @@
       },
     }, "← Search");
     const body = h("section", { class: "song-body" });
-    app.replaceChildren(h("header", { class: "song-head" }, back, heading, byline), body);
+    const groupsHost = h("div", { class: "song-groups" });
+    app.replaceChildren(h("header", { class: "song-head" }, back, heading, byline, groupsHost), body);
+    showSongGroups(route.song, groupsHost, gen);
     if (!sameSong) heading.focus({ preventScroll: true });
 
     const spinner = loading("Opening the song…");
@@ -527,6 +825,46 @@
       ? printView(song, route, gen)
       : h("div", { class: "read" }, displayControls(route), readerView(song, table, look), scrollControls(route.song, look));
     body.replaceChildren(toolbar, content);
+  }
+
+  // The song's groups as chips: type to add it to a group (or make one), × to take it out.
+  async function showSongGroups(key, host, gen) {
+    try {
+      await groups.load(await getJSON("/songs"));
+    } catch (_) {
+      return; // groups are extra: the song reads without them
+    }
+    if (gen !== generation || !groups.space) return;
+    let observer = null;
+    const show = () => {
+      if (observer) observer.disconnect();
+      const holder = h("div", { class: "chips-host" });
+      host.replaceChildren(h("span", { class: "label" }, "Groups"), holder);
+      groups.zg.renderTagInput(holder, groups.space).show(key);
+      observer = suggestGroups(holder);
+    };
+    show();
+    const unsubscribe = groups.onChange((event) => {
+      if (!host.isConnected) { unsubscribe(); if (observer) observer.disconnect(); return; }
+      if (event.type === "rebuilt") show(); // a reload or a merge: the chips follow the new space
+    });
+  }
+
+  // The tag input takes any name; offer the existing groups as suggestions (a phone's keyboard
+  // shows them above the keys). Re-attached after each redraw of the chips.
+  function suggestGroups(holder) {
+    const id = "song-groups-suggestions";
+    const attach = () => {
+      let list = document.getElementById(id);
+      if (!list) { list = h("datalist", { id }); document.body.append(list); }
+      list.replaceChildren(...groups.list().map((g) => h("option", { value: g.label })));
+      const input = holder.querySelector("input");
+      if (input && input.getAttribute("list") !== id) { input.setAttribute("list", id); input.setAttribute("enterkeyhint", "done"); }
+    };
+    attach();
+    const observer = new MutationObserver(attach);
+    observer.observe(holder, { childList: true, subtree: true });
+    return observer;
   }
 
   function tableFor(song, t) {

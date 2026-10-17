@@ -167,17 +167,21 @@ def _resolve(query: str, *, pick: int, refresh: bool, sources, store):
     return key, store[key]
 
 
-def forget(key: str, *, store=None) -> dict:
-    """Remove a song from the stored songs. It can be found and stored again by searching.
+def forget(key: str, *, store=None, library_root=None) -> dict:
+    """Remove a song from the stored songs and from every group it was in.
 
-    Returns ``{"key", "deleted"}``; ``deleted`` is False when it was not stored.
+    It can be found and stored again by searching. Returns ``{"key", "deleted"}``;
+    ``deleted`` is False when it was not stored.
     """
+    from songleaf.library import drop_item
+
     store = song_store() if store is None else store
     try:
         del store[key]  # one step: two deletes at once cannot both find it
         deleted = True
     except (KeyError, FileNotFoundError, ValueError):
         deleted = False
+    drop_item(key, root=library_root)
     return {"key": key, "deleted": deleted}
 
 

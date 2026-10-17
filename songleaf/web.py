@@ -5,7 +5,10 @@ apps.thorwhalen.com). Its routes:
 
 - ``GET /search?q=&artist=&lyrics=&limit=``: hits, best first (``tools.search``)
 - ``GET /songs``: the stored songs, with title and artist
-- ``DELETE /songs?key=``: remove one from them (``tools.forget``)
+- ``DELETE /songs?key=``: remove one from them, and from its groups (``tools.forget``)
+- ``GET /groups``, ``PUT /groups``: the library's groups, a zodal-groups snapshot with a
+  revision (:mod:`songleaf.library`); a save from a stale revision is a 409 carrying the
+  current groups
 - ``GET /layouts``: the layout options a sheet can combine, and the default colours
 - ``GET /song?key=``: the song as JSON (``tools.song``): text, chords, sections, its
   key and a chord table for every key it can move to; the page draws it as text
@@ -48,7 +51,9 @@ from functools import lru_cache
 from importlib.resources import files
 from urllib.parse import quote
 
-from songleaf import tools
+from starlette.requests import Request  # module level: FastAPI resolves annotations here
+
+from songleaf import library, tools
 from songleaf.render import (
     LAYOUT_OPTIONS,
     DenseStyle,
@@ -62,7 +67,13 @@ from songleaf.sources import SongNotFound, SourceUnavailable
 #: Failures a request can cause, and the HTTP status each becomes. Nothing broader:
 #: a KeyError or ValueError from a bug must not read as "not found" or "your fault".
 ERROR_STATUS = {SongNotFound: 404, SourceUnavailable: 503}
-_UI_FILES = {"app.js": "text/javascript", "style.css": "text/css"}
+_UI_FILES = {
+    "app.js": "text/javascript",
+    "style.css": "text/css",
+    # zodal-groups (model + vanilla renderers), bundled: see misc/vendor/README.md
+    "vendor/zodal-groups.js": "text/javascript",
+    "vendor/zodal-groups.css": "text/css",
+}
 _MAX_LIMIT = 50
 _PRIVATE_CACHE = {"Cache-Control": "private, max-age=300"}
 _COLOR_RE = re.compile(r"#[0-9a-fA-F]{6}")
@@ -135,16 +146,19 @@ def mk_app(
     sources=None,
     store=None,
     title: str = "songleaf",
+    library_root: str | None = None,
     sheet_cache_size: int = 32,
     image_cache_size: int = 8,
     image_scale: float = 2.0,
 ):
-    """The FastAPI app. ``sources`` and ``store`` are the seams of :mod:`songleaf.tools`.
+    """The FastAPI app. ``sources`` and ``store`` are the seams of :mod:`songleaf.tools`;
+    ``library_root`` is where the groups are kept (default: the data root).
 
     ``image_scale`` is pixels per PDF point for ``/sheet.png`` (2: an A4 page is
     1190 pixels wide, sharp on a phone).
     """
     from fastapi import Depends, FastAPI, HTTPException, Query
+    from starlette.concurrency import run_in_threadpool
     from fastapi.responses import JSONResponse, Response
 
     app = FastAPI(title=title)
@@ -178,7 +192,7 @@ def mk_app(
 
     @app.delete("/songs")
     def forget(key: str) -> dict:
-        result = tools.forget(key, store=store)
+        result = tools.forget(key, store=store, library_root=library_root)
         if not result["deleted"]:
             raise SongNotFound(f"{key!r} is not among the stored songs")
         return result
@@ -276,14 +290,52 @@ def mk_app(
             headers=_PRIVATE_CACHE,
         )
 
-    @app.get("/ui/{name}")
+    @app.get("/groups")
+    def groups() -> dict:
+        return library.read_groups(root=library_root)
+
+    @app.put("/groups")
+    async def save_groups(request: Request):
+        raw = await request.body()
+        if len(raw) > library.MAX_BYTES:
+            raise HTTPException(413, f"The groups are over {library.MAX_BYTES} bytes")
+        try:
+            body = json.loads(raw)
+        except ValueError as error:
+            raise HTTPException(400, "The body is not JSON") from error
+        if not isinstance(body, dict):
+            raise HTTPException(400, "The body is an object: {revision, snapshot}")
+        try:
+            return await run_in_threadpool(
+                library.save_groups,
+                body.get("snapshot"),
+                revision=body.get("revision"),
+                root=library_root,
+                # a member that is not a group must be a stored song (one deleted meanwhile goes)
+                keep_item=set(stored_keys(store=store)).__contains__,
+            )
+        except ValueError as error:
+            raise HTTPException(400, str(error)) from error
+        except library.RevisionConflict as conflict:
+            return JSONResponse(
+                {"detail": str(conflict), "current": conflict.current}, status_code=409
+            )
+
+    @app.get("/ui/{name:path}")
     def ui(name: str):
         if name not in _UI_FILES:
             return JSONResponse({"detail": f"No UI file {name!r}"}, status_code=404)
-        body = files("songleaf").joinpath("data", "web", name).read_bytes()
+        body = files("songleaf").joinpath("data", "web", *name.split("/")).read_bytes()
         return Response(body, media_type=_UI_FILES[name])
 
     return app
+
+
+def stored_keys(*, store=None) -> list[str]:
+    """The keys of the stored songs."""
+    from songleaf.store import song_store
+
+    return list(song_store() if store is None else store)
 
 
 def stored_songs(*, store=None) -> list[dict]:
