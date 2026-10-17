@@ -51,6 +51,8 @@ from functools import lru_cache
 from importlib.resources import files
 from urllib.parse import quote
 
+from starlette.requests import Request  # module level: FastAPI resolves annotations here
+
 from songleaf import library, tools
 from songleaf.render import (
     LAYOUT_OPTIONS,
@@ -144,16 +146,19 @@ def mk_app(
     sources=None,
     store=None,
     title: str = "songleaf",
+    library_root: str | None = None,
     sheet_cache_size: int = 32,
     image_cache_size: int = 8,
     image_scale: float = 2.0,
 ):
-    """The FastAPI app. ``sources`` and ``store`` are the seams of :mod:`songleaf.tools`.
+    """The FastAPI app. ``sources`` and ``store`` are the seams of :mod:`songleaf.tools`;
+    ``library_root`` is where the groups are kept (default: the data root).
 
     ``image_scale`` is pixels per PDF point for ``/sheet.png`` (2: an A4 page is
     1190 pixels wide, sharp on a phone).
     """
-    from fastapi import Body, Depends, FastAPI, HTTPException, Query
+    from fastapi import Depends, FastAPI, HTTPException, Query
+    from starlette.concurrency import run_in_threadpool
     from fastapi.responses import JSONResponse, Response
 
     app = FastAPI(title=title)
@@ -187,7 +192,7 @@ def mk_app(
 
     @app.delete("/songs")
     def forget(key: str) -> dict:
-        result = tools.forget(key, store=store)
+        result = tools.forget(key, store=store, library_root=library_root)
         if not result["deleted"]:
             raise SongNotFound(f"{key!r} is not among the stored songs")
         return result
@@ -287,14 +292,29 @@ def mk_app(
 
     @app.get("/groups")
     def groups() -> dict:
-        return library.read_groups()
+        return library.read_groups(root=library_root)
 
     @app.put("/groups")
-    def save_groups(body: dict = Body(...)):
+    async def save_groups(request: Request):
+        raw = await request.body()
+        if len(raw) > library.MAX_BYTES:
+            raise HTTPException(413, f"The groups are over {library.MAX_BYTES} bytes")
         try:
-            revision = int(body.get("revision"))
-            return library.save_groups(body.get("snapshot"), revision=revision)
-        except (TypeError, ValueError) as error:
+            body = json.loads(raw)
+        except ValueError as error:
+            raise HTTPException(400, "The body is not JSON") from error
+        if not isinstance(body, dict):
+            raise HTTPException(400, "The body is an object: {revision, snapshot}")
+        try:
+            return await run_in_threadpool(
+                library.save_groups,
+                body.get("snapshot"),
+                revision=body.get("revision"),
+                root=library_root,
+                # a member that is not a group must be a stored song (one deleted meanwhile goes)
+                keep_item=set(stored_keys(store=store)).__contains__,
+            )
+        except ValueError as error:
             raise HTTPException(400, str(error)) from error
         except library.RevisionConflict as conflict:
             return JSONResponse(
@@ -309,6 +329,13 @@ def mk_app(
         return Response(body, media_type=_UI_FILES[name])
 
     return app
+
+
+def stored_keys(*, store=None) -> list[str]:
+    """The keys of the stored songs."""
+    from songleaf.store import song_store
+
+    return list(song_store() if store is None else store)
 
 
 def stored_songs(*, store=None) -> list[dict]:

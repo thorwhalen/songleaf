@@ -217,28 +217,63 @@ def test_a_stored_song_can_be_deleted(client):
     assert client.delete("/songs", params={"key": "memory:1"}).status_code == 404
 
 
+def _edge(edge_id, parent, child):
+    return {"id": edge_id, "parent": parent, "child": child, "kind": "contains"}
+
+
 def test_groups_save_with_a_revision_and_refuse_a_stale_one(client):
+    client.get("/sheet", params={"key": "memory:1"})  # stored: may be in a group
     empty = client.get("/groups").json()
     assert empty == {"revision": 0, "snapshot": {"nodes": [], "edges": []}}
     snapshot = {
-        "nodes": [{"id": "Family"}, {"id": "memory:1"}],
-        "edges": [{"id": "e1", "parent": "Family", "child": "memory:1"}],
+        "nodes": [{"id": "Family"}],
+        "edges": [_edge("e1", "Family", "memory:1")],
     }
     saved = client.put("/groups", json={"revision": 0, "snapshot": snapshot})
     assert saved.status_code == 200 and saved.json()["revision"] == 1
+    assert saved.json()["snapshot"]["edges"] == snapshot["edges"]
     stale = client.put(
         "/groups", json={"revision": 0, "snapshot": {"nodes": [], "edges": []}}
     )
     assert stale.status_code == 409 and stale.json()["current"]["revision"] == 1
-    bad = client.put("/groups", json={"revision": 1, "snapshot": {"nodes": "x"}})
-    assert bad.status_code == 400
+
+
+def test_groups_refuse_what_a_page_could_not_load(client):
+    def put(snapshot, revision=0):
+        return client.put("/groups", json={"revision": revision, "snapshot": snapshot})
+
+    loop = [_edge("a", "A", "B"), _edge("b", "B", "A")]
+    for bad in (
+        {"nodes": "x", "edges": []},
+        {"nodes": [], "edges": [_edge("e", "A", "A")]},  # self-loop
+        {"nodes": [], "edges": loop},  # cycle
+        {
+            "nodes": [],
+            "edges": [_edge("e", "A", "B"), _edge("e", "A", "C")],
+        },  # duplicate id
+        {"nodes": [{"id": "A"}, {"id": "A"}], "edges": []},  # duplicate node
+        {"nodes": [], "edges": [{"id": "e", "parent": "A", "child": "B"}]},  # no kind
+    ):
+        assert put(bad).status_code == 400, bad
+    for revision in (0.5, True, "0"):
+        assert put({"nodes": [], "edges": []}, revision).status_code == 400, revision
+    assert client.put("/groups", content=b"[1, 2]").status_code == 400
+
+
+def test_a_song_not_stored_is_dropped_from_groups_on_save(client):
+    snapshot = {
+        "nodes": [{"id": "Family"}, {"id": "Inner"}],
+        "edges": [_edge("e1", "Family", "memory:9"), _edge("e2", "Family", "Inner")],
+    }
+    saved = client.put("/groups", json={"revision": 0, "snapshot": snapshot}).json()
+    assert [e["child"] for e in saved["snapshot"]["edges"]] == ["Inner"]
 
 
 def test_deleting_a_song_takes_it_out_of_its_groups(client):
     client.get("/sheet", params={"key": "memory:1"})
     snapshot = {
-        "nodes": [{"id": "Family"}, {"id": "memory:1"}],
-        "edges": [{"id": "e1", "parent": "Family", "child": "memory:1"}],
+        "nodes": [{"id": "Family"}],
+        "edges": [_edge("e1", "Family", "memory:1")],
     }
     client.put("/groups", json={"revision": 0, "snapshot": snapshot})
     client.delete("/songs", params={"key": "memory:1"})
@@ -247,10 +282,7 @@ def test_deleting_a_song_takes_it_out_of_its_groups(client):
 
 def test_the_vendored_groups_bundle_is_served(client):
     js = client.get("/ui/vendor/zodal-groups.js")
-    assert (
-        js.status_code == 200
-        and "renderTagMenu" in js.text
-        or "defineGroups" in js.text
-    )
+    assert js.status_code == 200
+    assert "defineGroups" in js.text and "renderTagMenu" in js.text
     assert client.get("/ui/vendor/other.js").status_code == 404
-    assert client.get("/ui/../web.py").status_code == 404
+    assert client.get("/ui/vendor%2F..%2Fapp.js").status_code == 404

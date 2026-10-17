@@ -167,7 +167,7 @@ def _resolve(query: str, *, pick: int, refresh: bool, sources, store):
     return key, store[key]
 
 
-def forget(key: str, *, store=None) -> dict:
+def forget(key: str, *, store=None, library_root=None) -> dict:
     """Remove a song from the stored songs and from every group it was in.
 
     It can be found and stored again by searching. Returns ``{"key", "deleted"}``;
@@ -181,7 +181,7 @@ def forget(key: str, *, store=None) -> dict:
         deleted = True
     except (KeyError, FileNotFoundError, ValueError):
         deleted = False
-    drop_item(key)
+    drop_item(key, root=library_root)
     return {"key": key, "deleted": deleted}
 
 
