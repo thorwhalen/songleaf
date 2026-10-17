@@ -374,12 +374,15 @@
 <span class="sd">    ``query`` is a song key or a search, as for ``sheet``; the song is stored</span>
 <span class="sd">    the same way. Besides the song's own fields (``text``, ``annotations``,</span>
 <span class="sd">    ``meta``, ``provenance``), the result has ``chords`` (the distinct chords,</span>
-<span class="sd">    in order of first appearance), ``song_key`` (the estimated key, ``""`` with</span>
+<span class="sd">    in order of first appearance), ``sections`` (``{"start", "end", "label",</span>
+<span class="sd">    "family"}``, the family as the printed sheet shades it: ``"chorus"``,</span>
+<span class="sd">    ``"bridge"`` or ``""``), ``song_key`` (the estimated key, ``""`` with</span>
 <span class="sd">    no chords) and ``transpositions``: one table per shift from</span>
 <span class="sd">    ``-transpositions + 1`` to ``transpositions`` semitones, each</span>
 <span class="sd">    ``{"semitones", "key", "chords": {original: transposed}}``.</span>
 <span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.harmony</span><span class="w"> </span><span class="kn">import</span> <span class="n">transposition_table</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.render</span><span class="w"> </span><span class="kn">import</span> <span class="n">section_family</span>
 
     <span class="k">if</span> <span class="n">pick</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"pick counts from 1, got </span><span class="si">{</span><span class="n">pick</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
@@ -395,6 +398,15 @@
         <span class="s2">"artist"</span><span class="p">:</span> <span class="n">found</span><span class="o">.</span><span class="n">artist</span><span class="p">,</span>
         <span class="o">**</span><span class="n">found</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
         <span class="s2">"chords"</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">symbols</span><span class="p">)),</span>
+        <span class="s2">"sections"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">"start"</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+                <span class="s2">"end"</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">end</span><span class="p">,</span>
+                <span class="s2">"label"</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"label"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+                <span class="s2">"family"</span><span class="p">:</span> <span class="n">section_family</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"label"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)),</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">found</span><span class="o">.</span><span class="n">of_kind</span><span class="p">(</span><span class="s2">"section"</span><span class="p">)</span>
+        <span class="p">],</span>
         <span class="s2">"song_key"</span><span class="p">:</span> <span class="n">transposition_table</span><span class="p">(</span><span class="n">symbols</span><span class="p">,</span> <span class="mi">0</span><span class="p">)[</span><span class="s2">"key"</span><span class="p">],</span>
         <span class="s2">"transpositions"</span><span class="p">:</span> <span class="n">tables</span><span class="p">,</span>
     <span class="p">}</span></div>
@@ -498,7 +510,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=b45afc8c"></script>
+</div><script src="../../_static/documentation_options.js?v=162d0dcb"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

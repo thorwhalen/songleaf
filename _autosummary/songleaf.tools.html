@@ -363,7 +363,9 @@ more pages.</p>
 <p><code class="docutils literal notranslate"><span class="pre">query</span></code> is a song key or a search, as for <code class="docutils literal notranslate"><span class="pre">sheet</span></code>; the song is stored
 the same way. Besides the song’s own fields (<code class="docutils literal notranslate"><span class="pre">text</span></code>, <code class="docutils literal notranslate"><span class="pre">annotations</span></code>,
 <code class="docutils literal notranslate"><span class="pre">meta</span></code>, <code class="docutils literal notranslate"><span class="pre">provenance</span></code>), the result has <code class="docutils literal notranslate"><span class="pre">chords</span></code> (the distinct chords,
-in order of first appearance), <code class="docutils literal notranslate"><span class="pre">song_key</span></code> (the estimated key, <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> with
+in order of first appearance), <code class="docutils literal notranslate"><span class="pre">sections</span></code> (<code class="docutils literal notranslate"><span class="pre">{&quot;start&quot;,</span> <span class="pre">&quot;end&quot;,</span> <span class="pre">&quot;label&quot;,</span>
+<span class="pre">&quot;family&quot;}</span></code>, the family as the printed sheet shades it: <code class="docutils literal notranslate"><span class="pre">&quot;chorus&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;bridge&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>), <code class="docutils literal notranslate"><span class="pre">song_key</span></code> (the estimated key, <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> with
 no chords) and <code class="docutils literal notranslate"><span class="pre">transpositions</span></code>: one table per shift from
 <code class="docutils literal notranslate"><span class="pre">-transpositions</span> <span class="pre">+</span> <span class="pre">1</span></code> to <code class="docutils literal notranslate"><span class="pre">transpositions</span></code> semitones, each
 <code class="docutils literal notranslate"><span class="pre">{&quot;semitones&quot;,</span> <span class="pre">&quot;key&quot;,</span> <span class="pre">&quot;chords&quot;:</span> <span class="pre">{original:</span> <span class="pre">transposed}}</span></code>.</p>
@@ -456,7 +458,7 @@ no chords) and <code class="docutils literal notranslate"><span class="pre">tran
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=b45afc8c"></script>
+</div><script src="../_static/documentation_options.js?v=162d0dcb"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

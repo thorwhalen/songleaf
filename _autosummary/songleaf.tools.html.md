@@ -77,7 +77,9 @@ The song itself as JSON: lyrics text, chords and sections, and every key it can 
 `query` is a song key or a search, as for `sheet`; the song is stored
 the same way. Besides the song’s own fields (`text`, `annotations`,
 `meta`, `provenance`), the result has `chords` (the distinct chords,
-in order of first appearance), `song_key` (the estimated key, `""` with
+in order of first appearance), `sections` (`{"start", "end", "label",
+"family"}`, the family as the printed sheet shades it: `"chorus"`,
+`"bridge"` or `""`), `song_key` (the estimated key, `""` with
 no chords) and `transpositions`: one table per shift from
 `-transpositions + 1` to `transpositions` semitones, each
 `{"semitones", "key", "chords": {original: transposed}}`.
