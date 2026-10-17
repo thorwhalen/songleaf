@@ -16,8 +16,12 @@ The page is a two-path shell (:func:`page_shell`) that loads its script and
 style from ``/ui/``, so it changes with this package, not with the host. The app
 carries no authentication: the host gates it.
 
-A rendered sheet is kept in memory (the last ``sheet_cache_size``), so the page's
-three requests for one sheet render it once.
+A rendered sheet and its page images are kept in memory (the last
+``sheet_cache_size`` of each), so the page's requests for one sheet render it once.
+
+Only what a request can get wrong becomes a 4xx: an unknown song (404), a bad
+layout or page (400, 404). A corpus that is not on the machine is a 503 saying
+where to put it. Anything else is a bug and stays a 500.
 
 Requires ``pip install songleaf[web]`` (FastAPI, pypdfium2). Importing :mod:`songleaf` does
 not import this module.
@@ -25,7 +29,9 @@ not import this module.
 
 from __future__ import annotations
 
+import html
 import io
+import json
 import os
 import tempfile
 import threading
@@ -35,10 +41,11 @@ from urllib.parse import quote
 
 from songleaf import tools
 from songleaf.render import LAYOUT_OPTIONS, layout_spec
-from songleaf.sources import SourceUnavailable
+from songleaf.sources import SongNotFound, SourceUnavailable
 
-#: Failures a request can cause, and the HTTP status each becomes.
-ERROR_STATUS = {LookupError: 404, ValueError: 400, SourceUnavailable: 503}
+#: Failures a request can cause, and the HTTP status each becomes. Nothing broader:
+#: a KeyError or ValueError from a bug must not read as "not found" or "your fault".
+ERROR_STATUS = {SongNotFound: 404, SourceUnavailable: 503}
 _UI_FILES = {"app.js": "text/javascript", "style.css": "text/css"}
 _MAX_LIMIT = 50
 _PRIVATE_CACHE = {"Cache-Control": "private, max-age=300"}
@@ -57,13 +64,13 @@ def mk_app(
     ``image_scale`` is pixels per PDF point for ``/sheet.png`` (2: an A4 page is
     1190 pixels wide, sharp on a phone).
     """
-    from fastapi import FastAPI, Query
+    from fastapi import FastAPI, HTTPException, Query
     from fastapi.responses import JSONResponse, Response
 
     app = FastAPI(title=title)
-    # The default source loads its corpus on first use; two first requests at
-    # once would load it twice. Serialising calls costs nothing at this scale.
-    corpus_lock = threading.Lock()
+    pdfium_lock = (
+        threading.Lock()
+    )  # pdfium is not thread-safe; reportlab renders need none
 
     for error_type, status in ERROR_STATUS.items():
 
@@ -80,13 +87,12 @@ def mk_app(
         lyrics: str = "",
         limit: int = Query(20, ge=1, le=_MAX_LIMIT),
     ) -> list[dict]:
-        if not (q or title or artist or lyrics).strip():
+        q, title, artist, lyrics = (text.strip() for text in (q, title, artist, lyrics))
+        if not (q or title or artist or lyrics):
             return []
-        with corpus_lock:
-            return tools.search(
-                q, title=title, artist=artist, lyrics=lyrics, limit=limit,
-                sources=sources,
-            )  # fmt: skip
+        return tools.search(
+            q, title=title, artist=artist, lyrics=lyrics, limit=limit, sources=sources
+        )
 
     @app.get("/songs")
     def songs() -> list[dict]:
@@ -106,10 +112,9 @@ def mk_app(
     def rendered(key: str, layout: str) -> tuple[bytes, dict]:
         with tempfile.TemporaryDirectory() as tmp:
             output = os.path.join(tmp, "sheet.pdf")
-            with corpus_lock:
-                result = tools.sheet(
-                    key, output=output, layout=layout, sources=sources, store=store
-                )
+            result = tools.sheet(
+                key, output=output, layout=layout, sources=sources, store=store
+            )
             with open(output, "rb") as file:
                 pdf = file.read()
         name = " - ".join(filter(None, (result["artist"], result["title"]))) or "sheet"
@@ -125,7 +130,17 @@ def mk_app(
         return pdf, info
 
     def sheet_of(key: str, layout: str) -> tuple[bytes, dict]:
-        return rendered(key, layout_spec(layout))  # one cache entry per spelling
+        try:
+            spec = layout_spec(layout)  # one spelling, so one cache entry, per layout
+        except ValueError as error:
+            raise HTTPException(400, str(error)) from error
+        return rendered(key, spec)
+
+    @lru_cache(maxsize=sheet_cache_size)
+    def page_image(key: str, layout: str, page: int) -> bytes:
+        pdf, _ = rendered(key, layout)
+        with pdfium_lock:
+            return pdf_page_png(pdf, page, scale=image_scale)
 
     @app.get("/sheet")
     def sheet(key: str, layout: str = "dense") -> dict:
@@ -134,7 +149,7 @@ def mk_app(
     @app.get("/sheet.pdf")
     def sheet_pdf(key: str, layout: str = "dense"):
         pdf, info = sheet_of(key, layout)
-        disposition = f"inline; filename*=UTF-8''{quote(info['file_name'])}"
+        disposition = f"inline; filename*=UTF-8''{quote(info['file_name'], safe='')}"
         return Response(
             pdf,
             media_type="application/pdf",
@@ -143,11 +158,13 @@ def mk_app(
 
     @app.get("/sheet.png")
     def sheet_png(key: str, layout: str = "dense", page: int = Query(1, ge=1)):
-        pdf, info = sheet_of(key, layout)
+        _, info = sheet_of(key, layout)
         if page > info["pages"]:
-            raise LookupError(f"The sheet has {info['pages']} page(s), not {page}")
+            raise HTTPException(
+                404, f"The sheet has {info['pages']} page(s), not {page}"
+            )
         return Response(
-            pdf_page_png(pdf, page, scale=image_scale),
+            page_image(key, info["layout"], page),
             media_type="image/png",
             headers=_PRIVATE_CACHE,
         )
@@ -167,10 +184,10 @@ def stored_songs(*, store=None) -> list[dict]:
     from songleaf.store import song_store
 
     store = song_store() if store is None else store
-    rows = [
-        {"key": key, "title": store[key].title, "artist": store[key].artist}
-        for key in store
-    ]
+    rows = []
+    for key in store:
+        song = store[key]
+        rows.append({"key": key, "title": song.title, "artist": song.artist})
     return sorted(rows, key=lambda row: (row["artist"].lower(), row["title"].lower()))
 
 
@@ -181,7 +198,10 @@ def page_shell(*, api: str, base: str = "", title: str = "songleaf") -> str:
     True
     """
     config = {"api": api.rstrip("/"), "base": base.rstrip("/"), "title": title}
-    config_js = ", ".join(f'{k}: "{v}"' for k, v in config.items())
+    config_js = json.dumps(config).replace(
+        "<", "\\u003c"
+    )  # no "</script>" can close it
+    api_attr, title_text = html.escape(config["api"]), html.escape(title)
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -189,15 +209,15 @@ def page_shell(*, api: str, base: str = "", title: str = "songleaf") -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="light dark">
-<title>{title}</title>
+<title>{title_text}</title>
 <!-- songleaf page shell, from songleaf.web.page_shell: the script and style load from the API,
      so they upgrade with the package. -->
-<script>window.SONGLEAF = {{ {config_js} }};</script>
-<link rel="stylesheet" href="{config["api"]}/ui/style.css">
+<script>window.SONGLEAF = {config_js};</script>
+<link rel="stylesheet" href="{api_attr}/ui/style.css">
 </head>
 <body>
 <main id="app" aria-live="polite"><p class="muted">Loading…</p></main>
-<script src="{config["api"]}/ui/app.js"></script>
+<script src="{api_attr}/ui/app.js"></script>
 </body>
 </html>
 """

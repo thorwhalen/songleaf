@@ -11,6 +11,7 @@
   const SLOW_MS = 3000; // past this, say why the wait is long
   const app = document.getElementById("app");
   let generation = 0; // bumps on every render: a late response from an older view is dropped
+  let searchTimer = null; // the pending debounced search; a view change cancels it
   let layoutOptions = null; // [{name, sets}] from /layouts, fetched once
 
   // --- the route: one module owns history ------------------------------------------------
@@ -98,6 +99,7 @@
   // --- views -----------------------------------------------------------------------------
 
   function render() {
+    clearTimeout(searchTimer); // a search typed just before leaving must not fire on the next view
     generation += 1;
     const route = readRoute();
     window.scrollTo(0, 0);
@@ -108,11 +110,10 @@
   function renderSearch(route, gen) {
     document.title = route.q || route.lyrics ? `${route.q || route.lyrics} · ${CONFIG.title}` : CONFIG.title;
     const results = h("section", { class: "results", "aria-live": "polite" });
-    let timer = null;
     // A refinement replaces the URL and refreshes the results only: the inputs stay as
     // they are, so typing (and a phone's keyboard) is never interrupted.
     const refine = () => {
-      clearTimeout(timer);
+      clearTimeout(searchTimer);
       const next = { q: query.value.trim(), lyrics: lyrics.value.trim() };
       history.replaceState({}, "", formatRoute(next));
       document.title = next.q || next.lyrics ? `${next.q || next.lyrics} · ${CONFIG.title}` : CONFIG.title;
@@ -120,8 +121,8 @@
       showResults(next, results, generation);
     };
     const onInput = () => {
-      clearTimeout(timer);
-      timer = setTimeout(refine, SEARCH_DEBOUNCE_MS);
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(refine, SEARCH_DEBOUNCE_MS);
     };
     const query = h("input", {
       type: "search", name: "q", value: route.q, placeholder: "Title or artist",
@@ -195,7 +196,7 @@
     const byline = h("p", { class: "artist" }, known.artist || "");
     document.title = `${known.title || route.song} · ${CONFIG.title}`;
     const back = h("a", {
-      href: CONFIG.base + "/", class: "back",
+      href: location.pathname, class: "back",
       onclick: (e) => {
         e.preventDefault();
         // Back to the results this sheet was opened from, when they are the page underneath;
@@ -209,7 +210,7 @@
     app.replaceChildren(h("header", {}, back, heading, byline), controls, viewer);
     heading.focus({ preventScroll: true });
     buildLayoutControls(route, controls);
-    showPdf(route, viewer, gen, { heading, byline });
+    showPdf(route, viewer, gen, { heading, byline, controls });
   }
 
   async function buildLayoutControls(route, controls) {
@@ -218,29 +219,36 @@
     } catch (_) {
       return; // the sheet still shows, in the layout the URL names
     }
-    const chosen = new Set(route.layout.split("+").filter((o) => o && o !== "dense"));
+    const boxes = {};
     for (const option of layoutOptions) {
       const box = h("input", {
-        type: "checkbox", value: option.name, checked: chosen.has(option.name),
+        type: "checkbox", value: option.name,
         onchange: () => {
           if (box.checked) {
             // two options that set the same thing (where chords go) exclude each other
             for (const other of layoutOptions) {
-              if (other.name !== option.name && other.sets.some((s) => option.sets.includes(s))) chosen.delete(other.name);
+              if (other.name !== option.name && other.sets.some((s) => option.sets.includes(s))) boxes[other.name].checked = false;
             }
-            chosen.add(option.name);
-          } else {
-            chosen.delete(option.name);
           }
-          const layout = layoutOptions.map((o) => o.name).filter((n) => chosen.has(n)).join("+") || "dense";
+          const layout = layoutOptions.map((o) => o.name).filter((n) => boxes[n].checked).join("+") || "dense";
           navigate({ song: route.song, layout }, { replace: true, state: history.state || {} });
         },
       });
+      boxes[option.name] = box;
       controls.append(h("label", { class: "chip" }, box, option.name));
     }
+    syncLayout(controls, controls.dataset.layout || route.layout);
   }
 
-  async function showPdf(route, viewer, gen, { heading, byline }) {
+  // Tick the boxes of a layout spec. The server's spelling (from /sheet) wins over the URL's,
+  // which may use an alias ("2col") or another case.
+  function syncLayout(controls, layout) {
+    controls.dataset.layout = layout;
+    const chosen = new Set(layout.split("+"));
+    for (const box of controls.querySelectorAll("input[type=checkbox]")) box.checked = chosen.has(box.value);
+  }
+
+  async function showPdf(route, viewer, gen, { heading, byline, controls }) {
     const spinner = loading("Making the sheet…");
     viewer.replaceChildren(spinner);
     const params = new URLSearchParams({ key: route.song, layout: route.layout });
@@ -249,6 +257,7 @@
       if (gen !== generation) return;
       heading.textContent = info.title || info.key;
       byline.textContent = info.artist || "";
+      syncLayout(controls, info.layout);
       document.title = `${heading.textContent} · ${CONFIG.title}`;
       history.replaceState({ ...(history.state || {}), title: info.title, artist: info.artist }, "", location.href);
       const pdfUrl = CONFIG.api + "/sheet.pdf?" + params;
@@ -264,7 +273,7 @@
       );
     } catch (error) {
       if (gen !== generation) return;
-      viewer.replaceChildren(errorBox(error.message, () => showPdf(route, viewer, gen, { heading, byline })));
+      viewer.replaceChildren(errorBox(error.message, () => showPdf(route, viewer, gen, { heading, byline, controls })));
     } finally {
       spinner.stop();
     }

@@ -79,7 +79,7 @@ def sheet(
         hits = _sources.search(query, limit=pick, sources=sources)
         if len(hits) < pick:
             found = f"only {len(hits)} match" if hits else "nothing matches"
-            raise LookupError(f"No song number {pick} for {query!r}: {found}")
+            raise _sources.SongNotFound(f"No song number {pick} for {query!r}: {found}")
         key = hits[pick - 1].key
     if refresh or not _is_stored(store, key):
         store[key] = _sources.get_song(key, sources=sources)

@@ -2,7 +2,9 @@
 
 A *source* is any object with a ``name``, a
 ``search(query, *, title, artist, lyrics, limit) -> list[Hit]`` method and a
-``get(song_id) -> Song`` method. :func:`search` and :func:`get_song` take
+``get(song_id) -> Song`` method that raises ``KeyError`` for an id it does not
+have (:func:`get_song` reports that as :class:`SongNotFound`; a source that cannot
+load its data at all raises :class:`SourceUnavailable`). :func:`search` and :func:`get_song` take
 several through ``sources=``; the default is the Kaggle chords-and-lyrics
 corpus, read through ``sung``.
 
@@ -14,6 +16,7 @@ from __future__ import annotations
 
 import os
 import re
+import threading
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
 from functools import cached_property, lru_cache
@@ -62,6 +65,13 @@ class SourceUnavailable(RuntimeError):
     """A source's data cannot be loaded here (a corpus that is not on this machine, say)."""
 
 
+class SongNotFound(KeyError):
+    """No song by that key, id or query. A ``KeyError``, so ``except KeyError`` still catches it."""
+
+    def __str__(self) -> str:  # KeyError's own str() quotes the message
+        return str(self.args[0]) if self.args else ""
+
+
 def kaggle_chords_zip() -> str | None:
     """The corpus zip under the data root (``datasets/`` + :data:`KAGGLE_CHORDS_ZIP`), if there is one.
 
@@ -81,7 +91,7 @@ def _load_kaggle_corpus():
         return get_lyrics_and_chords_dataset(
             zip_path=kaggle_chords_zip(), usecols=KaggleChordsSource.columns
         )
-    except Exception as error:
+    except (ImportError, OSError) as error:  # no sung, no zip, no Kaggle access
         in_data_root = os.path.join(data_dir("datasets"), KAGGLE_CHORDS_ZIP)
         raise SourceUnavailable(
             "Could not load the Kaggle chords-and-lyrics corpus. Put a copy of "
@@ -123,10 +133,17 @@ class KaggleChordsSource:
     def __init__(self, *, loader=None, min_score: float = 70):
         self._loader = loader or _load_kaggle_corpus
         self.min_score = min_score
+        self._load_lock = threading.Lock()
+        self._loaded = None
 
-    @cached_property
+    @property
     def _df(self):
-        return self._loader().reset_index(drop=True)
+        """The corpus, loaded once even when several threads ask for it first."""
+        if self._loaded is None:
+            with self._load_lock:
+                if self._loaded is None:
+                    self._loaded = self._loader().reset_index(drop=True)
+        return self._loaded
 
     @cached_property
     def _titles(self) -> list[str]:
@@ -225,7 +242,7 @@ class KaggleChordsSource:
         try:
             row = self._row_of_id[str(song_id)]
         except KeyError:
-            raise KeyError(f"No song with id {song_id!r} in {self.name}") from None
+            raise SongNotFound(f"No song with id {song_id!r} in {self.name}") from None
         record = self._df.iloc[row]
         text = record["chords&lyrics"]
         return parse_chords_over_lyrics(
@@ -372,9 +389,10 @@ class LocalFolderSource:
         """The song at this relative path, parsed if it's a chart, else score-linked."""
         from songleaf.parse import parse_chords_over_lyrics
 
-        path = os.path.join(self.root, song_id)
-        if not os.path.isfile(path):
-            raise KeyError(f"No file at {song_id!r} under {self.root}")
+        path = os.path.realpath(os.path.join(self.root, song_id))
+        inside = path.startswith(os.path.realpath(self.root) + os.sep)
+        if not (inside and os.path.isfile(path)):  # an id never leaves the folder
+            raise SongNotFound(f"No file at {song_id!r} under {self.root}")
         stem, ext = os.path.splitext(os.path.basename(song_id))
         title, artist = _title_and_artist(stem)
         provenance = {
@@ -437,8 +455,15 @@ def get_song(key: str, *, sources: Sequence | None = None) -> Song:
     sources = default_sources() if sources is None else sources
     name, sep, song_id = key.partition(":")
     if not sep:
-        raise KeyError(f"A song key looks like '<source>:<id>', got {key!r}")
+        raise SongNotFound(f"A song key looks like '<source>:<id>', got {key!r}")
     for source in sources:
         if source.name == name:
-            return source.get(song_id)
-    raise KeyError(f"No source named {name!r} (sources: {[s.name for s in sources]})")
+            try:
+                return source.get(song_id)
+            except SongNotFound:
+                raise
+            except KeyError as error:  # the protocol: a source's get raises KeyError
+                raise SongNotFound(f"No song with id {song_id!r} in {name}") from error
+    raise SongNotFound(
+        f"No source named {name!r} (sources: {[s.name for s in sources]})"
+    )

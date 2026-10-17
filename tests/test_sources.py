@@ -80,3 +80,13 @@ def test_get_song_routes_by_source_name(kaggle, memory_source):
         get_song("nowhere:1", sources=[kaggle])
     with pytest.raises(KeyError):
         get_song("no-colon", sources=[kaggle])
+
+
+def test_a_local_folder_id_never_leaves_the_folder(tmp_path):
+    from songleaf.sources import LocalFolderSource, SongNotFound
+
+    folder = tmp_path / "imports"
+    folder.mkdir()
+    (tmp_path / "outside.txt").write_text("C\nnot yours")
+    with pytest.raises(SongNotFound):
+        LocalFolderSource(str(folder)).get("../outside.txt")

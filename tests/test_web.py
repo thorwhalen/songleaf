@@ -1,5 +1,7 @@
 """The web surface, through FastAPI's test client, over the synthetic source."""
 
+import sys
+
 import pytest
 
 pytest.importorskip("fastapi")
@@ -8,6 +10,7 @@ pytest.importorskip("httpx")
 from fastapi.testclient import TestClient  # noqa: E402
 
 from songleaf import sources as sources_module  # noqa: E402
+from songleaf.parse import parse_chords_over_lyrics  # noqa: E402
 from songleaf.store import song_store  # noqa: E402
 from songleaf.web import mk_app, page_shell  # noqa: E402
 
@@ -69,23 +72,57 @@ def test_an_unknown_song_is_a_404(client):
 
 
 def test_a_missing_corpus_is_a_503_that_says_where_to_put_it(monkeypatch, tmp_path):
+    # the real loader, with sung unimportable: what a server without the corpus sees
     monkeypatch.setenv("SONGLEAF_DATA_DIR", str(tmp_path))
     monkeypatch.delenv("SUNG_CHORDS_AND_LYRICS_ZIP", raising=False)
-
-    def no_corpus():
-        raise sources_module.SourceUnavailable(
-            "Put the zip at datasets/chords-and-lyrics/"
-        )
-
-    source = sources_module.KaggleChordsSource(loader=no_corpus)
-    client = TestClient(
-        mk_app(sources=[source], store=song_store(str(tmp_path / "songs")))
-    )
+    monkeypatch.setitem(sys.modules, "sung.chords_and_lyrics", None)
+    source = sources_module.KaggleChordsSource()
+    store = song_store(str(tmp_path / "songs"))
+    client = TestClient(mk_app(sources=[source], store=store))
     response = client.get("/search", params={"q": "anything"})
+    assert response.status_code == 503
     assert (
-        response.status_code == 503
-        and "datasets/chords-and-lyrics" in response.json()["detail"]
+        "datasets/chords-and-lyrics/chords-and-lyrics-dataset.zip"
+        in (response.json()["detail"])
     )
+    # a stored song still opens without the corpus
+    store["kaggle_chords:7"] = parse_chords_over_lyrics("C\nla la", meta={"title": "T"})
+    assert client.get("/sheet", params={"key": "kaggle_chords:7"}).status_code == 200
+
+
+def test_whitespace_in_one_field_does_not_hide_another(tmp_path):
+    calls = []
+
+    class Spy:
+        name = "spy"
+
+        def search(self, query="", **fields):
+            calls.append((query, fields))
+            return []
+
+    client = TestClient(mk_app(sources=[Spy()], store=song_store(str(tmp_path))))
+    client.get("/search", params={"q": "  ", "title": " paper boats "})
+    assert calls == [
+        ("", {"title": "paper boats", "artist": "", "lyrics": "", "limit": 20})
+    ]
+
+
+def test_a_bug_is_a_500_not_a_404(memory_source, tmp_path):
+    class BrokenStore(dict):
+        def __getitem__(self, key):
+            raise KeyError("a bug, not a missing song")
+
+        def __contains__(self, key):
+            return True
+
+    app = mk_app(sources=[memory_source], store=BrokenStore())
+    client = TestClient(app, raise_server_exceptions=False)
+    assert client.get("/sheet", params={"key": "memory:1"}).status_code == 500
+
+
+def test_the_layout_comes_back_in_its_one_spelling(client):
+    info = client.get("/sheet", params={"key": "memory:1", "layout": "2col+INLINE"})
+    assert info.json()["layout"] == "two-column+inline"
 
 
 def test_layouts_say_which_options_exclude_each_other(client):
