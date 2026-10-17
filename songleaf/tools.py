@@ -173,9 +173,11 @@ def forget(key: str, *, store=None) -> dict:
     Returns ``{"key", "deleted"}``; ``deleted`` is False when it was not stored.
     """
     store = song_store() if store is None else store
-    deleted = _is_stored(store, key)
-    if deleted:
-        del store[key]
+    try:
+        del store[key]  # one step: two deletes at once cannot both find it
+        deleted = True
+    except (KeyError, FileNotFoundError, ValueError):
+        deleted = False
     return {"key": key, "deleted": deleted}
 
 

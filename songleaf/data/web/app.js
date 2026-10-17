@@ -119,6 +119,10 @@
         for (const [name, param] of Object.entries(numeric)) if (name in saved) out[param] = String(saved[name]);
         return out;
       },
+      forgetSong(key) { // a deleted song leaves no settings behind
+        for (const name of ["transpose", "scroll"]) if (values[name]) delete values[name][key];
+        save();
+      },
       scrollLevelOf(key) { return (values.scroll || {})[key] || values.scrollDefault || 5; },
       setScrollLevel(key, level) {
         values.scroll = { ...(values.scroll || {}), [key]: level };
@@ -144,29 +148,34 @@
     let running = false;
     let frame = 0;
     let last = 0;
-    let carry = 0;
+    let position = 0; // fractional: the browser places it to the device pixel, so slow is smooth
     let wakeLock = null;
     let level = 5;
     let pxPerLevel = 2.4;
     const listeners = new Set();
     const notify = () => listeners.forEach((f) => f(running));
     async function keepAwake() {
-      try { wakeLock = navigator.wakeLock ? await navigator.wakeLock.request("screen") : null; } catch (_) { wakeLock = null; }
+      if (!navigator.wakeLock) return;
+      let lock = null;
+      try { lock = await navigator.wakeLock.request("screen"); } catch (_) { return; }
+      if (!running) { lock.release().catch(() => {}); return; } // paused while the request was out
+      if (wakeLock) wakeLock.release().catch(() => {});
+      wakeLock = lock;
     }
     function step(now) {
       if (!running) return;
       const seconds = last ? Math.min((now - last) / 1000, 0.1) : 0; // a background tab never jumps
       last = now;
-      carry += level * pxPerLevel * seconds;
-      const whole = Math.floor(carry);
-      if (whole >= 1) { window.scrollBy(0, whole); carry -= whole; }
+      if (Math.abs(window.scrollY - position) > 3) position = window.scrollY; // moved by something else: go on from there
+      position += level * pxPerLevel * seconds;
+      window.scrollTo(0, position);
       const bottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
       if (bottom) { stop(); return; }
       frame = requestAnimationFrame(step);
     }
     function start() {
       if (running) return;
-      running = true; last = 0; carry = 0;
+      running = true; last = 0; position = window.scrollY;
       keepAwake();
       frame = requestAnimationFrame(step);
       notify();
@@ -179,11 +188,13 @@
       notify();
     }
     // A touch, the wheel or a scrolling key means the reader took over: pause.
+    const isControl = (target) => target.closest && target.closest(".toolbar-wrap, .scroll-pill, input, select, textarea");
     for (const type of ["touchstart", "wheel", "mousedown"]) window.addEventListener(type, (e) => {
-      if (running && !(e.target.closest && e.target.closest(".toolbar-wrap"))) stop();
+      if (running && !isControl(e.target)) stop();
     }, { passive: true });
     window.addEventListener("keydown", (e) => {
-      if (running && ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(e.key)) stop();
+      const scrolls = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(e.key);
+      if (running && scrolls && !isControl(e.target)) stop();
     });
     document.addEventListener("visibilitychange", () => { if (running && document.visibilityState === "visible") keepAwake(); });
     return {
@@ -292,8 +303,12 @@
 
   // --- views -----------------------------------------------------------------------------
 
+  let shownView = ""; // the song and view on screen: redrawing the same one keeps the scroll going
   function render() {
-    autoScroll.stop(); // leaving or redrawing a view never leaves the page moving
+    const next = readRoute();
+    const view = next.song ? `${next.song}|${next.view}` : "";
+    if (view !== shownView) autoScroll.stop(); // a new song, or Print, never inherits the motion
+    shownView = view;
     while (scrollUnsubscribers.length) scrollUnsubscribers.pop()(); // toolbars about to be replaced
     clearTimeout(searchTimer); // a search typed just before leaving must not fire on the next view
     generation += 1;
@@ -382,21 +397,30 @@
     let editing = false;
     const listHost = h("div");
     const count = h("span", { class: "muted" });
+    let busy = false;
     const remove = h("button", {
       type: "button", class: "danger", disabled: true,
       onclick: async () => {
-        const n = selected.size;
-        const what = n === 1 ? "this song" : `these ${n} songs`;
-        if (!window.confirm(`Remove ${what} from your list? Search finds ${n === 1 ? "it" : "them"} again.`)) return;
+        if (busy) return;
+        const keys = [...selected]; // what was confirmed is what is deleted
+        const one = keys.length === 1 && songs.find((s) => s.key === keys[0]);
+        const what = one ? `“${one.title || one.key}”` : `these ${keys.length} songs`;
+        if (!window.confirm(`Delete ${what} from your songs? Search finds ${one ? "it" : "them"} again.`)) return;
+        busy = true;
+        listHost.inert = true; edit.disabled = true; // nothing changes while deleting
         remove.disabled = true;
-        remove.textContent = "Removing…";
-        const failed = [];
-        for (const key of selected) {
-          const response = await fetch(CONFIG.api + "/songs?" + new URLSearchParams({ key }), { method: "DELETE", credentials: "same-origin" });
-          if (!response.ok && response.status !== 404) failed.push(key);
-          prefs.setTranspose(key, 0);
+        remove.textContent = "Deleting…";
+        let failed = 0;
+        for (const key of keys) {
+          try {
+            const response = await fetch(CONFIG.api + "/songs?" + new URLSearchParams({ key }), { method: "DELETE", credentials: "same-origin" });
+            if (response.ok || response.status === 404) prefs.forgetSong(key);
+            else failed += 1;
+          } catch (_) {
+            failed += 1;
+          }
         }
-        if (failed.length) window.alert(`${failed.length} could not be removed. Try again.`);
+        if (failed) window.alert(`${failed} could not be deleted. Check the connection and try again.`);
         refresh();
       },
     }, "Delete");
@@ -501,7 +525,7 @@
     applyLook(look);
     const content = route.view === "print"
       ? printView(song, route, gen)
-      : h("div", { class: "read" }, displayControls(route), readerView(song, table, look));
+      : h("div", { class: "read" }, displayControls(route), readerView(song, table, look), scrollControls(route.song, look));
     body.replaceChildren(toolbar, content);
   }
 
@@ -571,8 +595,7 @@
       onclick: (e) => togglePanel(panelHost, e.currentTarget, () => lookPanel(route), "look"),
     }, "Aa");
 
-    const scroll = reading ? scrollControls(route.song, look) : null;
-    const bar = h("div", { class: "toolbar" }, size, keyGroup, scroll, viewSwitch, settings);
+    const bar = h("div", { class: "toolbar" }, size, keyGroup, viewSwitch, settings);
     const reopen = openPanel && bar.querySelector(`[data-panel="${openPanel}"]`);
     if (reopen) { // a choice made in a panel re-renders the song; the panel stays open
       reopen.setAttribute("aria-expanded", "true");
@@ -605,7 +628,7 @@
     };
     show(autoScroll.running);
     const unsubscribe = autoScroll.onChange(show);
-    const group = h("div", { class: "group scroll-controls", role: "group", "aria-label": "Auto-scroll" },
+    const group = h("div", { class: "scroll-pill", role: "group", "aria-label": "Auto-scroll" },
       play,
       h("button", { type: "button", class: "icon", title: "Slower", "aria-label": "Slower", onclick: () => setLevel(level - 1) }, "−"),
       value,
