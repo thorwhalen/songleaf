@@ -51,7 +51,9 @@ from functools import lru_cache
 from importlib.resources import files
 from urllib.parse import quote
 
-from starlette.requests import Request  # module level: FastAPI resolves annotations here
+from starlette.requests import (
+    Request,
+)  # module level: FastAPI resolves annotations here
 
 from songleaf import library, tools
 from songleaf.render import (
