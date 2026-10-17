@@ -80,7 +80,7 @@
   function readRoute() {
     const params = new URLSearchParams(location.search);
     const song = params.get("song") || "";
-    const t = params.has("t") ? Number(params.get("t")) || 0 : (song ? prefs.transposeOf(song) : 0);
+    const t = params.has("t") ? Math.round(Number(params.get("t"))) || 0 : (song ? prefs.transposeOf(song) : 0);
     return {
       q: params.get("q") || "",
       lyrics: params.get("lyrics") || "",
@@ -307,6 +307,11 @@
     }
     if (gen !== generation) return;
     songCache.set(route.song, song);
+    const t = wrapShift(route.t, song); // a URL may name any shift; the song offers -5..+6
+    if (t !== route.t) {
+      route = { ...route, t };
+      history.replaceState(history.state, "", formatRoute(route));
+    }
     heading.textContent = song.title || song.key;
     byline.textContent = song.artist || "";
     document.title = `${heading.textContent} · ${CONFIG.title}`;
@@ -660,11 +665,11 @@
 
   function clamp(value, low, high) { return Math.min(high, Math.max(low, value)); }
   function round1(value) { return Math.round(value * 10) / 10; }
-  function wrapShift(t, song) {
+  function wrapShift(t, song) { // the same key, inside the shifts the song offers
     const shifts = (song.transpositions || []).map((x) => x.semitones);
     if (!shifts.length) return 0;
-    const low = Math.min(...shifts), high = Math.max(...shifts);
-    return t > high ? low + (t - high - 1) : t < low ? high - (low - t - 1) : t;
+    const low = Math.min(...shifts), period = Math.max(...shifts) - low + 1;
+    return ((((t - low) % period) + period) % period) + low;
   }
 
   render();

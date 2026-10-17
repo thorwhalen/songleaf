@@ -9,8 +9,12 @@ charts' words. :class:`KaggleChordsIndex` reads that file. It keeps only the
 titles, artists and popularity in memory (for fuzzy matching, a few tens of MB)
 and answers lyrics searches and song lookups from disk.
 
-Search results are the same as the DataFrame source's: the ranking code is
-shared, and only where the data comes from differs.
+Search results are the DataFrame source's: the ranking code is shared, and only
+where the data comes from differs. The one difference is how lyrics split into
+words: FTS5's tokenizer treats ``_`` as a separator and does not compose
+decomposed accents, where the DataFrame source's regular expression does the
+opposite. Rebuilding the index while a server runs is safe: a process that
+notices the file changed reloads it.
 
 >>> import pandas as pd, tempfile, os
 >>> corpus = pd.DataFrame({
@@ -84,7 +88,24 @@ def build_kaggle_index(
     started = time.time()
     df = (loader or _load_kaggle_corpus)().reset_index(drop=True)
     columns = KaggleChordsSource.columns
-    building = path + ".building"
+    building = (
+        f"{path}.{os.getpid()}.building"  # one per process: concurrent builds never mix
+    )
+    try:
+        _write_index(building, df, columns, batch_size=batch_size)
+        os.replace(building, path)
+    finally:
+        if os.path.exists(building):  # a failed build leaves nothing behind
+            os.remove(building)
+    return {
+        "path": path,
+        "songs": len(df),
+        "megabytes": round(os.path.getsize(path) / 1e6, 1),
+        "seconds": round(time.time() - started, 1),
+    }
+
+
+def _write_index(building: str, df, columns, *, batch_size: int) -> None:
     if os.path.exists(building):
         os.remove(building)
     with closing(sqlite3.connect(building)) as conn:
@@ -114,13 +135,6 @@ def build_kaggle_index(
         )
         conn.execute("INSERT INTO chart_words(chart_words) VALUES ('optimize')")
         conn.commit()
-    os.replace(building, path)
-    return {
-        "path": path,
-        "songs": len(df),
-        "megabytes": round(os.path.getsize(path) / 1e6, 1),
-        "seconds": round(time.time() - started, 1),
-    }
 
 
 def _text_or_empty(value) -> str:
@@ -156,9 +170,10 @@ class KaggleChordsIndex(KaggleChordsSource):
 
     def __init__(self, path: str | None = None, *, min_score: float = 70):
         super().__init__(loader=self._no_dataframe, min_score=min_score)
-        self.path = path or kaggle_index_path()
+        self.path = os.path.abspath(path or kaggle_index_path())
         self._columns_lock = threading.Lock()
         self._columns_loaded = None
+        self._loaded_version = None  # (mtime, size) of the file the columns came from
 
     @staticmethod
     def _no_dataframe():
@@ -173,12 +188,46 @@ class KaggleChordsIndex(KaggleChordsSource):
         # read-only, one connection per call: safe across threads
         return closing(sqlite3.connect(f"{Path(self.path).as_uri()}?mode=ro", uri=True))
 
+    _CACHED = (
+        "_ids",
+        "_titles",
+        "_artists",
+        "_langs",
+        "_popularity",
+        "_labels",
+        "_row_of_id",
+    )
+
+    def _version(self):
+        try:
+            stat = os.stat(self.path)
+        except OSError:
+            return None
+        return stat.st_mtime_ns, stat.st_size
+
+    def _reload_if_rebuilt(self) -> None:
+        """Drop what was read from an index file that has since been rebuilt."""
+        if self._loaded_version is not None and self._version() != self._loaded_version:
+            with self._columns_lock:
+                self._columns_loaded, self._loaded_version = None, None
+                for name in self._CACHED:
+                    self.__dict__.pop(name, None)
+
+    def search(self, query: str = "", **constraints):
+        self._reload_if_rebuilt()
+        return super().search(query, **constraints)
+
+    def get(self, song_id: str):
+        self._reload_if_rebuilt()
+        return super().get(song_id)
+
     @property
     def _columns(self) -> dict[str, list]:
-        """ids, titles, artists, langs and popularity, in row order, loaded once."""
+        """ids, titles, artists, langs and popularity, in row order, loaded once per file."""
         if self._columns_loaded is None:
             with self._columns_lock:
                 if self._columns_loaded is None:
+                    self._loaded_version = self._version()
                     with self._connect() as conn:
                         rows = conn.execute(
                             "SELECT id, title, artist, lang, popularity "

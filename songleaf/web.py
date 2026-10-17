@@ -104,7 +104,12 @@ class SheetRequest:
         for name in ("lyric_color", "chord_color"):
             if getattr(self, name) and not _COLOR_RE.fullmatch(getattr(self, name)):
                 raise ValueError(f"{name} is #rrggbb, got {getattr(self, name)!r}")
-        return replace(self, layout=layout_spec(self.layout))
+        return replace(
+            self,
+            layout=layout_spec(self.layout),
+            lyric_color=self.lyric_color.lower(),
+            chord_color=self.chord_color.lower(),
+        )
 
     def renderer(self):
         """The ``(song, output) -> dict`` renderer this request describes."""
@@ -130,6 +135,7 @@ def mk_app(
     store=None,
     title: str = "songleaf",
     sheet_cache_size: int = 32,
+    image_cache_size: int = 8,
     image_scale: float = 2.0,
 ):
     """The FastAPI app. ``sources`` and ``store`` are the seams of :mod:`songleaf.tools`.
@@ -229,7 +235,7 @@ def mk_app(
             raise HTTPException(400, str(error)) from error
         return rendered(request)
 
-    @lru_cache(maxsize=sheet_cache_size)
+    @lru_cache(maxsize=image_cache_size)  # PNGs are ~10x a PDF's size: keep fewer
     def page_image(request: SheetRequest, page: int) -> bytes:
         pdf, _ = rendered(request)
         with pdfium_lock:

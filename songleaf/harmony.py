@@ -135,9 +135,11 @@ _FLAT_NAMES = ("C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B")
 #: Keys whose signatures use flats (as tonic pitch classes): F Bb Eb Ab Db Gb, d g c f bb eb.
 _FLAT_MAJOR_TONICS = frozenset({5, 10, 3, 8, 1, 6})
 _FLAT_MINOR_TONICS = frozenset({2, 7, 0, 5, 10, 3})
+#: The bass is only a final ``/note`` (``D/F#``); a slash inside the extension (``C6/9``,
+#: ``Bm5-/7``) belongs to the chord's suffix.
 _TRANSPOSABLE_RE = re.compile(
-    r"(?P<lead>[*.(\s]*)(?P<root>[A-G][#b]?)(?P<rest>[^/]*)"
-    r"(?:/(?P<bass>[A-G][#b]?)(?P<tail>.*))?",
+    r"(?P<lead>[*.(\s]*)(?P<root>[A-G][#b]?)(?P<rest>.*?)"
+    r"(?:/(?P<bass>[A-G][#b]?)(?P<tail>[^/A-Za-z0-9#]*))?",
     re.DOTALL,
 )
 
@@ -179,6 +181,8 @@ def transpose_chord(symbol: str, semitones: int, *, flats: bool = False) -> str:
     ('A', 'Gm7', 'Eb/G')
     >>> transpose_chord("Bbmaj7", -1, flats=True), transpose_chord("N.C.", 4), transpose_chord("Am", 0)
     ('Amaj7', 'N.C.', 'Am')
+    >>> [transpose_chord(c, 2) for c in ("D7/9", "Bm5-/7", "C6/9", "C(4/9)", "(Em7)", "Am7/G)")]
+    ['E7/9', 'C#m5-/7', 'D6/9', 'D(4/9)', '(F#m7)', 'Bm7/A)']
     """
     if semitones % 12 == 0 or parse_chord(symbol) is None:
         return symbol

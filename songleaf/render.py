@@ -1146,7 +1146,7 @@ def render_sheet(
 
     The lyric font size is the largest that fits the song on one page, times
     ``scale``: ``1`` fills the page, ``0.8`` leaves room, ``1.2`` is larger type
-    that runs onto a second page.
+    that runs onto a second page. It never goes past ``max_font_size``.
 
     ``output`` is a path or a binary file object. Returns
     ``{"path", "font_size", "pages", "rows"}``; ``path`` is ``None`` when
@@ -1167,9 +1167,9 @@ def render_sheet(
         min_font_size=min_font_size,
         max_font_size=max_font_size,
     )
-    if scale <= 0:
+    if not scale > 0:  # also refuses NaN
         raise ValueError(f"scale must be positive, got {scale!r}")
-    size *= scale
+    size = min(size * scale, max_font_size)
     heading = _heading(song)
     paint = _paint(song, style, layout.shading)
     flow = _flow(
