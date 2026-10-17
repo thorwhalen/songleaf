@@ -215,3 +215,42 @@ def test_a_stored_song_can_be_deleted(client):
     assert client.delete("/songs", params={"key": "memory:1"}).json()["deleted"]
     assert client.get("/songs").json() == []
     assert client.delete("/songs", params={"key": "memory:1"}).status_code == 404
+
+
+def test_groups_save_with_a_revision_and_refuse_a_stale_one(client):
+    empty = client.get("/groups").json()
+    assert empty == {"revision": 0, "snapshot": {"nodes": [], "edges": []}}
+    snapshot = {
+        "nodes": [{"id": "Family"}, {"id": "memory:1"}],
+        "edges": [{"id": "e1", "parent": "Family", "child": "memory:1"}],
+    }
+    saved = client.put("/groups", json={"revision": 0, "snapshot": snapshot})
+    assert saved.status_code == 200 and saved.json()["revision"] == 1
+    stale = client.put(
+        "/groups", json={"revision": 0, "snapshot": {"nodes": [], "edges": []}}
+    )
+    assert stale.status_code == 409 and stale.json()["current"]["revision"] == 1
+    bad = client.put("/groups", json={"revision": 1, "snapshot": {"nodes": "x"}})
+    assert bad.status_code == 400
+
+
+def test_deleting_a_song_takes_it_out_of_its_groups(client):
+    client.get("/sheet", params={"key": "memory:1"})
+    snapshot = {
+        "nodes": [{"id": "Family"}, {"id": "memory:1"}],
+        "edges": [{"id": "e1", "parent": "Family", "child": "memory:1"}],
+    }
+    client.put("/groups", json={"revision": 0, "snapshot": snapshot})
+    client.delete("/songs", params={"key": "memory:1"})
+    assert client.get("/groups").json()["snapshot"]["edges"] == []
+
+
+def test_the_vendored_groups_bundle_is_served(client):
+    js = client.get("/ui/vendor/zodal-groups.js")
+    assert (
+        js.status_code == 200
+        and "renderTagMenu" in js.text
+        or "defineGroups" in js.text
+    )
+    assert client.get("/ui/vendor/other.js").status_code == 404
+    assert client.get("/ui/../web.py").status_code == 404

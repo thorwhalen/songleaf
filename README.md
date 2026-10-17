@@ -136,6 +136,10 @@ site.get("/songleaf/", response_class=HTMLResponse)(
 )
 ```
 
+**Your songs** (the songs opened before) can be deleted, and grouped. Groups work like Gmail labels: a song can be in several groups, and a group can hold other groups. You can filter the list by a group or browse it as a tree, add a song to a group from the song's page (type a name), or pick several songs and use **Group…**. Groups are shared by everyone using the app (one library). They are kept on the server as a [zodal-groups](https://github.com/i2mint/zodal-groups) snapshot with a revision (`songleaf.library`). A save made from an out-of-date revision is refused, and the page replays its changes on top of the newer groups, so two people editing at once don't overwrite each other.
+
+In Read view, the floating ▶ starts **auto-scroll**, with − and + for the speed. It is remembered per song, pauses when you touch the song, and keeps the screen awake while running.
+
 The app has no login of its own: put it behind whatever gates the host. It takes the same `sources=` and `store=` as `sheet`. A rendered sheet is kept in memory (`sheet_cache_size=`, default 32), so the page's requests for one sheet render it once.
 
 ## Extending

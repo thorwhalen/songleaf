@@ -5,7 +5,10 @@ apps.thorwhalen.com). Its routes:
 
 - ``GET /search?q=&artist=&lyrics=&limit=``: hits, best first (``tools.search``)
 - ``GET /songs``: the stored songs, with title and artist
-- ``DELETE /songs?key=``: remove one from them (``tools.forget``)
+- ``DELETE /songs?key=``: remove one from them, and from its groups (``tools.forget``)
+- ``GET /groups``, ``PUT /groups``: the library's groups, a zodal-groups snapshot with a
+  revision (:mod:`songleaf.library`); a save from a stale revision is a 409 carrying the
+  current groups
 - ``GET /layouts``: the layout options a sheet can combine, and the default colours
 - ``GET /song?key=``: the song as JSON (``tools.song``): text, chords, sections, its
   key and a chord table for every key it can move to; the page draws it as text
@@ -48,7 +51,7 @@ from functools import lru_cache
 from importlib.resources import files
 from urllib.parse import quote
 
-from songleaf import tools
+from songleaf import library, tools
 from songleaf.render import (
     LAYOUT_OPTIONS,
     DenseStyle,
@@ -62,7 +65,13 @@ from songleaf.sources import SongNotFound, SourceUnavailable
 #: Failures a request can cause, and the HTTP status each becomes. Nothing broader:
 #: a KeyError or ValueError from a bug must not read as "not found" or "your fault".
 ERROR_STATUS = {SongNotFound: 404, SourceUnavailable: 503}
-_UI_FILES = {"app.js": "text/javascript", "style.css": "text/css"}
+_UI_FILES = {
+    "app.js": "text/javascript",
+    "style.css": "text/css",
+    # zodal-groups (model + vanilla renderers), bundled: see misc/vendor/README.md
+    "vendor/zodal-groups.js": "text/javascript",
+    "vendor/zodal-groups.css": "text/css",
+}
 _MAX_LIMIT = 50
 _PRIVATE_CACHE = {"Cache-Control": "private, max-age=300"}
 _COLOR_RE = re.compile(r"#[0-9a-fA-F]{6}")
@@ -144,7 +153,7 @@ def mk_app(
     ``image_scale`` is pixels per PDF point for ``/sheet.png`` (2: an A4 page is
     1190 pixels wide, sharp on a phone).
     """
-    from fastapi import Depends, FastAPI, HTTPException, Query
+    from fastapi import Body, Depends, FastAPI, HTTPException, Query
     from fastapi.responses import JSONResponse, Response
 
     app = FastAPI(title=title)
@@ -276,11 +285,27 @@ def mk_app(
             headers=_PRIVATE_CACHE,
         )
 
-    @app.get("/ui/{name}")
+    @app.get("/groups")
+    def groups() -> dict:
+        return library.read_groups()
+
+    @app.put("/groups")
+    def save_groups(body: dict = Body(...)):
+        try:
+            revision = int(body.get("revision"))
+            return library.save_groups(body.get("snapshot"), revision=revision)
+        except (TypeError, ValueError) as error:
+            raise HTTPException(400, str(error)) from error
+        except library.RevisionConflict as conflict:
+            return JSONResponse(
+                {"detail": str(conflict), "current": conflict.current}, status_code=409
+            )
+
+    @app.get("/ui/{name:path}")
     def ui(name: str):
         if name not in _UI_FILES:
             return JSONResponse({"detail": f"No UI file {name!r}"}, status_code=404)
-        body = files("songleaf").joinpath("data", "web", name).read_bytes()
+        body = files("songleaf").joinpath("data", "web", *name.split("/")).read_bytes()
         return Response(body, media_type=_UI_FILES[name])
 
     return app
