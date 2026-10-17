@@ -373,17 +373,13 @@ button.danger:disabled { opacity: 0.4; cursor: default; }
 .secondary-button { font: inherit; padding: 9px 14px; border-radius: var(--radius); border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; }
 .secondary-button:disabled { opacity: 0.4; cursor: default; }
 
-/* The group chips: one scrolling row per level (All · groups · Ungrouped, then a chosen
-   group's own groups). */
+/* The group chips (zodal-groups renderGroupChips): one scrolling row per level, edge to edge. */
 .group-nav { margin: 2px 0 6px; }
-.chip-row {
-  display: flex; gap: 6px; overflow-x: auto; padding: 4px var(--gutter) 6px;
-  margin: 0 calc(-1 * var(--gutter)); scrollbar-width: none;
-}
-.chip-row::-webkit-scrollbar { display: none; }
-.chip-row .chip { flex: 0 0 auto; }
-.chip-row.sub { padding-top: 0; }
-.chip-row.sub::before { content: "↳"; align-self: center; color: var(--muted); padding-right: 2px; }
+.group-nav .zg-group-chips-row { margin: 0 calc(-1 * var(--gutter)); padding: 2px var(--gutter) 4px; scrollbar-width: none; }
+.group-nav .zg-group-chips-row::-webkit-scrollbar { display: none; }
+.group-nav .zg-group-chip { font-size: 0.92em; border-color: var(--line); }
+.group-nav .zg-group-chip[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.group-nav .zg-group-chip.is-on-path { color: var(--accent); }
 .group-menu { margin: 6px 0 10px; }
 
 /* "Arrange groups" (wide screens): the zodal-groups tree, for dragging into groups. */
@@ -426,20 +422,12 @@ button.danger:disabled { opacity: 0.4; cursor: default; }
   background: var(--fg); color: var(--bg); font-size: 0.92em; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
 }
 
-/* --- zodal-groups stopgaps --------------------------------------------------------------
-   Until the vendored bundle is rebuilt from a zodal-groups with its touch pass: its styles
-   set `font: 13px` on their roots (so they ignore the page's type), give 26px rows and a
-   13px search field (iOS zooms into it), and hover without (hover: hover). Its stylesheet
-   loads after this one, so every rule here starts with `body` to win. */
-body :is(.zg-tree, .zg-tagmenu, .zg-tags, .zg-facets, .zg-columns, .zg-breadcrumbs) { font: inherit; }
-body .zg-row { min-height: var(--tap); padding-top: 4px; padding-bottom: 4px; }
-body .zg-twisty { align-self: stretch; display: inline-flex; align-items: center; justify-content: center; min-width: 28px; }
-@media (hover: none) { body .zg-row:hover { background: none; } }
-body .zg-tagmenu-search { font-size: max(16px, 1em); padding: 10px 12px; border-radius: 8px; }
+/* --- zodal-groups, themed ---------------------------------------------------------------
+   The vendored styles take the page's type and keep 44px targets on touch; this sets the
+   desktop row height to the page's and themes the tag menu. Its stylesheet loads after this
+   one, so these rules start with `body` to win. */
+:root { --zg-row-min: var(--tap); }
 body .zg-tagmenu-list { max-height: 45vh; }
-body .zg-tagmenu-option { min-height: var(--tap); padding: 6px 8px; grid-template-columns: 1.4rem 1fr auto; }
-body .zg-tagmenu-box { width: 1.15rem; height: 1.15rem; font-size: 0.85rem; }
-body .zg-tagmenu-actions button { min-height: var(--tap); padding: 8px 18px; border-radius: 8px; }
 /* the keyboard's highlight only while the menu has focus: on a phone it reads as "selected" */
 body .zg-tagmenu:not(:focus-within) .zg-tagmenu-option.is-active { background: none; outline: none; }
 body .zg-tagmenu-apply[aria-disabled="false"] { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }

@@ -268,7 +268,8 @@
     let blocked = ""; // why saving stopped ("" while it works)
     let rebuilds = 0; // bumps when the space is replaced: a save in flight then re-saves
     let unsubscribe = null;
-    let labels = new Map(); // stored song key -> "Title · Artist"
+    let labels = new Map(); // stored song key -> its title
+    let artists = new Map(); // stored song key -> its artist
     const listeners = new Set();
     const notify = (event) => listeners.forEach((f) => f(event));
 
@@ -280,7 +281,8 @@
       return zg;
     }
     function setSongs(songs) {
-      labels = new Map(songs.map((s) => [s.key, [s.title, s.artist].filter(Boolean).join(" · ") || s.key]));
+      labels = new Map(songs.map((s) => [s.key, s.title || s.key]));
+      artists = new Map(songs.map((s) => [s.key, s.artist || ""]));
     }
     // A new space from a snapshot, or an Error: the current one is untouched until it works.
     function build(snapshot) {
@@ -430,6 +432,7 @@
       songsIn,
       // The groups a song (or a group) is directly in.
       groupsOf(key) { return space ? space.parents(key).filter((id) => !labels.has(id)) : []; },
+      artistOf(id) { return artists.get(id) || undefined; },
       labelOf(id) { return (space && (space.space.nodes.get(id) || {}).label) || id; },
       isSong(id) { return labels.has(id); },
       onChange(f) { listeners.add(f); return () => listeners.delete(f); },
@@ -493,6 +496,7 @@
   }
 
   function navigate(route, { replace = false, state = {} } = {}) {
+    clearTimeout(scrollSaveTimer);
     const url = formatRoute(route);
     if (replace || url === location.pathname + location.search) history.replaceState(state, "", url);
     else history.pushState(state, "", url);
@@ -505,7 +509,13 @@
   function rememberScroll() {
     history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, "", location.href);
   }
-  // A phone may discard a hidden tab and reload it later: every entry keeps its place.
+  // A phone may discard a hidden tab and reload it later: every entry keeps its place, saved
+  // when the scrolling stops (a save while the page unloads is not kept by every browser).
+  let scrollSaveTimer = 0;
+  window.addEventListener("scroll", () => {
+    clearTimeout(scrollSaveTimer);
+    scrollSaveTimer = setTimeout(rememberScroll, 400);
+  }, { passive: true });
   window.addEventListener("pagehide", rememberScroll);
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") rememberScroll(); });
   const savedScroll = () => (history.state && typeof history.state.scrollY === "number" ? history.state.scrollY : null);
@@ -724,57 +734,6 @@
     if (after.restoreY != null) window.scrollTo(0, after.restoreY);
   }
 
-  // Group navigation as chips: All · the top groups · Ungrouped, and under a chosen group that
-  // holds groups, a row of those (a drill-down: a row per level of the path). Local on purpose:
-  // zodal-groups is getting a drill-down chip widget, and this is the one function to swap for
-  // it. `model` is what it reads (see groupModel); `value` is a group id, "" for all songs, or
-  // UNGROUPED; `onPick(value)` is called for a deliberate change.
-  function renderGroupChips(host, model, { value, onPick }) {
-    const path = model.pathTo(value);
-    const chip = (id, text, n, checked) => h("button", {
-      type: "button", role: "radio", class: "chip", "aria-checked": String(checked),
-      onclick: () => { if (id !== value) onPick(id); },
-    }, text, h("span", { class: "count" }, String(n)));
-    const rows = [h("div", { class: "chip-row", role: "radiogroup", "aria-label": "Show" },
-      chip("", "All", model.total, value === ""),
-      model.roots().map((g) => chip(g.id, g.label, g.count, path[0] === g.id)),
-      (model.ungrouped || value === UNGROUPED) && chip(UNGROUPED, "Ungrouped", model.ungrouped, value === UNGROUPED))];
-    path.forEach((id, depth) => {
-      const subs = model.subgroups(id);
-      if (!subs.length) return;
-      const here = model.find(id);
-      rows.push(h("div", { class: "chip-row sub", role: "radiogroup", "aria-label": `In ${here.label}` },
-        chip(id, `All of ${here.label}`, here.count, value === id),
-        subs.map((g) => chip(g.id, g.label, g.count, path[depth + 1] === g.id))));
-    });
-    host.replaceChildren(...rows);
-    for (const row of rows) { // a chosen chip scrolled out of its row (a reload, Back) comes into view
-      const on = row.querySelector('[aria-checked="true"]');
-      if (on && on.offsetLeft + on.offsetWidth > row.scrollLeft + row.clientWidth) row.scrollLeft = on.offsetLeft - 16;
-    }
-  }
-
-  // What the group chips read: the groups as a hierarchy, with how many songs each holds.
-  function groupModel(songs) {
-    const list = groups.list();
-    const byId = new Map(list.map((g) => [g.id, g]));
-    const parentsOf = (id) => groups.groupsOf(id).filter((p) => byId.has(p));
-    return {
-      total: songs.length,
-      ungrouped: list.length ? songs.filter((s) => !groups.groupsOf(s.key).length).length : 0,
-      find: (id) => byId.get(id),
-      roots: () => list.filter((g) => !parentsOf(g.id).length),
-      subgroups: (id) => list.filter((g) => parentsOf(g.id).includes(id)),
-      // From a top group down to `id`, through the first parent at each level (a group in
-      // several groups is reached through one of them); [] for all songs and Ungrouped.
-      pathTo(id) {
-        const path = [];
-        for (let at = id; at && byId.has(at) && !path.includes(at); at = parentsOf(at)[0]) path.unshift(at);
-        return path;
-      },
-    };
-  }
-
   // File songs into groups: the zodal-groups tag menu over `keys`, staged until Apply (the
   // same menu from the library's Group… and from a song's page). It closes after an Apply that
   // went through, and a toast says what changed.
@@ -854,6 +813,10 @@
     let group = route.group || "";
     let tree = null; // the arrange tree, kept across data redraws so expanded groups stay open
     let menu = null; // the tag menu, while open
+    let chips = null; // the zodal-groups chip navigation, {renderer, space}
+    // The chips speak in selections ({path, ungrouped}), the URL in one group id.
+    const selectionOf = (value) => (value === UNGROUPED ? { ungrouped: true } : { path: value ? [value] : [] });
+    const valueOf = (sel) => (sel.ungrouped ? UNGROUPED : sel.path.length ? sel.path[sel.path.length - 1] : "");
     const listHost = h("div");
     const navHost = h("nav", { class: "group-nav", "aria-label": "Groups" });
     const menuHost = h("div", { class: "group-menu-host" });
@@ -904,21 +867,42 @@
       label.disabled = busy || !selected.size || !groups.space;
     };
     function shown() { // the songs the chosen group lets through, in library order
-      if (!group || !groups.space) return songs;
-      if (group === UNGROUPED) return songs.filter((s) => !groups.groupsOf(s.key).length);
-      const keep = new Set(groups.songsIn(group));
+      if (!group || !chips) return songs;
+      const keep = new Set(chips.renderer.items());
       return songs.filter((s) => keep.has(s.key));
     }
+    // A tap on a chip is a deliberate change (pushed); the chips also move by themselves when
+    // the chosen group goes away (replaced).
+    let tapped = false;
+    navHost.addEventListener("click", () => { tapped = true; }, true);
+    navHost.addEventListener("click", () => { tapped = false; });
+    const corrected = (value) => { // the chips showed another group than the URL named
+      group = value;
+      history.replaceState(history.state, "", formatRoute({ group }));
+    };
     function drawNav() {
-      const model = groupModel(songs);
-      const known = !group || group === UNGROUPED || model.find(group);
-      if (groups.space && !known) { // a group emptied or renamed elsewhere: show all, and say so in the URL
-        group = "";
-        history.replaceState(history.state, "", formatRoute({ group: "" }));
+      if (!groups.space || !groups.list().length) {
+        if (chips) chips.renderer.destroy();
+        chips = null;
+        navHost.hidden = true;
+        return;
       }
-      navHost.hidden = !groups.list().length;
-      if (navHost.hidden) navHost.replaceChildren();
-      else renderGroupChips(navHost, model, { value: group, onPick: pick });
+      navHost.hidden = false;
+      if (chips && chips.space === groups.space) { chips.renderer.render(); return; }
+      if (chips) chips.renderer.destroy();
+      const renderer = groups.zg.renderGroupChips(navHost, groups.space, {
+        items: () => songs.map((s) => s.key),
+        selection: selectionOf(group),
+        label: "Groups",
+        onNavigate: (sel) => {
+          if (tapped) { tapped = false; pick(valueOf(sel)); return; }
+          corrected(valueOf(sel));
+          drawList();
+          sync();
+        },
+      });
+      chips = { renderer, space: groups.space };
+      if (valueOf(renderer.selection) !== group) corrected(valueOf(renderer.selection)); // unknown or emptied
     }
     // A deliberate change of group is a history entry: Back undoes it, a reload keeps it.
     function pick(id) {
@@ -929,6 +913,10 @@
     function setGroup(id) {
       group = id || "";
       if (menu) menu.close(); // its selection was made in the old list
+      if (chips) {
+        const shownValue = valueOf(chips.renderer.setSelection(selectionOf(group)));
+        if (shownValue !== group) corrected(shownValue);
+      }
       redraw();
     }
     function emptyNote() {
@@ -957,6 +945,7 @@
         host);
       details.open = arrangeOpen;
       const renderer = groups.zg.renderTree(host, groups.space, {
+        subtitle: (row) => groups.artistOf(row.nodeId),
         onSelect: (id) => { const song = songs.find((s) => s.key === id); if (song) openSong(song); },
         onChange: () => {},
       });
@@ -984,7 +973,7 @@
     }
     draw();
     const unsubscribe = groups.onChange((event) => {
-      if (!listHost.isConnected) { unsubscribe(); return; } // this view is gone
+      if (!listHost.isConnected) { unsubscribe(); if (chips) chips.renderer.destroy(); return; } // this view is gone
       if (event.type === "rebuilt") draw();
       else if (event.type === "change" && !(menu && menu.open)) redraw(); // the menu redraws itself; we follow on close
     });
@@ -1068,6 +1057,7 @@
     const known = history.state || {};
     const sameSong = app.dataset.song === route.song;
     const reopen = sameSong ? openPanel : null; // a choice made in a panel redraws the song; the panel stays open
+    const restoreY = fresh ? savedScroll() : null; // a reload, mid-song: read before anything scrolls
     if (currentPanels) currentPanels.dispose();
     openPanel = reopen;
     if (!sameSong) window.scrollTo(0, 0);
@@ -1143,7 +1133,7 @@
     showSongGroups(route.song, groupsButton, { reload: !sameSong });
     if (reopen && builders[reopen] && (reopen !== "groups" || groups.space)) panels.open(reopen, builders[reopen]);
     else openPanel = null;
-    if (fresh && savedScroll() !== null) window.scrollTo(0, savedScroll()); // a reload, mid-song
+    if (restoreY !== null) window.scrollTo(0, restoreY);
     if (pendingFocus) {
       const target = app.querySelector(pendingFocus);
       if (target) target.focus({ preventScroll: true });
