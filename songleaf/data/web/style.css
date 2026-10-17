@@ -278,3 +278,18 @@ button, .button {
 .reader.shaded .fam-bridge { background: var(--bridge-band); }
 .reader.shaded [class*="fam-"] { margin-left: -0.3em; margin-right: -0.3em; padding-left: 0.3em; padding-right: 0.3em; }
 .reader.shaded .section-label[class*="fam-"] { margin-top: 0.9em; margin-bottom: 0; padding-top: 0.2em; }
+
+/* --- the library: your songs, an edit mode ----------------------------------------------- */
+.library-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.library-head h2 { margin-bottom: 0.2em; }
+.library-head .text, .edit-actions .text { font: inherit; background: none; border: 0; color: var(--accent); cursor: pointer; padding: 6px 0; }
+.edit-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 6px; }
+.edit-actions[hidden] { display: none; }
+button.danger { background: #b3261e; border-color: #b3261e; color: #fff; }
+button.danger:disabled { opacity: 0.4; cursor: default; }
+.songs.picking label { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.6em; padding: 12px 2px; min-height: 44px; cursor: pointer; }
+.songs.picking input { width: 20px; height: 20px; align-self: center; accent-color: var(--accent); margin: 0 4px 0 0; }
+
+/* --- auto-scroll --------------------------------------------------------------------------- */
+.toolbar button.play { min-width: 40px; }
+.toolbar button.play[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }

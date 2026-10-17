@@ -207,3 +207,11 @@ def test_sections_carry_the_family_the_sheet_shades(client):
     sections = client.get("/song", params={"key": "memory:1"}).json()["sections"]
     families = {s["label"]: s["family"] for s in sections}
     assert families["Chorus"] == "chorus" and families["Verse 1"] == ""
+
+
+def test_a_stored_song_can_be_deleted(client):
+    client.get("/sheet", params={"key": "memory:1"})  # stores it
+    assert [s["key"] for s in client.get("/songs").json()] == ["memory:1"]
+    assert client.delete("/songs", params={"key": "memory:1"}).json()["deleted"]
+    assert client.get("/songs").json() == []
+    assert client.delete("/songs", params={"key": "memory:1"}).status_code == 404
