@@ -323,3 +323,12 @@ def test_every_ui_file_is_served(client):
         response = client.get(f"/ui/{name}")
         assert response.status_code == 200, name
         assert response.headers["content-type"].startswith(media_type)
+
+
+def test_the_reader_settings_map_onto_real_layout_options(client):
+    from songleaf.render import LAYOUT_OPTIONS
+
+    mapping = client.get("/layouts").json()["from_reader"]
+    assert set(mapping) == {"chordMode", "columns", "shade"}
+    for by_value in mapping.values():
+        assert set(by_value.values()) <= set(LAYOUT_OPTIONS) - {"dense"}

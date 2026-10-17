@@ -91,6 +91,13 @@ LAYOUT_CONTROLS: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
     ("columns", "Columns", (("", "One"), ("two-column", "Two"))),
     ("shading", "Shade sections", (("", "Off"), ("shaded", "On"))),
 )
+#: How the reader's settings map onto layout options, so a sheet starts as the song reads:
+#: ``{setting: {value: option}}`` (values as strings). Served by ``/layouts`` as ``from_reader``.
+READER_LAYOUT: dict[str, dict[str, str]] = {
+    "chordMode": {"inline": "inline"},
+    "columns": {"2": "two-column"},
+    "shade": {"true": "shaded"},
+}
 _MAX_LIMIT = 50
 _PRIVATE_CACHE = {"Cache-Control": "private, max-age=300"}
 _COLOR_RE = re.compile(r"#[0-9a-fA-F]{6}")
@@ -246,6 +253,7 @@ def mk_app(
             "default": "dense",
             "options": options,
             "controls": controls,
+            "from_reader": READER_LAYOUT,
             "style": style,
             "limits": SHEET_LIMITS,
         }

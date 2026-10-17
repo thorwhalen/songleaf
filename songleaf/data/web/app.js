@@ -95,6 +95,10 @@
     if (!isObject(values)) values = {};
     if (!isObject(values.look)) delete values.look;
     const look = values.look || {};
+    if (values.look && !look.v) { // v2: the reader and the PDF have their own chord size
+      if (look.chordScale !== undefined && look.printChordScale === undefined) look.printChordScale = look.chordScale;
+      look.v = 2;
+    }
     if (look.lyricColor || look.chordColor) { // before papers, colours were for light paper
       look.inks = { ...(look.inks || {}), light: { lyricColor: look.lyricColor, chordColor: look.chordColor } };
       delete look.lyricColor;
@@ -501,6 +505,9 @@
   function rememberScroll() {
     history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, "", location.href);
   }
+  // A phone may discard a hidden tab and reload it later: every entry keeps its place.
+  window.addEventListener("pagehide", rememberScroll);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") rememberScroll(); });
   const savedScroll = () => (history.state && typeof history.state.scrollY === "number" ? history.state.scrollY : null);
 
   window.addEventListener("popstate", () => {
@@ -585,7 +592,13 @@
     const route = readRoute();
     const fresh = firstRender;
     firstRender = false;
-    if (route.song) renderSong(route, generation);
+    if (!route.song) { // a song left (Back, or the link): opening it again starts afresh
+      delete app.dataset.song;
+      if (currentPanels) currentPanels.dispose();
+      currentPanels = null;
+      openPanel = null;
+    }
+    if (route.song) renderSong(route, generation, fresh);
     else renderSearch(route, generation, fresh);
   }
 
@@ -725,7 +738,7 @@
     const rows = [h("div", { class: "chip-row", role: "radiogroup", "aria-label": "Show" },
       chip("", "All", model.total, value === ""),
       model.roots().map((g) => chip(g.id, g.label, g.count, path[0] === g.id)),
-      model.ungrouped && chip(UNGROUPED, "Ungrouped", model.ungrouped, value === UNGROUPED))];
+      (model.ungrouped || value === UNGROUPED) && chip(UNGROUPED, "Ungrouped", model.ungrouped, value === UNGROUPED))];
     path.forEach((id, depth) => {
       const subs = model.subgroups(id);
       if (!subs.length) return;
@@ -766,7 +779,7 @@
   // same menu from the library's Group… and from a song's page). It closes after an Apply that
   // went through, and a toast says what changed.
   const coarsePointer = window.matchMedia ? window.matchMedia("(pointer: coarse)") : null;
-  function openTagMenu(host, keys, { onClose = () => {} } = {}) {
+  function openTagMenu(host, keys, { onClose = () => {}, opener = null } = {}) {
     if (!groups.space || !keys.length) return null;
     const handle = groups.space;
     const atOpen = handle.space;
@@ -781,7 +794,13 @@
       open.destroy();
       host.replaceChildren();
       onClose();
+      if (opener && opener.isConnected && (!document.activeElement || document.activeElement === document.body)) opener.focus();
     };
+    // Only an Apply (the button, or Ctrl/⌘+Enter) may close the menu as done: a drag in the
+    // tree meanwhile also changes the space.
+    let applied = false;
+    panel.addEventListener("click", (e) => { if (e.target.closest(".zg-tagmenu-apply")) applied = true; }, true);
+    panel.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) applied = true; }, true);
     menu = groups.zg.renderTagMenu(panel, handle, {
       selection: keys,
       candidates: () => groups.list().map((g) => g.id), // groups only: never a song
@@ -790,7 +809,7 @@
       onClose: close,
       onChange: () => {
         // After an Apply: the space moved on and nothing is left staged.
-        if (!menu || groups.space !== handle || handle.space === atOpen || menu.session.state.pending.size) return;
+        if (!menu || !applied || groups.space !== handle || handle.space === atOpen || menu.session.state.pending.size) return;
         const sentence = filingSentence(keys, before);
         setTimeout(close, 0); // let the menu finish its own update first
         if (sentence) toast(sentence);
@@ -868,7 +887,10 @@
     }, "Delete");
     const label = h("button", {
       type: "button", class: "secondary-button", disabled: true,
-      onclick: () => { menu = openTagMenu(menuHost, [...selected], { onClose: () => { menu = null; redraw(); } }); },
+      onclick: () => {
+        if (menu) menu.close();
+        menu = openTagMenu(menuHost, [...selected], { opener: label, onClose: () => { menu = null; redraw(); } });
+      },
     }, "Group…");
     const actions = h("div", { class: "edit-actions", hidden: true }, count, h("div", { class: "edit-buttons" }, label, remove));
     const edit = h("button", {
@@ -889,7 +911,7 @@
     }
     function drawNav() {
       const model = groupModel(songs);
-      const known = group === UNGROUPED ? model.ungrouped > 0 : !group || model.find(group);
+      const known = !group || group === UNGROUPED || model.find(group);
       if (groups.space && !known) { // a group emptied or renamed elsewhere: show all, and say so in the URL
         group = "";
         history.replaceState(history.state, "", formatRoute({ group: "" }));
@@ -906,6 +928,7 @@
     }
     function setGroup(id) {
       group = id || "";
+      if (menu) menu.close(); // its selection was made in the old list
       redraw();
     }
     function emptyNote() {
@@ -1040,7 +1063,7 @@
     if (button) button.focus();
   });
 
-  async function renderSong(route, gen) {
+  async function renderSong(route, gen, fresh = false) {
     activeLibrary = null;
     const known = history.state || {};
     const sameSong = app.dataset.song === route.song;
@@ -1077,7 +1100,7 @@
       await getOptions().catch(() => null);
     } catch (error) {
       if (gen !== generation) return;
-      body.replaceChildren(errorBox(`This song could not be opened (${error.message}).`, () => { generation += 1; renderSong(route, generation); }));
+      body.replaceChildren(errorBox(`This song could not be opened (${error.message}).`, () => { generation += 1; renderSong(route, generation, fresh); }));
       return;
     } finally {
       spinner.stop();
@@ -1105,7 +1128,7 @@
       look: (host) => { host.append(lookSheet(route)); },
       more: (host) => { host.append(morePanel(route, () => panels.open("groups", builders.groups))); },
       groups: (host) => {
-        const menu = openTagMenu(host, [route.song], { onClose: () => { if (openPanel === "groups") panels.shut(); } });
+        const menu = openTagMenu(host, [route.song], { opener: groupsButton, onClose: () => { if (openPanel === "groups") panels.shut(); } });
         return () => { if (menu) menu.close(); };
       },
     };
@@ -1120,6 +1143,7 @@
     showSongGroups(route.song, groupsButton, { reload: !sameSong });
     if (reopen && builders[reopen] && (reopen !== "groups" || groups.space)) panels.open(reopen, builders[reopen]);
     else openPanel = null;
+    if (fresh && savedScroll() !== null) window.scrollTo(0, savedScroll()); // a reload, mid-song
     if (pendingFocus) {
       const target = app.querySelector(pendingFocus);
       if (target) target.focus({ preventScroll: true });
@@ -1138,6 +1162,7 @@
     button.title = names.length ? "Change this song's groups" : "Put this song in a group";
   }
 
+  let stopSongGroups = null;
   async function showSongGroups(key, button, { reload }) {
     drawGroupsButton(button, key);
     if (reload || !groups.space) {
@@ -1149,11 +1174,13 @@
     }
     if (!button.isConnected) return;
     drawGroupsButton(button, key);
+    if (stopSongGroups) stopSongGroups(); // the song was redrawn: one listener, the current button's
     const unsubscribe = groups.onChange((event) => {
       if (!button.isConnected) { unsubscribe(); return; }
       drawGroupsButton(button, key);
       if (event.type === "rebuilt" && openPanel === "groups" && currentPanels) currentPanels.shut(); // the menu was on the old space
     });
+    stopSongGroups = unsubscribe;
   }
 
   function tableFor(song, t) {
@@ -1564,10 +1591,8 @@
   // The sheet follows the reader's settings (chords in the line, two columns, shading) unless a
   // layout was chosen here, which the URL then carries as `layout=`.
   function readerLayout(look) {
-    const parts = [];
-    if (look.chordMode === "inline") parts.push("inline");
-    if (look.columns === 2) parts.push("two-column");
-    if (look.shade) parts.push("shaded");
+    const map = (options && options.from_reader) || {}; // {setting: {value: option}}, from /layouts
+    const parts = Object.entries(map).map(([setting, byValue]) => byValue[String(look[setting])]).filter(Boolean);
     return parts.join("+") || "dense";
   }
   const layoutSet = (spec) => new Set(spec.split("+").filter((n) => n && n !== "dense"));
@@ -1584,34 +1609,36 @@
     if (route.t) params.set("transpose", String(route.t));
     if (look.printScale !== 1) params.set("scale", String(look.printScale));
     for (const [name, value] of Object.entries(prefs.printParams())) params.set(name, value);
-    buildLayoutControls(route, controls, layout, derived);
-    showSheet(params, route, { viewer, actions, controls }, gen);
-    return h("div", { class: "print" }, actions, controls, viewer);
+    const current = { layout, derived }; // the spelling the server gives replaces the URL's
+    buildLayoutControls(route, controls, current);
+    showSheet(params, route, { viewer, actions, controls, current }, gen);
+    const note = look.chordMode === "off" && h("p", { class: "muted hint" }, "The printed sheet keeps its chords.");
+    return h("div", { class: "print" }, actions, note, controls, viewer);
   }
 
   // One row per control the server describes (/layouts `controls`, in plain words); choosing
   // in one row replaces that row's option in the layout.
-  function buildLayoutControls(route, controls, layout, derived) {
+  function buildLayoutControls(route, controls, current) {
     if (!options || !options.controls) return;
     for (const control of options.controls) {
       const names = control.choices.map((c) => c.option).filter(Boolean);
       const chips = control.choices.map((choice) => h("button", {
         type: "button", role: "radio", class: "chip", "data-control": control.name, "data-option": choice.option,
         onclick: () => {
-          const next = [...layoutSet(layout)].filter((n) => !names.includes(n));
+          const next = [...layoutSet(current.layout)].filter((n) => !names.includes(n));
           if (choice.option) next.push(choice.option);
           const spec = next.join("+") || "dense";
           pendingFocus = `[data-control="${control.name}"][data-option="${choice.option}"]`;
-          goSong(route, { layout: sameLayout(spec, derived) ? "" : spec });
+          goSong(route, { layout: sameLayout(spec, current.derived) ? "" : spec });
         },
       }, choice.label));
       controls.append(h("div", { class: "row choice", role: "radiogroup", "aria-label": control.label },
         h("span", { class: "label" }, control.label), h("div", { class: "chips" }, chips)));
     }
-    if (route.layout && !sameLayout(route.layout, derived)) {
-      controls.append(h("button", { type: "button", class: "text", onclick: () => goSong(route, { layout: "" }) }, "Match my reading settings"));
-    }
-    markLayout(controls, layout);
+    controls.append(h("button", {
+      type: "button", class: "text match", hidden: !route.layout, onclick: () => goSong(route, { layout: "" }),
+    }, "Match my reading settings"));
+    markLayout(controls, current.layout);
   }
 
   // Check the chips of a layout spec. The server's spelling (from /sheet) wins over the URL's,
@@ -1625,7 +1652,7 @@
     }
   }
 
-  async function showSheet(params, route, { viewer, actions, controls }, gen) {
+  async function showSheet(params, route, { viewer, actions, controls, current }, gen) {
     const back = h("button", { type: "button", class: "text", onclick: () => { openPanel = null; goSong(route, { view: "read" }); } }, "Back to reading");
     actions.replaceChildren(back);
     const spinner = loading("Making the sheet…");
@@ -1633,7 +1660,15 @@
     try {
       const info = await getJSON("/sheet?" + params);
       if (gen !== generation) return;
+      current.layout = info.layout;
       markLayout(controls, info.layout);
+      const spelled = sameLayout(info.layout, current.derived) ? "" : info.layout;
+      if (route.layout && spelled !== route.layout) { // an alias, another case: the URL says it the server's way
+        route = { ...route, layout: spelled };
+        history.replaceState(history.state, "", formatRoute(route));
+      }
+      const match = controls.querySelector(".match");
+      if (match) match.hidden = !spelled;
       const pdfUrl = CONFIG.api + "/sheet.pdf?" + params;
       const facts = [info.font_size && `${Math.round(info.font_size)} pt`, info.pages > 1 && `${info.pages} pages`];
       const pages = [];
@@ -1651,7 +1686,7 @@
     } catch (error) {
       if (gen !== generation) return;
       viewer.replaceChildren(errorBox(`The sheet could not be made (${error.message}).`,
-        () => { generation += 1; showSheet(params, route, { viewer, actions, controls }, generation); }));
+        () => { generation += 1; showSheet(params, route, { viewer, actions, controls, current }, generation); }));
     } finally {
       spinner.stop();
     }
