@@ -234,7 +234,7 @@ button, .button {
 .reader .line { min-height: calc(var(--read-line) * 1em); white-space: pre-wrap; }
 .reader .line.blank { min-height: 0.6em; }
 .reader .line.with-chords { white-space: normal; padding-top: 0.15em; }
-.reader .w { display: inline-flex; white-space: nowrap; vertical-align: bottom; }
+.reader .w { display: inline-flex; flex-wrap: wrap; max-width: 100%; vertical-align: bottom; }
 .reader .p { display: inline-flex; flex-direction: column; }
 .reader .ch {
   font-size: calc(var(--chord-scale) * 1em);
@@ -244,7 +244,7 @@ button, .button {
   white-space: pre;
   padding-right: 0.35em; /* two chords close together never touch */
 }
-.reader .ly { white-space: pre; }
+.reader .ly { white-space: pre-wrap; }
 .reader .line.chords-only { display: flex; flex-wrap: wrap; gap: 0 0.2em; }
 .reader .line.chords-only .ch { padding-right: 0.6em; }
 .print .layout { margin-top: 0; }

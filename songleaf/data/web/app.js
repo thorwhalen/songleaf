@@ -34,7 +34,7 @@
   // Papers to read on. Light is the printed sheet's own paper, so its inks are the server's.
   const PAPERS = {
     light: { label: "Light", paper: "#fbfaf7", theme: "light" },
-    sepia: { label: "Sepia", paper: "#f4ecd8", ink: "#3b2f1e", chord: "#9a4f12", theme: "light" },
+    sepia: { label: "Sepia", paper: "#f4ecd8", ink: "#3b2f1e", chord: "#9a4f12", theme: "light", chorusBand: "#e9d9b4", bridgeBand: "#e0e1d3" },
     dark: { label: "Dark", paper: "#161615", ink: "#e8e6e1", chord: "#7aa7f0", theme: "dark" },
     black: { label: "Black", paper: "#000000", ink: "#f2f2f2", chord: "#8fb8ff", theme: "dark" },
   };
@@ -60,6 +60,9 @@
     try {
       values = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") || {};
     } catch (_) { /* private mode or blocked storage: defaults it is */ }
+    const isObject = (x) => x && typeof x === "object" && !Array.isArray(x);
+    if (!isObject(values)) values = {};
+    if (!isObject(values.look)) delete values.look;
     const look = values.look || {};
     if (look.lyricColor || look.chordColor) { // before papers, colours were for light paper
       look.inks = { ...(look.inks || {}), light: { lyricColor: look.lyricColor, chordColor: look.chordColor } };
@@ -71,10 +74,10 @@
     }
     return {
       // Everything the page draws with, resolved: the paper in use and its inks included.
-      look() {
+      look(paper) {
         const saved = values.look || {};
         const auto = darkQuery && darkQuery.matches ? "dark" : "light";
-        const paperName = PAPERS[saved.paper] ? saved.paper : auto;
+        const paperName = PAPERS[paper] ? paper : PAPERS[saved.paper] ? saved.paper : auto;
         const palette = PAPERS[paperName];
         const server = (options && options.style) || {};
         const inks = (saved.inks || {})[paperName] || {};
@@ -95,7 +98,15 @@
         values.look = saved;
         save();
       },
-      resetLook() { delete values.look; save(); },
+      // Back to the defaults for what the Look panel sets: one paper's inks, opacity, type.
+      // The paper and the display choices stay.
+      resetLook(paperName) {
+        const saved = { ...(values.look || {}) };
+        for (const name of ["lyricAlpha", "chordAlpha", "chordScale", "lineHeight", "font"]) delete saved[name];
+        if (saved.inks) saved.inks = Object.fromEntries(Object.entries(saved.inks).filter(([k]) => k !== paperName));
+        values.look = saved;
+        save();
+      },
       // The /sheet parameters the viewer's settings give: only what they changed, and the
       // inks chosen for light paper (a PDF is printed on white).
       printParams() {
@@ -490,16 +501,18 @@
   // Fine tuning: inks (kept per paper), opacity, chord size, spacing, font. Sliders
   // preview live; the printed sheet follows on release.
   function lookPanel(route) {
-    const look = prefs.look();
     const printing = route.view === "print";
+    const look = printing ? prefs.look("light") : prefs.look(); // a PDF is printed on light paper
     const after = () => { if (printing) goSong(route, {}); }; // one re-render per deliberate change
-    const preview = (changes) => applyLook({ ...prefs.look(), ...changes });
+    const preview = (changes) => { if (!printing) applyLook({ ...prefs.look(), ...changes }); };
+    const restore = () => { if (!printing) applyLook(prefs.look()); }; // a cancelled pick leaves nothing
 
     function colorRow(label, colorName, alphaName) {
       const color = h("input", {
         type: "color", value: look[colorName], "aria-label": `${label} colour`,
         oninput: (e) => preview({ [colorName]: e.target.value }),
-        onchange: (e) => { prefs.setInk(printing ? "light" : look.paperName, { [colorName]: e.target.value }); after(); },
+        onchange: (e) => { prefs.setInk(look.paperName, { [colorName]: e.target.value }); after(); },
+        onblur: restore,
       });
       const value = h("output", {}, `${Math.round(look[alphaName] * 100)}%`);
       const alpha = h("input", {
@@ -537,7 +550,7 @@
       h("p", { class: "muted hint" }, printing
         ? "Colours are those for light paper; opacity prints as the matching shade on white."
         : `Colours are kept for ${paperName} paper; the printed sheet uses those for light paper.`),
-      h("button", { type: "button", class: "text", onclick: () => { prefs.resetLook(); applyLook(prefs.look()); goSong(route, {}); } }, "Reset to defaults"));
+      h("button", { type: "button", class: "text", onclick: () => { prefs.resetLook(look.paperName); applyLook(prefs.look()); goSong(route, {}); } }, "Reset to defaults"));
   }
 
   // The paper, its inks and the reader's type, as CSS variables on the page. The paper also
@@ -546,6 +559,9 @@
     const root = document.documentElement;
     root.dataset.theme = look.palette.theme;
     root.style.setProperty("--bg", look.palette.paper);
+    for (const [name, value] of [["--chorus-band", look.palette.chorusBand], ["--bridge-band", look.palette.bridgeBand]]) {
+      if (value) root.style.setProperty(name, value); else root.style.removeProperty(name);
+    }
     root.style.setProperty("--read-size", `${look.readSize}px`);
     root.style.setProperty("--lyric-ink", rgba(look.lyricColor, look.lyricAlpha));
     root.style.setProperty("--chord-ink", rgba(look.chordColor, look.chordAlpha));
@@ -557,7 +573,9 @@
   }
 
   if (darkQuery && darkQuery.addEventListener) { // "auto" paper follows the phone as it changes
-    darkQuery.addEventListener("change", () => { if (prefs.look().paper === "auto") render(); });
+    // Colours only: inks and paper are CSS variables, so nothing is rebuilt (a search being
+    // typed, a sheet being shown) and nothing is fetched again.
+    darkQuery.addEventListener("change", () => { if (!PAPERS[prefs.look().paper]) applyLook(prefs.look()); });
   }
 
   // The reader's display, always in view above the song (as the layout is above the sheet).
@@ -606,7 +624,7 @@
     const sections = song.sections || [];
     const labelsAt = new Map(sections.filter((x) => x.label).map((x) => [x.start, x.label]).reverse());
     const familyAt = (offset) => {
-      const found = sections.find((x) => x.start <= offset && (offset < x.end || x.start === x.end && offset === x.start));
+      const found = sections.find((x) => x.start <= offset && offset <= x.end); // end inclusive, as printed
       return found ? found.family : "";
     };
     const classes = ["reader", `chords-${look.chordMode}`];
@@ -618,12 +636,16 @@
     if (facts.length) out.append(h("p", { class: "facts" }, facts.join(" · ")));
     const draw = { above: chordsAbove, inline: chordsInline, off: chordsOff }[look.chordMode] || chordsAbove;
     let start = 0;
+    let pendingLabel = null; // drawn only above a line that is drawn (chords Off drops some)
     for (const line of text.split("\n")) {
       const end = start + line.length;
       const family = familyAt(start);
       const label = labelsAt.get(start);
-      if (label) out.append(h("div", { class: `section-label ${family ? "fam-" + family : ""}` }, label));
+      if (label) pendingLabel = h("div", { class: `section-label ${family ? "fam-" + family : ""}` }, label);
       const el = draw(line, start, end, chordsAt);
+      if (el && !el.classList.contains("blank")) {
+        if (pendingLabel) { out.append(pendingLabel); pendingLabel = null; }
+      }
       if (el) {
         if (family) el.classList.add("fam-" + family);
         out.append(el);
