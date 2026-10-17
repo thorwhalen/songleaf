@@ -1,5 +1,5 @@
 Seams: (1) `sources=` = the Kaggle chords-and-lyrics corpus via `sung` · (2) `store=` = JSON files under `~/.local/share/songleaf/songs/` · (3) `renderer=` = the dense one-page A4 PDF.
-Surface built for v1: CLI (`python -m songleaf`, `cw` over `songleaf.tools`). Asked, not built: MCP, shipped skill, HTTP, frontend.
+Surfaces built: CLI (`python -m songleaf`, `cw` over `songleaf.tools`); HTTP + page (`songleaf.web.mk_app`, the `web` extra), deployed as the private apps.thorwhalen.com/songleaf through the thin in-tree app in the tw_platform repo. Asked, not built: MCP, shipped skill.
 Rationale and which defaults are provisional: the "v1 architecture: seams and surfaces" Discussion.
 
 # songleaf — dev map
@@ -15,7 +15,7 @@ Rationale and which defaults are provisional: the "v1 architecture: seams and su
 Inside seam 3 (songleaf#4): `render_sheet(song, output, layout=...)` draws any `SheetLayout`. A layout composes two strategies plus options: `chords=` (a `ChordPlacement`: `"over"` = `OverChords`, `"inline"` = `InlineChords`), `packing=` (a packer from `songleaf/packing.py`: `"greedy"`, `"structured"`), `columns=`, `shading=` (colours from `songleaf/harmony.py`), `style=`. `layout_named("inline+two-column")` builds one from `LAYOUT_OPTIONS`; the CLI's `--layout` is that spec; `make_renderer(spec)` is what `sheet` passes to seam 3. A new layout is a new option in `LAYOUT_OPTIONS`, or a new strategy in `CHORD_PLACEMENTS` / `PACKERS`, not a new renderer function.
 
 ```
-Surface for v1: CLI only (MCP/skill/HTTP/frontend: questions answered, not built)
+Surfaces: CLI, and HTTP + page (songleaf/web.py, songleaf/data/web/); MCP/skill: questions answered, not built
 NOT seams: fuzzy scorer (rapidfuzz WRatio), chords-over-lyrics parsing rules, style knobs (colours, chord scale, margins, page size: keyword args), store key encoding, CLI output format, rhyme/couplet break costs and the key estimate (keyword args)
 ```
 
@@ -34,5 +34,7 @@ python -m songleaf sheet "10000 hours justin bieber"   # -> a one-page A4 PDF un
 - **No song text from any real source in the repo**: not in tests, fixtures, docs, issues or commit messages. The corpus is scraped. Tests use synthesized lyrics only.
 - **No generated sheets in the repo.** PDFs go to the data root (`~/.local/share/songleaf/sheets/`) or a scratch dir.
 - `songleaf/tools.py` is the SSOT for surfaces: flat, serialisable arguments in, JSON-ready dicts out. Dependency-injection parameters (`sources=`, `store=`, `renderer=`) live in the core modules and are hidden from the CLI.
-- Importing `songleaf` must not import `sung`, `pandas`, `reportlab` or `cw`; they load when used.
+- Importing `songleaf` must not import `sung`, `pandas`, `reportlab`, `cw` or `fastapi`; they load when used. `songleaf.web` is never imported by the package itself.
+- The web page (`songleaf/data/web/app.js`, `style.css`) is vanilla JS with no build step, served from the package (the annals precedent): the URL is the state, opening a sheet pushes a history entry and every refinement replaces it, nothing goes in browser storage. A deliberate exception to the zodal/React default for a three-control page; the upgrade path is a zodal SPA against the same API.
+- The deployed app reads the corpus zip from the server's data root (`datasets/chords-and-lyrics/`), never from the repo. Who may open the app is set in the tw_platform repo (private), never here.
 - The linked-artifact model is a plain standoff model (`songleaf.model`), not a `lacing` store; see the Discussion for why and for the adapter plan.
