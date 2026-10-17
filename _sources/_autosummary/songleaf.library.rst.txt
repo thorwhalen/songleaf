@@ -1,0 +1,27 @@
+songleaf.library
+================
+
+.. automodule:: songleaf.library
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      MAX_BYTES
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      checked_snapshot
+      drop_item
+      read_groups
+      save_groups
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      RevisionConflict
+   

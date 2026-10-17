@@ -7,7 +7,7 @@
 <link rel="alternate" type="text/markdown" href="songleaf.tools.html.md">
 <link rel="describedby" href="../llms.txt" type="text/markdown">
 <link rel="alternate" type="text/markdown" href="songleaf.tools.html.md">
-<link rel="describedby" href="llms.txt"><link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="songleaf.web" href="songleaf.web.html"><link rel="prev" title="songleaf.store" href="songleaf.store.html">
+<link rel="describedby" href="llms.txt"><link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="For AI agents" href="../ai-agents.html"><link rel="prev" title="songleaf.store" href="songleaf.store.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
         <title>songleaf.tools - songleaf</title>
@@ -207,6 +207,7 @@
 <li class="toctree-l2 current has-children"><a class="reference internal" href="songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
+<li class="toctree-l3"><a class="reference internal" href="songleaf.library.html">songleaf.library</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.parse.html">songleaf.parse</a></li>
@@ -214,7 +215,6 @@
 <li class="toctree-l3"><a class="reference internal" href="songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3 current current-page"><a class="current reference internal" href="#">songleaf.tools</a></li>
-<li class="toctree-l3"><a class="reference internal" href="songleaf.web.html">songleaf.web</a></li>
 </ul>
 </li>
 </ul>
@@ -283,8 +283,8 @@ than dicts uses <a class="reference internal" href="songleaf.sources.html#module
 <tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.tools.build_index" title="songleaf.tools.build_index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_index</span></code></a>(*[, path])</p></td>
 <td><p>Build the search index of the Kaggle corpus, once, where the corpus zip is.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.tools.forget" title="songleaf.tools.forget"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forget</span></code></a>(key, *[, store])</p></td>
-<td><p>Remove a song from the stored songs.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.tools.forget" title="songleaf.tools.forget"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forget</span></code></a>(key, *[, store, library_root])</p></td>
+<td><p>Remove a song from the stored songs and from every group it was in.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.tools.search" title="songleaf.tools.search"><code class="xref py py-obj docutils literal notranslate"><span class="pre">search</span></code></a>([query, title, artist, lyrics, ...])</p></td>
 <td><p>Find songs: fuzzy title and artist (<code class="docutils literal notranslate"><span class="pre">query</span></code>), or by title, artist, or whole words of the lyrics.</p></td>
@@ -323,9 +323,10 @@ replacing the zip. <code class="docutils literal notranslate"><span class="pre">
 
 <dl class="py function">
 <dt class="sig sig-object py" id="songleaf.tools.forget">
-<span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">forget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/tools.html#forget"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.tools.forget" title="Link to this definition">¶</a></dt>
-<dd><p>Remove a song from the stored songs. It can be found and stored again by searching.</p>
-<p>Returns <code class="docutils literal notranslate"><span class="pre">{&quot;key&quot;,</span> <span class="pre">&quot;deleted&quot;}</span></code>; <code class="docutils literal notranslate"><span class="pre">deleted</span></code> is False when it was not stored.</p>
+<span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">forget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">library_root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/tools.html#forget"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.tools.forget" title="Link to this definition">¶</a></dt>
+<dd><p>Remove a song from the stored songs and from every group it was in.</p>
+<p>It can be found and stored again by searching. Returns <code class="docutils literal notranslate"><span class="pre">{&quot;key&quot;,</span> <span class="pre">&quot;deleted&quot;}</span></code>;
+<code class="docutils literal notranslate"><span class="pre">deleted</span></code> is False when it was not stored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -409,12 +410,12 @@ no chords) and <code class="docutils literal notranslate"><span class="pre">tran
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="songleaf.web.html">
+          <a class="next-page" href="../ai-agents.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">songleaf.web</div>
+                <div class="title">For AI agents</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -474,7 +475,7 @@ no chords) and <code class="docutils literal notranslate"><span class="pre">tran
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=bf6d79ad"></script>
+</div><script src="../_static/documentation_options.js?v=4bb83394"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

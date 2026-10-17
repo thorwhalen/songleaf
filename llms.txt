@@ -10,6 +10,7 @@
 - [songleaf](_autosummary/songleaf.html.md): songleaf: dense, readable one-page song sheets from searchable sources.
 - [songleaf.harmony](_autosummary/songleaf.harmony.html.md): What a chord does in its song’s key, so that sheets can shade chords by function.
 - [songleaf.kaggle_index](_autosummary/songleaf.kaggle_index.html.md): A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.
+- [songleaf.library](_autosummary/songleaf.library.html.md): The library’s groups: which stored songs are in which groups, shared by everyone using it.
 - [songleaf.model](_autosummary/songleaf.model.html.md): The linked-artifact model: a song is lyrics text plus standoff annotations.
 - [songleaf.packing](_autosummary/songleaf.packing.html.md): Line packing: which consecutive lines of a paragraph share a row.
 - [songleaf.parse](_autosummary/songleaf.parse.html.md): Parse chords-over-lyrics text into a &#96;Song&#96;.
@@ -17,9 +18,8 @@
 - [songleaf.sources](_autosummary/songleaf.sources.html.md): Where songs are found: sources, and a search that composes them.
 - [songleaf.store](_autosummary/songleaf.store.html.md): Where songs persist: a &#96;MutableMapping&#96; of songs, JSON files by default.
 - [songleaf.tools](_autosummary/songleaf.tools.html.md): The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.
-- [songleaf.web](_autosummary/songleaf.web.html.md): The web surface: a JSON API over &#96;songleaf.tools&#96;, the sheet as a PDF, and the page.
 - [For AI agents](ai-agents.html.md): &#96;songleaf&#96; ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-17 13:33 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-17 14:02 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
 
 ## Optional
 

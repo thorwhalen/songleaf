@@ -43,6 +43,7 @@
 
    harmony
    kaggle_index
+   library
    model
    packing
    parse

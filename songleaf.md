@@ -1,4 +1,4 @@
-> built 2026-10-17 13:33 UTC from 262da47 (main) · songleaf 0.0.9. Details: build_info.json
+> built 2026-10-17 14:02 UTC from a24ef45 (main) · songleaf 0.0.10. Details: build_info.json
 
 # index.html.md
 
@@ -140,6 +140,10 @@ site.get("/songleaf/", response_class=HTMLResponse)(
     lambda: page_shell(api="/api/songleaf", base="/songleaf")
 )
 ```
+
+**Your songs** (the songs opened before) can be deleted, and grouped. Groups work like Gmail labels: a song can be in several groups, and a group can hold other groups. You can filter the list by a group or browse it as a tree, add a song to a group from the song’s page (type a name), or pick several songs and use **Group…**. Groups are shared by everyone using the app (one library). They are kept on the server as a [zodal-groups](https://github.com/i2mint/zodal-groups) snapshot with a revision (`songleaf.library`). A save made from an out-of-date revision is refused, and the page replays its changes on top of the newer groups, so two people editing at once don’t overwrite each other.
+
+In Read view, the floating ▶ starts **auto-scroll**, with − and + for the speed. It is remembered per song, pauses when you touch the song, and keeps the screen awake while running.
 
 The app has no login of its own: put it behind whatever gates the host. It takes the same `sources=` and `store=` as `sheet`. A rendered sheet is kept in memory (`sheet_cache_size=`, default 32), so the page’s requests for one sheet render it once.
 
@@ -657,17 +661,17 @@ The keys of the stored songs.
 
 ### Modules
 
-| [`harmony`](_autosummary/songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                                                                         |
-|--------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`kaggle_index`](_autosummary/songleaf.kaggle_index.html.md#module-songleaf.kaggle_index) | A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.                                                               |
-| [`model`](_autosummary/songleaf.model.html.md#module-songleaf.model)               | The linked-artifact model: a song is lyrics text plus standoff annotations.                                                                               |
-| [`packing`](_autosummary/songleaf.packing.html.md#module-songleaf.packing)           | Line packing: which consecutive lines of a paragraph share a row.                                                                                         |
-| [`parse`](_autosummary/songleaf.parse.html.md#module-songleaf.parse)               | Parse chords-over-lyrics text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song).                                           |
-| [`render`](_autosummary/songleaf.render.html.md#module-songleaf.render)             | Render a song onto one dense page, with the lyrics as large as will fit.                                                                                  |
-| [`sources`](_autosummary/songleaf.sources.html.md#module-songleaf.sources)           | Where songs are found: sources, and a search that composes them.                                                                                          |
-| [`store`](_autosummary/songleaf.store.html.md#module-songleaf.store)               | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                                                                  |
-| [`tools`](_autosummary/songleaf.tools.html.md#module-songleaf.tools)               | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.                                                        |
-| [`web`](_autosummary/songleaf.web.html.md#module-songleaf.web)                   | The web surface: a JSON API over [`songleaf.tools`](_autosummary/songleaf.tools.html.md#module-songleaf.tools), the sheet as a PDF, and the page. |
+| [`harmony`](_autosummary/songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                               |
+|--------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| [`kaggle_index`](_autosummary/songleaf.kaggle_index.html.md#module-songleaf.kaggle_index) | A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.                     |
+| [`library`](_autosummary/songleaf.library.html.md#module-songleaf.library)           | The library's groups: which stored songs are in which groups, shared by everyone using it.                      |
+| [`model`](_autosummary/songleaf.model.html.md#module-songleaf.model)               | The linked-artifact model: a song is lyrics text plus standoff annotations.                                     |
+| [`packing`](_autosummary/songleaf.packing.html.md#module-songleaf.packing)           | Line packing: which consecutive lines of a paragraph share a row.                                               |
+| [`parse`](_autosummary/songleaf.parse.html.md#module-songleaf.parse)               | Parse chords-over-lyrics text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song). |
+| [`render`](_autosummary/songleaf.render.html.md#module-songleaf.render)             | Render a song onto one dense page, with the lyrics as large as will fit.                                        |
+| [`sources`](_autosummary/songleaf.sources.html.md#module-songleaf.sources)           | Where songs are found: sources, and a search that composes them.                                                |
+| [`store`](_autosummary/songleaf.store.html.md#module-songleaf.store)               | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                        |
+| [`tools`](_autosummary/songleaf.tools.html.md#module-songleaf.tools)               | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.              |
 
 
 # _autosummary/songleaf.kaggle_index.html.md
@@ -762,6 +766,114 @@ Where the index lives: beside the corpus zip, under the data root.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+
+# _autosummary/songleaf.library.html.md
+
+# songleaf.library
+
+The library’s groups: which stored songs are in which groups, shared by everyone using it.
+
+The groups are a zodal-groups snapshot (`{"nodes": [...], "edges": [...]}`: songs and
+groups are nodes, a membership is an edge from a group to a song or to another group). The
+page edits them with zodal-groups and saves the whole snapshot; this module keeps it as one
+JSON document under the data root (`library/groups.json`) with a revision number.
+
+A save names the revision it was made from. If the document has moved on since (someone
+else saved), the save is refused with [`RevisionConflict`](_autosummary/songleaf.library.html.md#songleaf.library.RevisionConflict), which carries the current
+document, so no one’s change is silently overwritten.
+
+```pycon
+>>> import tempfile
+>>> root = tempfile.mkdtemp()
+>>> read_groups(root=root)
+{'revision': 0, 'snapshot': {'nodes': [], 'edges': []}}
+>>> snapshot = {"nodes": [{"id": "Family"}, {"id": "memory:1"}],
+...             "edges": [{"id": "e1", "parent": "Family", "child": "memory:1",
+...                        "kind": "contains"}]}
+>>> save_groups(snapshot, revision=0, root=root)["revision"]
+1
+>>> drop_item("memory:1", root=root)["snapshot"]["edges"]
+[]
+```
+
+### Module Attributes
+
+| [`MAX_BYTES`](_autosummary/songleaf.library.html.md#songleaf.library.MAX_BYTES)   | thousands of songs fit many times over.   |
+|--------------------------------------------------------------|-------------------------------------------|
+
+### Functions
+
+| [`checked_snapshot`](_autosummary/songleaf.library.html.md#songleaf.library.checked_snapshot)(snapshot)                       | `snapshot` if it has the shape of a zodal-groups snapshot, else `ValueError`.           |
+|---------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| [`drop_item`](_autosummary/songleaf.library.html.md#songleaf.library.drop_item)(item, \*[, root])                      | Take `item` (a song key) out of every group; returns the document, saved if it changed. |
+| [`read_groups`](_autosummary/songleaf.library.html.md#songleaf.library.read_groups)(\*[, root])                          | `{"revision", "snapshot"}`: the current groups, revision 0 when there are none.         |
+| [`save_groups`](_autosummary/songleaf.library.html.md#songleaf.library.save_groups)(snapshot, \*, revision[, root, ...]) | Replace the groups with `snapshot`, made from `revision`; returns the new document.     |
+
+### Exceptions
+
+| [`RevisionConflict`](_autosummary/songleaf.library.html.md#songleaf.library.RevisionConflict)(current)   | The groups changed since the revision a save was made from.   |
+|------------------------------------------------------------------------------|---------------------------------------------------------------|
+
+### songleaf.library.MAX_BYTES *= 2000000*
+
+thousands of songs fit many times over.
+
+* **Type:**
+  The largest groups document accepted, in bytes
+
+### *exception* songleaf.library.RevisionConflict(current)
+
+Bases: [`Exception`](https://docs.python.org/3/builtins/exceptions.html#Exception)
+
+The groups changed since the revision a save was made from.
+
+### songleaf.library.checked_snapshot(snapshot)
+
+`snapshot` if it has the shape of a zodal-groups snapshot, else `ValueError`.
+
+The checks are zodal-groups’ own read-path rules (`parseSnapshot`: non-empty string
+ids, unique node and edge ids, every edge with a parent, a child and a kind), plus no
+self-loop and no cycle, so a page can always load what was saved. The profile’s other
+rules are zodal-groups’, applied where the edit is made.
+
+```pycon
+>>> edge = {"id": "e", "parent": "a", "child": "a", "kind": "contains"}
+>>> checked_snapshot({"nodes": [], "edges": [edge]})
+Traceback (most recent call last):
+...
+ValueError: edges[0]: a group cannot contain itself ('a')
+```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.library.drop_item(item, , root=None)
+
+Take `item` (a song key) out of every group; returns the document, saved if it changed.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.library.read_groups(, root=None)
+
+`{"revision", "snapshot"}`: the current groups, revision 0 when there are none.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.library.save_groups(snapshot, , revision, root=None, keep_item=None)
+
+Replace the groups with `snapshot`, made from `revision`; returns the new document.
+
+`keep_item(id) -> bool`, when given, decides whether a member that is not a group (an
+item: a song key) may stay; memberships of the others are dropped (a song deleted while
+a page that still showed it was saving). Raises [`RevisionConflict`](_autosummary/songleaf.library.html.md#songleaf.library.RevisionConflict) when the
+stored revision is not `revision`, and `ValueError` when `snapshot` is not a
+snapshot or `revision` not a whole number.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 
 # _autosummary/songleaf.model.html.md
@@ -1671,7 +1783,7 @@ than dicts uses [`songleaf.sources`](_autosummary/songleaf.sources.html.md#modul
 
 | [`build_index`](_autosummary/songleaf.tools.html.md#songleaf.tools.build_index)(\*[, path])                        | Build the search index of the Kaggle corpus, once, where the corpus zip is.                      |
 |-------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| [`forget`](_autosummary/songleaf.tools.html.md#songleaf.tools.forget)(key, \*[, store])                       | Remove a song from the stored songs.                                                             |
+| [`forget`](_autosummary/songleaf.tools.html.md#songleaf.tools.forget)(key, \*[, store, library_root])         | Remove a song from the stored songs and from every group it was in.                              |
 | [`search`](_autosummary/songleaf.tools.html.md#songleaf.tools.search)([query, title, artist, lyrics, ...])    | Find songs: fuzzy title and artist (`query`), or by title, artist, or whole words of the lyrics. |
 | [`sheet`](_autosummary/songleaf.tools.html.md#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...]) | Make a one-page song sheet (PDF) for the best match of `query`.                                  |
 | [`song`](_autosummary/songleaf.tools.html.md#songleaf.tools.song)(query, \*[, pick, refresh, ...])          | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.         |
@@ -1692,11 +1804,12 @@ replacing the zip. `path` defaults to beside the zip under the data root.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### songleaf.tools.forget(key, , store=None)
+### songleaf.tools.forget(key, , store=None, library_root=None)
 
-Remove a song from the stored songs. It can be found and stored again by searching.
+Remove a song from the stored songs and from every group it was in.
 
-Returns `{"key", "deleted"}`; `deleted` is False when it was not stored.
+It can be found and stored again by searching. Returns `{"key", "deleted"}`;
+`deleted` is False when it was not stored.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -1759,149 +1872,24 @@ The keys of the stored songs.
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 
-# _autosummary/songleaf.web.html.md
-
-# songleaf.web
-
-The web surface: a JSON API over [`songleaf.tools`](_autosummary/songleaf.tools.html.md#module-songleaf.tools), the sheet as a PDF, and the page.
-
-`mk_app()` is a FastAPI app; mount it anywhere (`/api/songleaf` on
-apps.thorwhalen.com). Its routes:
-
-- `GET /search?q=&artist=&lyrics=&limit=`: hits, best first (`tools.search`)
-- `GET /songs`: the stored songs, with title and artist
-- `DELETE /songs?key=`: remove one from them (`tools.forget`)
-- `GET /layouts`: the layout options a sheet can combine, and the default colours
-- `GET /song?key=`: the song as JSON (`tools.song`): text, chords, sections, its
-  key and a chord table for every key it can move to; the page draws it as text
-- `GET /sheet?key=&...`: render the sheet; its title, artist, font size and pages
-- `GET /sheet.pdf?key=&...`: the sheet itself
-- `GET /sheet.png?key=&...&page=`: one page of it as an image, for browsers that
-  show no PDF inline (Android’s)
-
-The sheet routes take the parameters of [`SheetRequest`](_autosummary/songleaf.web.html.md#songleaf.web.SheetRequest): `layout`,
-`transpose` (semitones), `scale` (of the size that fills the page), and the
-colours, opacities and chord size the page’s reader uses.
-
-- `GET /ui/app.js`, `GET /ui/style.css`: the page’s script and style
-
-The page is a two-path shell ([`page_shell()`](_autosummary/songleaf.web.html.md#songleaf.web.page_shell)) that loads its script and
-style from `/ui/`, so it changes with this package, not with the host. The app
-carries no authentication: the host gates it.
-
-A rendered sheet and its page images are kept in memory (the last
-`sheet_cache_size` of each), so the page’s requests for one sheet render it once.
-
-Only what a request can get wrong becomes a 4xx: an unknown song (404), a bad
-layout or page (400, 404). A corpus that is not on the machine is a 503 saying
-where to put it. Anything else is a bug and stays a 500.
-
-Requires `pip install songleaf[web]` (FastAPI, pypdfium2). Importing [`songleaf`](_autosummary/songleaf.html.md#module-songleaf) does
-not import this module.
-
-### Module Attributes
-
-| [`ERROR_STATUS`](_autosummary/songleaf.web.html.md#songleaf.web.ERROR_STATUS)   | Failures a request can cause, and the HTTP status each becomes.   |
-|-----------------------------------------------------------------|-------------------------------------------------------------------|
-| [`SHEET_LIMITS`](_autosummary/songleaf.web.html.md#songleaf.web.SHEET_LIMITS)   | (low, high).                                                      |
-
-### Functions
-
-| [`mk_app`](_autosummary/songleaf.web.html.md#songleaf.web.mk_app)(\*[, sources, store, title, ...])   | The FastAPI app.                                                                                                                       |
-|---------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
-| [`page_shell`](_autosummary/songleaf.web.html.md#songleaf.web.page_shell)(\*, api[, base, title])         | The page's HTML: where the page lives (`base`) and where [`mk_app()`](_autosummary/songleaf.web.html.md#songleaf.web.mk_app) is mounted (`api`). |
-| [`pdf_page_png`](_autosummary/songleaf.web.html.md#songleaf.web.pdf_page_png)(pdf[, page, scale])           | One page (from 1) of a PDF as PNG bytes, `scale` pixels per point.                                                                     |
-| [`stored_songs`](_autosummary/songleaf.web.html.md#songleaf.web.stored_songs)(\*[, store])                  | Every stored song as `{key, title, artist}`, by artist then title.                                                                     |
-
-### Classes
-
-| [`SheetRequest`](_autosummary/songleaf.web.html.md#songleaf.web.SheetRequest)(key[, layout, transpose, ...])   | What a sheet is made from: the song, its layout and the reader's look.   |
-|------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|
-
-### songleaf.web.ERROR_STATUS *= {<class 'songleaf.sources.SongNotFound'>: 404, <class 'songleaf.sources.SourceUnavailable'>: 503}*
-
-Failures a request can cause, and the HTTP status each becomes. Nothing broader:
-a KeyError or ValueError from a bug must not read as “not found” or “your fault”.
-
-### songleaf.web.SHEET_LIMITS *= {'chord_alpha': (0.0, 1.0), 'chord_scale': (0.3, 1.5), 'lyric_alpha': (0.0, 1.0), 'scale': (0.3, 3.0), 'transpose': (-11, 11)}*
-
-(low, high).
-
-* **Type:**
-  Allowed ranges of the numeric sheet parameters
-
-### *class* songleaf.web.SheetRequest(key, layout='dense', transpose=0, scale=1.0, lyric_color='', lyric_alpha=1.0, chord_color='', chord_alpha=1.0, chord_scale=0.0)
-
-Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
-
-What a sheet is made from: the song, its layout and the reader’s look.
-
-Empty colours and a zero `chord_scale` keep the layout’s own. Opacities are
-blended onto white paper. Frozen, so it is also the render cache’s key.
-
-#### checked()
-
-This request in its one spelling, or `ValueError` naming what is wrong.
-
-* **Return type:**
-  [`SheetRequest`](_autosummary/songleaf.web.html.md#songleaf.web.SheetRequest)
-
-#### renderer()
-
-The `(song, output) -> dict` renderer this request describes.
-
-### songleaf.web.mk_app(, sources=None, store=None, title='songleaf', sheet_cache_size=32, image_cache_size=8, image_scale=2.0)
-
-The FastAPI app. `sources` and `store` are the seams of [`songleaf.tools`](_autosummary/songleaf.tools.html.md#module-songleaf.tools).
-
-`image_scale` is pixels per PDF point for `/sheet.png` (2: an A4 page is
-1190 pixels wide, sharp on a phone).
-
-### songleaf.web.page_shell(, api, base='', title='songleaf')
-
-The page’s HTML: where the page lives (`base`) and where [`mk_app()`](_autosummary/songleaf.web.html.md#songleaf.web.mk_app) is mounted (`api`).
-
-```pycon
->>> "/api/songleaf/ui/app.js" in page_shell(api="/api/songleaf", base="/songleaf")
-True
-```
-
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
-### songleaf.web.pdf_page_png(pdf, page=1, , scale=2.0)
-
-One page (from 1) of a PDF as PNG bytes, `scale` pixels per point.
-
-* **Return type:**
-  [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)
-
-### songleaf.web.stored_songs(, store=None)
-
-Every stored song as `{key, title, artist}`, by artist then title.
-
-* **Return type:**
-  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
-
-
 # about-this-build.html.md
 
 <!-- generated by epythet -->
 
 # About this build
 
-This documentation was built on **2026-10-17 13:33 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/262da47abdf08f6464a2ad5f1f51d699cf2267aa"><code>262da47</code></a> on branch <code>main</code>, for **songleaf 0.0.9** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-17 14:02 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/a24ef454afe3f3562d0e5f925a1d549eb58d701d"><code>a24ef45</code></a> on branch <code>main</code>, for **songleaf 0.0.10** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.9) is behind the latest release on PyPI (0.0.10): `pip install songleaf` gives newer code than these docs describe.
+- The documented version (0.0.10) is behind the latest release on PyPI (0.0.11): `pip install songleaf` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/262da47abdf08f6464a2ad5f1f51d699cf2267aa"><code>262da47abdf08f6464a2ad5f1f51d699cf2267aa</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/a24ef454afe3f3562d0e5f925a1d549eb58d701d"><code>a24ef454afe3f3562d0e5f925a1d549eb58d701d</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -1912,9 +1900,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39036933264">39036933264</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39038872759">39038872759</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>262da47abdf08f6464a2ad5f1f51d699cf2267aa</code> (in the history of the built commit) |
+| Event commit | <code>a24ef454afe3f3562d0e5f925a1d549eb58d701d</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -1939,13 +1927,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.10/">0.0.10</a>, newer than the documented version (0.0.9).
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.11/">0.0.11</a>, newer than the documented version (0.0.10).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 262da47abdf08f6464a2ad5f1f51d699cf2267aa
+git checkout a24ef454afe3f3562d0e5f925a1d549eb58d701d
 pip install "epythet==0.2.17"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

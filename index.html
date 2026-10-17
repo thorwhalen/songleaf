@@ -207,6 +207,7 @@
 <li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.library.html">songleaf.library</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.parse.html">songleaf.parse</a></li>
@@ -214,7 +215,6 @@
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.tools.html">songleaf.tools</a></li>
-<li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.web.html">songleaf.web</a></li>
 </ul>
 </li>
 </ul>
@@ -402,6 +402,8 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 <span class="p">)</span>
 </pre></div>
 </div>
+<p><strong>Your songs</strong> (the songs opened before) can be deleted, and grouped. Groups work like Gmail labels: a song can be in several groups, and a group can hold other groups. You can filter the list by a group or browse it as a tree, add a song to a group from the song’s page (type a name), or pick several songs and use <strong>Group…</strong>. Groups are shared by everyone using the app (one library). They are kept on the server as a <a class="reference external" href="https://github.com/i2mint/zodal-groups">zodal-groups</a> snapshot with a revision (<code class="docutils literal notranslate"><span class="pre">songleaf.library</span></code>). A save made from an out-of-date revision is refused, and the page replays its changes on top of the newer groups, so two people editing at once don’t overwrite each other.</p>
+<p>In Read view, the floating ▶ starts <strong>auto-scroll</strong>, with − and + for the speed. It is remembered per song, pauses when you touch the song, and keeps the screen awake while running.</p>
 <p>The app has no login of its own: put it behind whatever gates the host. It takes the same <code class="docutils literal notranslate"><span class="pre">sources=</span></code> and <code class="docutils literal notranslate"><span class="pre">store=</span></code> as <code class="docutils literal notranslate"><span class="pre">sheet</span></code>. A rendered sheet is kept in memory (<code class="docutils literal notranslate"><span class="pre">sheet_cache_size=</span></code>, default 32), so the page’s requests for one sheet render it once.</p>
 </section>
 <section id="extending">
@@ -421,7 +423,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-17 13:33 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/262da47abdf08f6464a2ad5f1f51d699cf2267aa">262da47</a> (main) · songleaf 0.0.9 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-17 14:02 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/a24ef454afe3f3562d0e5f925a1d549eb58d701d">a24ef45</a> (main) · songleaf 0.0.10 · <a href="about-this-build.html">about this build</a></p>
         </article>
       </div>
       <footer>
@@ -484,7 +486,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=bf6d79ad"></script>
+</div><script src="_static/documentation_options.js?v=4bb83394"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

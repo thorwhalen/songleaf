@@ -204,6 +204,7 @@
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../_autosummary/songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.library.html">songleaf.library</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.parse.html">songleaf.parse</a></li>
@@ -211,7 +212,6 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.tools.html">songleaf.tools</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.web.html">songleaf.web</a></li>
 </ul>
 </li>
 </ul>
@@ -430,17 +430,21 @@
 
 <div class="viewcode-block" id="forget">
 <a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.forget">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">forget</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Remove a song from the stored songs. It can be found and stored again by searching.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">forget</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">library_root</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Remove a song from the stored songs and from every group it was in.</span>
 
-<span class="sd">    Returns ``{"key", "deleted"}``; ``deleted`` is False when it was not stored.</span>
+<span class="sd">    It can be found and stored again by searching. Returns ``{"key", "deleted"}``;</span>
+<span class="sd">    ``deleted`` is False when it was not stored.</span>
 <span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.library</span><span class="w"> </span><span class="kn">import</span> <span class="n">drop_item</span>
+
     <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">del</span> <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>  <span class="c1"># one step: two deletes at once cannot both find it</span>
         <span class="n">deleted</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
         <span class="n">deleted</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">drop_item</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="n">library_root</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">{</span><span class="s2">"key"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span> <span class="s2">"deleted"</span><span class="p">:</span> <span class="n">deleted</span><span class="p">}</span></div>
 
 
@@ -527,7 +531,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=bf6d79ad"></script>
+</div><script src="../../_static/documentation_options.js?v=4bb83394"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

@@ -203,6 +203,7 @@
 <li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.library.html">songleaf.library</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.parse.html">songleaf.parse</a></li>
@@ -210,7 +211,6 @@
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.tools.html">songleaf.tools</a></li>
-<li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.web.html">songleaf.web</a></li>
 </ul>
 </li>
 </ul>
@@ -287,7 +287,7 @@
   <h2>C</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="_autosummary/songleaf.web.html#songleaf.web.SheetRequest.checked">checked() (songleaf.web.SheetRequest method)</a>
+        <li><a href="_autosummary/songleaf.library.html#songleaf.library.checked_snapshot">checked_snapshot() (in module songleaf.library)</a>
 </li>
         <li><a href="_autosummary/songleaf.html#songleaf.chord">chord() (in module songleaf)</a>
 
@@ -329,6 +329,8 @@
         </ul></li>
         <li><a href="_autosummary/songleaf.render.html#songleaf.render.DFLT_MARGIN">DFLT_MARGIN (in module songleaf.render)</a>
 </li>
+        <li><a href="_autosummary/songleaf.library.html#songleaf.library.drop_item">drop_item() (in module songleaf.library)</a>
+</li>
     </ul></td>
   </tr></table>
 </section>
@@ -337,12 +339,10 @@
   <h2>E</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="_autosummary/songleaf.web.html#songleaf.web.ERROR_STATUS">ERROR_STATUS (in module songleaf.web)</a>
+        <li><a href="_autosummary/songleaf.harmony.html#songleaf.harmony.estimate_key">estimate_key() (in module songleaf.harmony)</a>
 </li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="_autosummary/songleaf.harmony.html#songleaf.harmony.estimate_key">estimate_key() (in module songleaf.harmony)</a>
-</li>
         <li><a href="_autosummary/songleaf.render.html#songleaf.render.ChordPlacement.extent">extent() (songleaf.render.ChordPlacement method)</a>
 </li>
     </ul></td>
@@ -519,7 +519,7 @@
           <li><a href="_autosummary/songleaf.render.html#songleaf.render.make_renderer">(in module songleaf.render)</a>
 </li>
         </ul></li>
-        <li><a href="_autosummary/songleaf.web.html#songleaf.web.mk_app">mk_app() (in module songleaf.web)</a>
+        <li><a href="_autosummary/songleaf.library.html#songleaf.library.MAX_BYTES">MAX_BYTES (in module songleaf.library)</a>
 </li>
         <li>
     module
@@ -530,6 +530,8 @@
           <li><a href="_autosummary/songleaf.harmony.html#module-songleaf.harmony">songleaf.harmony</a>
 </li>
           <li><a href="_autosummary/songleaf.kaggle_index.html#module-songleaf.kaggle_index">songleaf.kaggle_index</a>
+</li>
+          <li><a href="_autosummary/songleaf.library.html#module-songleaf.library">songleaf.library</a>
 </li>
           <li><a href="_autosummary/songleaf.model.html#module-songleaf.model">songleaf.model</a>
 </li>
@@ -544,8 +546,6 @@
           <li><a href="_autosummary/songleaf.store.html#module-songleaf.store">songleaf.store</a>
 </li>
           <li><a href="_autosummary/songleaf.tools.html#module-songleaf.tools">songleaf.tools</a>
-</li>
-          <li><a href="_autosummary/songleaf.web.html#module-songleaf.web">songleaf.web</a>
 </li>
         </ul></li>
     </ul></td>
@@ -588,8 +588,6 @@
         </ul></li>
         <li><a href="_autosummary/songleaf.render.html#songleaf.render.PACKERS">PACKERS (in module songleaf.render)</a>
 </li>
-        <li><a href="_autosummary/songleaf.web.html#songleaf.web.page_shell">page_shell() (in module songleaf.web)</a>
-</li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="_autosummary/songleaf.harmony.html#songleaf.harmony.parse_chord">parse_chord() (in module songleaf.harmony)</a>
@@ -600,8 +598,6 @@
           <li><a href="_autosummary/songleaf.parse.html#songleaf.parse.parse_chords_over_lyrics">(in module songleaf.parse)</a>
 </li>
         </ul></li>
-        <li><a href="_autosummary/songleaf.web.html#songleaf.web.pdf_page_png">pdf_page_png() (in module songleaf.web)</a>
-</li>
         <li><a href="_autosummary/songleaf.render.html#songleaf.render.SheetLayout.placement">placement (songleaf.render.SheetLayout property)</a>
 
         <ul>
@@ -616,21 +612,23 @@
   <h2>R</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_autosummary/songleaf.library.html#songleaf.library.read_groups">read_groups() (in module songleaf.library)</a>
+</li>
         <li><a href="_autosummary/songleaf.html#songleaf.render_dense_a4">render_dense_a4() (in module songleaf)</a>
 
         <ul>
           <li><a href="_autosummary/songleaf.render.html#songleaf.render.render_dense_a4">(in module songleaf.render)</a>
 </li>
         </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="_autosummary/songleaf.html#songleaf.render_sheet">render_sheet() (in module songleaf)</a>
 
         <ul>
           <li><a href="_autosummary/songleaf.render.html#songleaf.render.render_sheet">(in module songleaf.render)</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="_autosummary/songleaf.web.html#songleaf.web.SheetRequest.renderer">renderer() (songleaf.web.SheetRequest method)</a>
+        <li><a href="_autosummary/songleaf.library.html#songleaf.library.RevisionConflict">RevisionConflict</a>
 </li>
         <li><a href="_autosummary/songleaf.packing.html#songleaf.packing.rhyme_key">rhyme_key() (in module songleaf.packing)</a>
 </li>
@@ -642,6 +640,8 @@
   <h2>S</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_autosummary/songleaf.library.html#songleaf.library.save_groups">save_groups() (in module songleaf.library)</a>
+</li>
         <li><a href="_autosummary/songleaf.html#songleaf.score_link">score_link() (in module songleaf)</a>
 
         <ul>
@@ -678,16 +678,12 @@
           <li><a href="_autosummary/songleaf.tools.html#songleaf.tools.sheet">(in module songleaf.tools)</a>
 </li>
         </ul></li>
-        <li><a href="_autosummary/songleaf.web.html#songleaf.web.SHEET_LIMITS">SHEET_LIMITS (in module songleaf.web)</a>
-</li>
         <li><a href="_autosummary/songleaf.html#songleaf.SheetLayout">SheetLayout (class in songleaf)</a>
 
         <ul>
           <li><a href="_autosummary/songleaf.render.html#songleaf.render.SheetLayout">(class in songleaf.render)</a>
 </li>
         </ul></li>
-        <li><a href="_autosummary/songleaf.web.html#songleaf.web.SheetRequest">SheetRequest (class in songleaf.web)</a>
-</li>
         <li><a href="_autosummary/songleaf.render.html#songleaf.render.short_label">short_label() (in module songleaf.render)</a>
 </li>
         <li><a href="_autosummary/songleaf.html#songleaf.Song">Song (class in songleaf)</a>
@@ -725,6 +721,13 @@
 
         <ul>
           <li><a href="_autosummary/songleaf.kaggle_index.html#module-songleaf.kaggle_index">module</a>
+</li>
+        </ul></li>
+        <li>
+    songleaf.library
+
+        <ul>
+          <li><a href="_autosummary/songleaf.library.html#module-songleaf.library">module</a>
 </li>
         </ul></li>
         <li>
@@ -776,13 +779,6 @@
           <li><a href="_autosummary/songleaf.tools.html#module-songleaf.tools">module</a>
 </li>
         </ul></li>
-        <li>
-    songleaf.web
-
-        <ul>
-          <li><a href="_autosummary/songleaf.web.html#module-songleaf.web">module</a>
-</li>
-        </ul></li>
         <li><a href="_autosummary/songleaf.sources.html#songleaf.sources.SongNotFound">SongNotFound</a>
 </li>
         <li><a href="_autosummary/songleaf.html#songleaf.songs">songs() (in module songleaf)</a>
@@ -792,8 +788,6 @@
 </li>
         </ul></li>
         <li><a href="_autosummary/songleaf.sources.html#songleaf.sources.SourceUnavailable">SourceUnavailable</a>
-</li>
-        <li><a href="_autosummary/songleaf.web.html#songleaf.web.stored_songs">stored_songs() (in module songleaf.web)</a>
 </li>
     </ul></td>
   </tr></table>
@@ -873,7 +867,7 @@
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=bf6d79ad"></script>
+</div><script src="_static/documentation_options.js?v=4bb83394"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

@@ -350,14 +350,14 @@ The keys of the stored songs.
 
 ### Modules
 
-| [`harmony`](songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                                                                         |
-|--------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`kaggle_index`](songleaf.kaggle_index.html.md#module-songleaf.kaggle_index) | A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.                                                               |
-| [`model`](songleaf.model.html.md#module-songleaf.model)               | The linked-artifact model: a song is lyrics text plus standoff annotations.                                                                               |
-| [`packing`](songleaf.packing.html.md#module-songleaf.packing)           | Line packing: which consecutive lines of a paragraph share a row.                                                                                         |
-| [`parse`](songleaf.parse.html.md#module-songleaf.parse)               | Parse chords-over-lyrics text into a [`Song`](songleaf.model.html.md#songleaf.model.Song).                                           |
-| [`render`](songleaf.render.html.md#module-songleaf.render)             | Render a song onto one dense page, with the lyrics as large as will fit.                                                                                  |
-| [`sources`](songleaf.sources.html.md#module-songleaf.sources)           | Where songs are found: sources, and a search that composes them.                                                                                          |
-| [`store`](songleaf.store.html.md#module-songleaf.store)               | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                                                                  |
-| [`tools`](songleaf.tools.html.md#module-songleaf.tools)               | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.                                                        |
-| [`web`](songleaf.web.html.md#module-songleaf.web)                   | The web surface: a JSON API over [`songleaf.tools`](songleaf.tools.html.md#module-songleaf.tools), the sheet as a PDF, and the page. |
+| [`harmony`](songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                               |
+|--------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| [`kaggle_index`](songleaf.kaggle_index.html.md#module-songleaf.kaggle_index) | A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.                     |
+| [`library`](songleaf.library.html.md#module-songleaf.library)           | The library's groups: which stored songs are in which groups, shared by everyone using it.                      |
+| [`model`](songleaf.model.html.md#module-songleaf.model)               | The linked-artifact model: a song is lyrics text plus standoff annotations.                                     |
+| [`packing`](songleaf.packing.html.md#module-songleaf.packing)           | Line packing: which consecutive lines of a paragraph share a row.                                               |
+| [`parse`](songleaf.parse.html.md#module-songleaf.parse)               | Parse chords-over-lyrics text into a [`Song`](songleaf.model.html.md#songleaf.model.Song). |
+| [`render`](songleaf.render.html.md#module-songleaf.render)             | Render a song onto one dense page, with the lyrics as large as will fit.                                        |
+| [`sources`](songleaf.sources.html.md#module-songleaf.sources)           | Where songs are found: sources, and a search that composes them.                                                |
+| [`store`](songleaf.store.html.md#module-songleaf.store)               | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                        |
+| [`tools`](songleaf.tools.html.md#module-songleaf.tools)               | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.              |
