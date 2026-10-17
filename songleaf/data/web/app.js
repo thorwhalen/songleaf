@@ -119,12 +119,90 @@
         for (const [name, param] of Object.entries(numeric)) if (name in saved) out[param] = String(saved[name]);
         return out;
       },
+      forgetSong(key) { // a deleted song leaves no settings behind
+        for (const name of ["transpose", "scroll"]) if (values[name]) delete values[name][key];
+        save();
+      },
+      scrollLevelOf(key) { return (values.scroll || {})[key] || values.scrollDefault || 5; },
+      setScrollLevel(key, level) {
+        values.scroll = { ...(values.scroll || {}), [key]: level };
+        values.scrollDefault = level; // a new song starts at the last speed used
+        save();
+      },
       transposeOf(key) { return (values.transpose || {})[key] || 0; },
       setTranspose(key, t) {
         values.transpose = { ...(values.transpose || {}) };
         if (t) values.transpose[key] = t; else delete values.transpose[key];
         save();
       },
+    };
+  })();
+
+  // --- auto-scroll: the page moves at a steady speed while you play --------------------
+
+  // Speed is a level from 1 to SCROLL_LEVELS; a level is a fraction of the reading size per
+  // second, so larger type scrolls proportionally faster and a line passes at the same pace.
+  const SCROLL_LEVELS = 12;
+  const SCROLL_PER_LEVEL = 0.12; // reading sizes per second, per level
+  const autoScroll = (function () {
+    let running = false;
+    let frame = 0;
+    let last = 0;
+    let position = 0; // fractional: the browser places it to the device pixel, so slow is smooth
+    let wakeLock = null;
+    let level = 5;
+    let pxPerLevel = 2.4;
+    const listeners = new Set();
+    const notify = () => listeners.forEach((f) => f(running));
+    async function keepAwake() {
+      if (!navigator.wakeLock) return;
+      let lock = null;
+      try { lock = await navigator.wakeLock.request("screen"); } catch (_) { return; }
+      if (!running) { lock.release().catch(() => {}); return; } // paused while the request was out
+      if (wakeLock) wakeLock.release().catch(() => {});
+      wakeLock = lock;
+    }
+    function step(now) {
+      if (!running) return;
+      const seconds = last ? Math.min((now - last) / 1000, 0.1) : 0; // a background tab never jumps
+      last = now;
+      if (Math.abs(window.scrollY - position) > 3) position = window.scrollY; // moved by something else: go on from there
+      position += level * pxPerLevel * seconds;
+      window.scrollTo(0, position);
+      const bottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+      if (bottom) { stop(); return; }
+      frame = requestAnimationFrame(step);
+    }
+    function start() {
+      if (running) return;
+      running = true; last = 0; position = window.scrollY;
+      keepAwake();
+      frame = requestAnimationFrame(step);
+      notify();
+    }
+    function stop() {
+      if (!running) return;
+      running = false;
+      cancelAnimationFrame(frame);
+      if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+      notify();
+    }
+    // A touch, the wheel or a scrolling key means the reader took over: pause.
+    const isControl = (target) => target.closest && target.closest(".toolbar-wrap, .scroll-pill, input, select, textarea");
+    for (const type of ["touchstart", "wheel", "mousedown"]) window.addEventListener(type, (e) => {
+      if (running && !isControl(e.target)) stop();
+    }, { passive: true });
+    window.addEventListener("keydown", (e) => {
+      const scrolls = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(e.key);
+      if (running && scrolls && !isControl(e.target)) stop();
+    });
+    document.addEventListener("visibilitychange", () => { if (running && document.visibilityState === "visible") keepAwake(); });
+    return {
+      start, stop,
+      toggle() { if (running) stop(); else start(); },
+      get running() { return running; },
+      configure(next) { level = next.level; pxPerLevel = next.readSize * SCROLL_PER_LEVEL; },
+      onChange(f) { listeners.add(f); return () => listeners.delete(f); },
     };
   })();
 
@@ -225,7 +303,13 @@
 
   // --- views -----------------------------------------------------------------------------
 
+  let shownView = ""; // the song and view on screen: redrawing the same one keeps the scroll going
   function render() {
+    const next = readRoute();
+    const view = next.song ? `${next.song}|${next.view}` : "";
+    if (view !== shownView) autoScroll.stop(); // a new song, or Print, never inherits the motion
+    shownView = view;
+    while (scrollUnsubscribers.length) scrollUnsubscribers.pop()(); // toolbars about to be replaced
     clearTimeout(searchTimer); // a search typed just before leaving must not fire on the next view
     generation += 1;
     applyLook(prefs.look()); // the paper (light or dark) is the whole page's, search included
@@ -298,13 +382,77 @@
       if (gen !== generation) return;
       results.replaceChildren(
         songs.length
-          ? h("div", {}, h("h2", {}, "Songs you opened before"), songList(songs))
+          ? library(songs, () => showStored(results, generation))
           : h("p", { class: "muted" }, "Search by title or artist, or by words of the lyrics.")
       );
     } catch (error) {
       if (gen !== generation) return;
       results.replaceChildren(errorBox(error.message, () => showStored(results, gen)));
     }
+  }
+
+  // The stored songs, with an Edit mode: pick songs, then act on them (delete).
+  function library(songs, refresh) {
+    const selected = new Set();
+    let editing = false;
+    const listHost = h("div");
+    const count = h("span", { class: "muted" });
+    let busy = false;
+    const remove = h("button", {
+      type: "button", class: "danger", disabled: true,
+      onclick: async () => {
+        if (busy) return;
+        const keys = [...selected]; // what was confirmed is what is deleted
+        const one = keys.length === 1 && songs.find((s) => s.key === keys[0]);
+        const what = one ? `“${one.title || one.key}”` : `these ${keys.length} songs`;
+        if (!window.confirm(`Delete ${what} from your songs? Search finds ${one ? "it" : "them"} again.`)) return;
+        busy = true;
+        listHost.inert = true; edit.disabled = true; // nothing changes while deleting
+        remove.disabled = true;
+        remove.textContent = "Deleting…";
+        let failed = 0;
+        for (const key of keys) {
+          try {
+            const response = await fetch(CONFIG.api + "/songs?" + new URLSearchParams({ key }), { method: "DELETE", credentials: "same-origin" });
+            if (response.ok || response.status === 404) prefs.forgetSong(key);
+            else failed += 1;
+          } catch (_) {
+            failed += 1;
+          }
+        }
+        if (failed) window.alert(`${failed} could not be deleted. Check the connection and try again.`);
+        refresh();
+      },
+    }, "Delete");
+    const actions = h("div", { class: "edit-actions", hidden: true }, count, remove);
+    const edit = h("button", {
+      type: "button", class: "text",
+      onclick: () => { editing = !editing; selected.clear(); draw(); },
+    });
+    const sync = () => {
+      count.textContent = selected.size ? `${selected.size} selected` : "Pick songs";
+      remove.disabled = !selected.size;
+    };
+    function draw() {
+      edit.textContent = editing ? "Done" : "Edit";
+      actions.hidden = !editing;
+      listHost.replaceChildren(editing ? pickList(songs, selected, sync) : songList(songs));
+      sync();
+    }
+    draw();
+    return h("div", { class: "library" },
+      h("div", { class: "library-head" }, h("h2", {}, "Your songs"), edit),
+      actions, listHost);
+  }
+
+  function pickList(songs, selected, onChange) {
+    return h("ul", { class: "songs picking" }, songs.map((song) => h("li", {}, h("label", {},
+      h("input", {
+        type: "checkbox", checked: selected.has(song.key),
+        onchange: (e) => { if (e.target.checked) selected.add(song.key); else selected.delete(song.key); onChange(); },
+      }),
+      h("span", { class: "title" }, song.title || song.key),
+      song.artist && h("span", { class: "artist" }, song.artist)))));
   }
 
   function songList(songs) {
@@ -377,7 +525,7 @@
     applyLook(look);
     const content = route.view === "print"
       ? printView(song, route, gen)
-      : h("div", { class: "read" }, displayControls(route), readerView(song, table, look));
+      : h("div", { class: "read" }, displayControls(route), readerView(song, table, look), scrollControls(route.song, look));
     body.replaceChildren(toolbar, content);
   }
 
@@ -406,6 +554,7 @@
         look.readSize = value;
         prefs.setLook({ readSize: value });
         applyLook(look);
+        autoScroll.configure({ level: prefs.scrollLevelOf(route.song), readSize: value });
         sizeLabel.textContent = String(value);
       } else {
         const value = round1(clamp(look.printScale + direction * PRINT_SCALES.step, PRINT_SCALES.min, PRINT_SCALES.max));
@@ -456,6 +605,38 @@
     }
     return h("div", { class: "toolbar-wrap" }, bar, panelHost);
   }
+
+  // Play/pause and − speed +. The speed is remembered per song.
+  function scrollControls(key, look) {
+    let level = prefs.scrollLevelOf(key);
+    autoScroll.configure({ level, readSize: look.readSize });
+    const play = h("button", {
+      type: "button", class: "icon play", onclick: () => autoScroll.toggle(),
+    });
+    const value = h("span", { class: "size-value", "aria-live": "polite" }, String(level));
+    const setLevel = (next) => {
+      level = clamp(next, 1, SCROLL_LEVELS);
+      prefs.setScrollLevel(key, level);
+      autoScroll.configure({ level, readSize: prefs.look().readSize });
+      value.textContent = String(level);
+    };
+    const show = (running) => {
+      play.textContent = running ? "❚❚" : "▶";
+      play.title = running ? "Pause scrolling" : "Scroll the song";
+      play.setAttribute("aria-label", play.title);
+      play.setAttribute("aria-pressed", String(running));
+    };
+    show(autoScroll.running);
+    const unsubscribe = autoScroll.onChange(show);
+    const group = h("div", { class: "scroll-pill", role: "group", "aria-label": "Auto-scroll" },
+      play,
+      h("button", { type: "button", class: "icon", title: "Slower", "aria-label": "Slower", onclick: () => setLevel(level - 1) }, "−"),
+      value,
+      h("button", { type: "button", class: "icon", title: "Faster", "aria-label": "Faster", onclick: () => setLevel(level + 1) }, "+"));
+    scrollUnsubscribers.push(unsubscribe);
+    return group;
+  }
+  const scrollUnsubscribers = [];
 
   function togglePanel(host, button, build, name) {
     const open = button.getAttribute("aria-expanded") === "true";

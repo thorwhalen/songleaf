@@ -167,6 +167,20 @@ def _resolve(query: str, *, pick: int, refresh: bool, sources, store):
     return key, store[key]
 
 
+def forget(key: str, *, store=None) -> dict:
+    """Remove a song from the stored songs. It can be found and stored again by searching.
+
+    Returns ``{"key", "deleted"}``; ``deleted`` is False when it was not stored.
+    """
+    store = song_store() if store is None else store
+    try:
+        del store[key]  # one step: two deletes at once cannot both find it
+        deleted = True
+    except (KeyError, FileNotFoundError, ValueError):
+        deleted = False
+    return {"key": key, "deleted": deleted}
+
+
 def songs(*, store=None) -> list[str]:
     """The keys of the stored songs."""
     store = song_store() if store is None else store
@@ -214,4 +228,4 @@ def _file_name(song, key: str, layout: str = "") -> str:
 
 
 #: Every operation, in the order the CLI lists them.
-TOOLS = (search, sheet, song, songs, build_index)
+TOOLS = (search, sheet, song, songs, forget, build_index)
