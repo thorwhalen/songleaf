@@ -95,9 +95,12 @@
     if (!isObject(values)) values = {};
     if (!isObject(values.look)) delete values.look;
     const look = values.look || {};
-    if (values.look && !look.v) { // v2: the reader and the PDF have their own chord size
+    let migrated = false;
+    if (!look.v) { // v2: the reader and the PDF have their own chord size; a v1 one printed too
       if (look.chordScale !== undefined && look.printChordScale === undefined) look.printChordScale = look.chordScale;
       look.v = 2;
+      values.look = look;
+      migrated = true;
     }
     if (look.lyricColor || look.chordColor) { // before papers, colours were for light paper
       look.inks = { ...(look.inks || {}), light: { lyricColor: look.lyricColor, chordColor: look.chordColor } };
@@ -107,6 +110,7 @@
     function save() {
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(values)); } catch (_) { /* not kept */ }
     }
+    if (migrated) save();
     return {
       // Everything the page draws with, resolved: the paper in use and its inks included.
       look(paper) {
@@ -514,9 +518,15 @@
   let scrollSaveTimer = 0;
   window.addEventListener("scroll", () => {
     clearTimeout(scrollSaveTimer);
+    if (autoScroll.running) return; // saved once it stops (browsers cap history writes)
     scrollSaveTimer = setTimeout(rememberScroll, 400);
   }, { passive: true });
   window.addEventListener("pagehide", rememberScroll);
+  autoScroll.onChange((running) => { // saved a moment after it stops, unless the view changes first
+    if (running) return;
+    clearTimeout(scrollSaveTimer);
+    scrollSaveTimer = setTimeout(rememberScroll, 400);
+  });
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") rememberScroll(); });
   const savedScroll = () => (history.state && typeof history.state.scrollY === "number" ? history.state.scrollY : null);
 
@@ -594,6 +604,7 @@
     const next = readRoute();
     const view = next.song ? `${next.song}|${next.view}` : "";
     if (view !== shownView) autoScroll.stop(); // a new song, or Print, never inherits the motion
+    clearTimeout(scrollSaveTimer); // a save pending for the view being left must not land on this entry
     shownView = view;
     while (scrollUnsubscribers.length) scrollUnsubscribers.pop()(); // toolbars about to be replaced
     clearTimeout(searchTimer); // a search typed just before leaving must not fire on the next view
@@ -758,8 +769,9 @@
     // Only an Apply (the button, or Ctrl/⌘+Enter) may close the menu as done: a drag in the
     // tree meanwhile also changes the space.
     let applied = false;
-    panel.addEventListener("click", (e) => { if (e.target.closest(".zg-tagmenu-apply")) applied = true; }, true);
-    panel.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) applied = true; }, true);
+    const canApply = () => { const b = panel.querySelector(".zg-tagmenu-apply"); return !!b && b.getAttribute("aria-disabled") === "false"; };
+    panel.addEventListener("click", (e) => { if (e.target.closest(".zg-tagmenu-apply") && canApply()) applied = true; }, true);
+    panel.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && canApply()) applied = true; }, true);
     menu = groups.zg.renderTagMenu(panel, handle, {
       selection: keys,
       candidates: () => groups.list().map((g) => g.id), // groups only: never a song
@@ -888,7 +900,12 @@
         return;
       }
       navHost.hidden = false;
-      if (chips && chips.space === groups.space) { chips.renderer.render(); return; }
+      if (chips && chips.space === groups.space) {
+        chips.renderer.render();
+        if (valueOf(chips.renderer.selection) !== group) corrected(valueOf(chips.renderer.selection)); // the group went away
+        revealChosen();
+        return;
+      }
       if (chips) chips.renderer.destroy();
       const renderer = groups.zg.renderGroupChips(navHost, groups.space, {
         items: () => songs.map((s) => s.key),
@@ -903,6 +920,18 @@
       });
       chips = { renderer, space: groups.space };
       if (valueOf(renderer.selection) !== group) corrected(valueOf(renderer.selection)); // unknown or emptied
+      revealChosen();
+    }
+    // Each row scrolls sideways and is redrawn on every change: bring its chosen chip into view.
+    function revealChosen() {
+      if (!navHost.isConnected) { requestAnimationFrame(revealChosen); return; } // drawn before it is on the page
+      for (const row of navHost.querySelectorAll(".zg-group-chips-row")) {
+        const on = [...row.querySelectorAll('[aria-pressed="true"], .is-on-path')].pop();
+        if (!on) continue;
+        const box = row.getBoundingClientRect();
+        const chip = on.getBoundingClientRect();
+        if (chip.left < box.left || chip.right > box.right) row.scrollLeft += chip.left - box.left - 16;
+      }
     }
     // A deliberate change of group is a history entry: Back undoes it, a reload keeps it.
     function pick(id) {
@@ -913,7 +942,7 @@
     function setGroup(id) {
       group = id || "";
       if (menu) menu.close(); // its selection was made in the old list
-      if (chips) {
+      if (chips && valueOf(chips.renderer.selection) !== group) { // Back or Forward (a tap is shown already)
         const shownValue = valueOf(chips.renderer.setSelection(selectionOf(group)));
         if (shownValue !== group) corrected(shownValue);
       }
@@ -1057,7 +1086,7 @@
     const known = history.state || {};
     const sameSong = app.dataset.song === route.song;
     const reopen = sameSong ? openPanel : null; // a choice made in a panel redraws the song; the panel stays open
-    const restoreY = fresh ? savedScroll() : null; // a reload, mid-song: read before anything scrolls
+    const restoreY = fresh && route.view !== "print" ? savedScroll() : null; // a reload, mid-song: read before anything scrolls
     if (currentPanels) currentPanels.dispose();
     openPanel = reopen;
     if (!sameSong) window.scrollTo(0, 0);
