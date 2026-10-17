@@ -114,12 +114,15 @@ def song(
     ``query`` is a song key or a search, as for ``sheet``; the song is stored
     the same way. Besides the song's own fields (``text``, ``annotations``,
     ``meta``, ``provenance``), the result has ``chords`` (the distinct chords,
-    in order of first appearance), ``song_key`` (the estimated key, ``""`` with
+    in order of first appearance), ``sections`` (``{"start", "end", "label",
+    "family"}``, the family as the printed sheet shades it: ``"chorus"``,
+    ``"bridge"`` or ``""``), ``song_key`` (the estimated key, ``""`` with
     no chords) and ``transpositions``: one table per shift from
     ``-transpositions + 1`` to ``transpositions`` semitones, each
     ``{"semitones", "key", "chords": {original: transposed}}``.
     """
     from songleaf.harmony import transposition_table
+    from songleaf.render import section_family
 
     if pick < 1:
         raise ValueError(f"pick counts from 1, got {pick}")
@@ -135,6 +138,15 @@ def song(
         "artist": found.artist,
         **found.to_dict(),
         "chords": list(dict.fromkeys(symbols)),
+        "sections": [
+            {
+                "start": a.start,
+                "end": a.end,
+                "label": a.body.get("label", ""),
+                "family": section_family(a.body.get("label", "")),
+            }
+            for a in found.of_kind("section")
+        ],
         "song_key": transposition_table(symbols, 0)["key"],
         "transpositions": tables,
     }

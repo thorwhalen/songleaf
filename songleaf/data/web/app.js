@@ -16,28 +16,35 @@
   const SLOW_MS = 3000; // past this, say why the wait is long
   const READ_SIZES = { min: 12, max: 56, step: 2 }; // reader lyric size, px
   const PRINT_SCALES = { min: 0.5, max: 2, step: 0.1 }; // PDF size, x the size that fills the page
-  // The reader's own defaults. Colours come from the server's sheet style (/layouts) when
-  // it has answered; the PDF gets only what the viewer changed, so it keeps its own tuning.
+  // The reader's defaults. The printed sheet's colours come from the server (/layouts), and
+  // the PDF gets only what the viewer changed, so it keeps its own tuning.
   const DEFAULT_LOOK = {
     readSize: 20,
     printScale: 1,
-    lyricColor: "#000000",
     lyricAlpha: 1,
-    chordColor: "#3b73c4",
     chordAlpha: 1,
     chordScale: 0.62,
     lineHeight: 1.25,
     font: "sans",
+    paper: "auto", // "auto" follows the phone's light or dark mode
+    chordMode: "above",
+    columns: 1,
+    shade: false,
   };
-  const PRINT_PARAMS = { // reader setting -> /sheet parameter
-    lyricColor: "lyric_color", lyricAlpha: "lyric_alpha",
-    chordColor: "chord_color", chordAlpha: "chord_alpha", chordScale: "chord_scale",
+  // Papers to read on. Light is the printed sheet's own paper, so its inks are the server's.
+  const PAPERS = {
+    light: { label: "Light", paper: "#fbfaf7", theme: "light" },
+    sepia: { label: "Sepia", paper: "#f4ecd8", ink: "#3b2f1e", chord: "#9a4f12", theme: "light" },
+    dark: { label: "Dark", paper: "#161615", ink: "#e8e6e1", chord: "#7aa7f0", theme: "dark" },
+    black: { label: "Black", paper: "#000000", ink: "#f2f2f2", chord: "#8fb8ff", theme: "dark" },
   };
+  const CHORD_MODES = { above: "Above", inline: "Inline", off: "Off" };
   const FONTS = {
     sans: 'system-ui, -apple-system, "Segoe UI", sans-serif',
     serif: 'Georgia, "Times New Roman", serif',
     mono: 'ui-monospace, "SF Mono", Menlo, monospace',
   };
+  const darkQuery = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
   const app = document.getElementById("app");
   let generation = 0; // bumps on every render: a late response from an older view is dropped
   let searchTimer = null; // the pending debounced search; a view change cancels it
@@ -53,19 +60,54 @@
     try {
       values = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") || {};
     } catch (_) { /* private mode or blocked storage: defaults it is */ }
+    const look = values.look || {};
+    if (look.lyricColor || look.chordColor) { // before papers, colours were for light paper
+      look.inks = { ...(look.inks || {}), light: { lyricColor: look.lyricColor, chordColor: look.chordColor } };
+      delete look.lyricColor;
+      delete look.chordColor;
+    }
     function save() {
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(values)); } catch (_) { /* not kept */ }
     }
     return {
+      // Everything the page draws with, resolved: the paper in use and its inks included.
       look() {
-        const server = options && options.style
-          ? { lyricColor: options.style.lyric_color, chordColor: options.style.chord_color, chordScale: options.style.chord_scale }
-          : {};
-        return { ...DEFAULT_LOOK, ...server, ...(values.look || {}) };
+        const saved = values.look || {};
+        const auto = darkQuery && darkQuery.matches ? "dark" : "light";
+        const paperName = PAPERS[saved.paper] ? saved.paper : auto;
+        const palette = PAPERS[paperName];
+        const server = (options && options.style) || {};
+        const inks = (saved.inks || {})[paperName] || {};
+        return {
+          ...DEFAULT_LOOK,
+          ...(server.chord_scale ? { chordScale: server.chord_scale } : {}),
+          ...saved,
+          paperName,
+          palette,
+          lyricColor: inks.lyricColor || palette.ink || server.lyric_color || "#000000",
+          chordColor: inks.chordColor || palette.chord || server.chord_color || "#3b73c4",
+        };
       },
-      changed() { return { ...(values.look || {}) }; }, // only what the viewer set
       setLook(changes) { values.look = { ...(values.look || {}), ...changes }; save(); },
+      setInk(paperName, changes) {
+        const saved = { ...(values.look || {}) };
+        saved.inks = { ...(saved.inks || {}), [paperName]: { ...((saved.inks || {})[paperName] || {}), ...changes } };
+        values.look = saved;
+        save();
+      },
       resetLook() { delete values.look; save(); },
+      // The /sheet parameters the viewer's settings give: only what they changed, and the
+      // inks chosen for light paper (a PDF is printed on white).
+      printParams() {
+        const saved = values.look || {};
+        const light = (saved.inks || {}).light || {};
+        const out = {};
+        if (light.lyricColor) out.lyric_color = light.lyricColor;
+        if (light.chordColor) out.chord_color = light.chordColor;
+        const numeric = { lyricAlpha: "lyric_alpha", chordAlpha: "chord_alpha", chordScale: "chord_scale" };
+        for (const [name, param] of Object.entries(numeric)) if (name in saved) out[param] = String(saved[name]);
+        return out;
+      },
       transposeOf(key) { return (values.transpose || {})[key] || 0; },
       setTranspose(key, t) {
         values.transpose = { ...(values.transpose || {}) };
@@ -175,6 +217,7 @@
   function render() {
     clearTimeout(searchTimer); // a search typed just before leaving must not fire on the next view
     generation += 1;
+    applyLook(prefs.look()); // the paper (light or dark) is the whole page's, search included
     const route = readRoute();
     if (route.song) renderSong(route, generation);
     else renderSearch(route, generation);
@@ -319,7 +362,11 @@
 
     const table = tableFor(song, route.t);
     const toolbar = buildToolbar(song, route, table);
-    const content = route.view === "print" ? printView(song, route, gen) : readerView(song, table);
+    const look = prefs.look();
+    applyLook(look);
+    const content = route.view === "print"
+      ? printView(song, route, gen)
+      : h("div", { class: "read" }, displayControls(route), readerView(song, table, look));
     body.replaceChildren(toolbar, content);
   }
 
@@ -440,27 +487,26 @@
   }
 
   // The reader's look. Sliders preview live; the printed sheet follows on release.
+  // Fine tuning: inks (kept per paper), opacity, chord size, spacing, font. Sliders
+  // preview live; the printed sheet follows on release.
   function lookPanel(route) {
     const look = prefs.look();
     const printing = route.view === "print";
-    const commit = (changes) => {
-      prefs.setLook(changes);
-      if (printing) goSong(route, {}); // one re-render per deliberate change
-    };
+    const after = () => { if (printing) goSong(route, {}); }; // one re-render per deliberate change
     const preview = (changes) => applyLook({ ...prefs.look(), ...changes });
 
     function colorRow(label, colorName, alphaName) {
       const color = h("input", {
         type: "color", value: look[colorName], "aria-label": `${label} colour`,
         oninput: (e) => preview({ [colorName]: e.target.value }),
-        onchange: (e) => commit({ [colorName]: e.target.value }),
+        onchange: (e) => { prefs.setInk(printing ? "light" : look.paperName, { [colorName]: e.target.value }); after(); },
       });
       const value = h("output", {}, `${Math.round(look[alphaName] * 100)}%`);
       const alpha = h("input", {
         type: "range", min: "0.1", max: "1", step: "0.05", value: String(look[alphaName]),
         "aria-label": `${label} opacity`,
         oninput: (e) => { value.textContent = `${Math.round(e.target.value * 100)}%`; preview({ [alphaName]: Number(e.target.value) }); },
-        onchange: (e) => commit({ [alphaName]: Number(e.target.value) }),
+        onchange: (e) => { prefs.setLook({ [alphaName]: Number(e.target.value) }); after(); },
       });
       return h("div", { class: "row" }, h("span", { class: "label" }, label), color, alpha, value);
     }
@@ -471,16 +517,17 @@
         type: "range", min: String(min), max: String(max), step: String(step), value: String(look[name]),
         "aria-label": label,
         oninput: (e) => { value.textContent = format(Number(e.target.value)); preview({ [name]: Number(e.target.value) }); },
-        onchange: (e) => commit({ [name]: Number(e.target.value) }),
+        onchange: (e) => { prefs.setLook({ [name]: Number(e.target.value) }); after(); },
       });
       return h("div", { class: "row" }, h("span", { class: "label" }, label), input, value);
     }
 
     const font = h("select", {
       "aria-label": "Font",
-      onchange: (e) => { preview({ font: e.target.value }); commit({ font: e.target.value }); },
+      onchange: (e) => { prefs.setLook({ font: e.target.value }); preview({}); },
     }, Object.keys(FONTS).map((name) => h("option", { value: name, selected: name === look.font }, name)));
 
+    const paperName = printing ? "white" : look.palette.label.toLowerCase();
     return h("div", { class: "panel look" },
       colorRow("Lyrics", "lyricColor", "lyricAlpha"),
       colorRow("Chords", "chordColor", "chordAlpha"),
@@ -488,63 +535,123 @@
       printing ? null : rangeRow("Line spacing", "lineHeight", 1, 2, 0.05, (v) => v.toFixed(2)),
       printing ? null : h("div", { class: "row" }, h("span", { class: "label" }, "Font"), font),
       h("p", { class: "muted hint" }, printing
-        ? "Colours and opacity print as the matching shade on white paper."
-        : "These settings apply to the printed sheet too."),
-      h("button", { type: "button", class: "text", onclick: () => { prefs.resetLook(); goSong(route, {}); } }, "Reset to defaults"));
+        ? "Colours are those for light paper; opacity prints as the matching shade on white."
+        : `Colours are kept for ${paperName} paper; the printed sheet uses those for light paper.`),
+      h("button", { type: "button", class: "text", onclick: () => { prefs.resetLook(); applyLook(prefs.look()); goSong(route, {}); } }, "Reset to defaults"));
   }
 
+  // The paper, its inks and the reader's type, as CSS variables on the page. The paper also
+  // sets light or dark for the whole page, so the toolbar and search match it.
   function applyLook(look) {
-    const root = document.documentElement.style;
-    root.setProperty("--read-size", `${look.readSize}px`);
-    root.setProperty("--lyric-ink", rgba(look.lyricColor, look.lyricAlpha));
-    root.setProperty("--chord-ink", rgba(look.chordColor, look.chordAlpha));
-    root.setProperty("--chord-scale", String(look.chordScale));
-    root.setProperty("--read-line", String(look.lineHeight));
-    root.setProperty("--read-font", FONTS[look.font] || FONTS.sans);
+    const root = document.documentElement;
+    root.dataset.theme = look.palette.theme;
+    root.style.setProperty("--bg", look.palette.paper);
+    root.style.setProperty("--read-size", `${look.readSize}px`);
+    root.style.setProperty("--lyric-ink", rgba(look.lyricColor, look.lyricAlpha));
+    root.style.setProperty("--chord-ink", rgba(look.chordColor, look.chordAlpha));
+    root.style.setProperty("--chord-scale", String(look.chordScale));
+    root.style.setProperty("--read-line", String(look.lineHeight));
+    root.style.setProperty("--read-font", FONTS[look.font] || FONTS.sans);
+    const meta = document.querySelector('meta[name="theme-color"]') || document.head.appendChild(h("meta", { name: "theme-color" }));
+    meta.setAttribute("content", look.palette.paper);
   }
 
-  // ----- the reader: the song as text, chords over the syllables they land on --------------
+  if (darkQuery && darkQuery.addEventListener) { // "auto" paper follows the phone as it changes
+    darkQuery.addEventListener("change", () => { if (prefs.look().paper === "auto") render(); });
+  }
 
-  function readerView(song, table) {
-    applyLook(prefs.look());
+  // The reader's display, always in view above the song (as the layout is above the sheet).
+  function displayControls(route) {
+    const look = prefs.look();
+    const set = (changes) => { prefs.setLook(changes); goSong(route, {}); };
+    function choiceRow(label, name, choices, current) {
+      return h("div", { class: "row", role: "radiogroup", "aria-label": label },
+        h("span", { class: "label" }, label),
+        Object.entries(choices).map(([value, text]) => h("button", {
+          type: "button", role: "radio", class: "chip", "aria-checked": String(value === String(current)),
+          "data-value": value, onclick: () => set({ [name]: name === "columns" ? Number(value) : value },
+          ),
+        }, text)));
+    }
+    const papers = { auto: "Auto", ...Object.fromEntries(Object.entries(PAPERS).map(([k, v]) => [k, v.label])) };
+    const paperRow = choiceRow("Paper", "paper", papers, PAPERS[look.paper] ? look.paper : "auto");
+    for (const button of paperRow.querySelectorAll("[data-value]")) { // a swatch of each paper
+      const palette = PAPERS[button.dataset.value];
+      button.prepend(h("span", {
+        class: "swatch" + (palette ? "" : " auto"),
+        style: palette ? `background:${palette.paper}` : null, "aria-hidden": "true",
+      }));
+    }
+    return h("fieldset", { class: "display" }, h("legend", {}, "Display"),
+      paperRow,
+      choiceRow("Chords", "chordMode", CHORD_MODES, look.chordMode),
+      choiceRow("Columns", "columns", { 1: "One", 2: "Two" }, look.columns),
+      h("div", { class: "row" }, h("span", { class: "label" }, "Sections"),
+        h("label", { class: "chip" },
+          h("input", { type: "checkbox", checked: look.shade, onchange: (e) => set({ shade: e.target.checked }) }),
+          "Shade choruses")));
+  }
+
+  // ----- the reader: the song as text, chords over (or in, or without) its syllables -------
+
+  function readerView(song, table, look) {
     const text = song.text || "";
     const chordsAt = new Map(); // offset -> [symbols], in song order
-    const labelsAt = new Map(); // offset -> section label
     for (const a of song.annotations || []) {
-      if (a.kind === "chord") {
-        const symbol = table.chords[a.body.symbol] || a.body.symbol;
-        if (!chordsAt.has(a.start)) chordsAt.set(a.start, []);
-        chordsAt.get(a.start).push(symbol);
-      } else if (a.kind === "section" && a.body.label && !labelsAt.has(a.start)) {
-        labelsAt.set(a.start, a.body.label);
-      }
+      if (a.kind !== "chord") continue;
+      const symbol = table.chords[a.body.symbol] || a.body.symbol;
+      if (!chordsAt.has(a.start)) chordsAt.set(a.start, []);
+      chordsAt.get(a.start).push(symbol);
     }
-    const out = h("article", { class: "reader", lang: (song.meta && song.meta.lang) || "" });
+    const sections = song.sections || [];
+    const labelsAt = new Map(sections.filter((x) => x.label).map((x) => [x.start, x.label]).reverse());
+    const familyAt = (offset) => {
+      const found = sections.find((x) => x.start <= offset && (offset < x.end || x.start === x.end && offset === x.start));
+      return found ? found.family : "";
+    };
+    const classes = ["reader", `chords-${look.chordMode}`];
+    if (look.columns === 2) classes.push("two-columns");
+    if (look.shade) classes.push("shaded");
+    const out = h("article", { class: classes.join(" "), lang: (song.meta && song.meta.lang) || "" });
     const meta = song.meta || {};
     const facts = [meta.capo && `Capo ${meta.capo}`, table.key && `Key ${table.key}`].filter(Boolean);
     if (facts.length) out.append(h("p", { class: "facts" }, facts.join(" · ")));
+    const draw = { above: chordsAbove, inline: chordsInline, off: chordsOff }[look.chordMode] || chordsAbove;
     let start = 0;
     for (const line of text.split("\n")) {
       const end = start + line.length;
+      const family = familyAt(start);
       const label = labelsAt.get(start);
-      if (label) out.append(h("div", { class: "section-label" }, label));
-      out.append(readerLine(line, start, end, chordsAt));
+      if (label) out.append(h("div", { class: `section-label ${family ? "fam-" + family : ""}` }, label));
+      const el = draw(line, start, end, chordsAt);
+      if (el) {
+        if (family) el.classList.add("fam-" + family);
+        out.append(el);
+      }
       start = end + 1;
     }
     return out;
   }
 
-  function readerLine(line, start, end, chordsAt) {
+  function chordOffsets(start, end, chordsAt) {
     const offsets = [];
     for (let i = start; i <= end; i += 1) if (chordsAt.has(i)) offsets.push(i);
+    return offsets;
+  }
+
+  function tidy(text) { return text.replace(/ {2,}/g, " "); } // alignment spaces from the chart
+
+  function chordsOnlyLine(offsets, chordsAt) { // an instrumental line
+    return h("div", { class: "line chords-only" }, offsets.flatMap((i) => chordsAt.get(i)).map((c) => h("span", { class: "ch" }, c)));
+  }
+
+  // Chords over the syllables they land on. Pieces break at every chord and after every
+  // space; pieces join into words, and a line wraps only between words, never inside one.
+  function chordsAbove(line, start, end, chordsAt) {
+    const offsets = chordOffsets(start, end, chordsAt);
     if (!line.trim() && !offsets.length) return h("div", { class: "line blank" });
-    if (!offsets.length) return h("div", { class: "line" }, line);
-    if (!line.trim()) { // an instrumental line: chords only
-      const all = offsets.flatMap((i) => chordsAt.get(i));
-      return h("div", { class: "line chords-only" }, all.map((c) => h("span", { class: "ch" }, c)));
-    }
-    // Pieces break at every chord and after every space; pieces join into words, and a
-    // line wraps only between words, never inside one.
+    if (!offsets.length) return h("div", { class: "line" }, tidy(line));
+    if (!line.trim()) return chordsOnlyLine(offsets, chordsAt);
     const cuts = new Set([start, ...offsets.filter((i) => i < end)]);
     for (let i = start + 1; i < end; i += 1) if (line[i - start - 1] === " " && line[i - start] !== " ") cuts.add(i);
     const sorted = [...cuts].sort((a, b) => a - b);
@@ -557,13 +664,35 @@
       const startsWord = cut === start || line[cut - start - 1] === " ";
       if (startsWord || !word) { word = h("span", { class: "w" }); el.append(word); }
       word.append(h("span", { class: "p" },
-        h("span", { class: "ch" }, chords ? chords.join(" ") : " "),
-        h("span", { class: "ly" }, piece.replace(/ {2,}/g, " ") || " ")));
+        h("span", { class: "ch" }, chords ? chords.join(" ") : "\u00a0"),
+        h("span", { class: "ly" }, tidy(piece) || "\u00a0")));
     });
     const trailing = chordsAt.get(end); // chords after the last syllable
     if (trailing && end > start) el.append(h("span", { class: "w" }, h("span", { class: "p" },
-      h("span", { class: "ch" }, trailing.join(" ")), h("span", { class: "ly" }, " "))));
+      h("span", { class: "ch" }, trailing.join(" ")), h("span", { class: "ly" }, "\u00a0"))));
     return el;
+  }
+
+  // Chords in the line, just before the syllable they land on: one line of type per line.
+  function chordsInline(line, start, end, chordsAt) {
+    const offsets = chordOffsets(start, end, chordsAt);
+    if (!line.trim() && !offsets.length) return h("div", { class: "line blank" });
+    if (!line.trim()) return chordsOnlyLine(offsets, chordsAt);
+    const el = h("div", { class: "line" });
+    let from = start;
+    for (const at of offsets) {
+      if (at > from) el.append(tidy(line.slice(from - start, at - start)));
+      el.append(h("span", { class: "ch in" }, chordsAt.get(at).join(" ")));
+      from = Math.max(from, at);
+    }
+    if (from < end) el.append(tidy(line.slice(from - start)));
+    return el;
+  }
+
+  // Lyrics only: instrumental lines go, the words stay.
+  function chordsOff(line, start, end, chordsAt) {
+    if (!line.trim()) return chordOffsets(start, end, chordsAt).length ? null : h("div", { class: "line blank" });
+    return h("div", { class: "line" }, tidy(line));
   }
 
   // ----- the printed sheet: layout options, size, page images, PDF ------------------------
@@ -575,9 +704,7 @@
     const params = new URLSearchParams({ key: route.song, layout: route.layout });
     if (route.t) params.set("transpose", String(route.t));
     if (look.printScale !== 1) params.set("scale", String(look.printScale));
-    for (const [name, value] of Object.entries(prefs.changed())) {
-      if (PRINT_PARAMS[name]) params.set(PRINT_PARAMS[name], String(value));
-    }
+    for (const [name, value] of Object.entries(prefs.printParams())) params.set(name, value);
     buildLayoutControls(route, controls);
     showSheet(params, viewer, gen, controls);
     return h("div", { class: "print" }, controls, viewer);
