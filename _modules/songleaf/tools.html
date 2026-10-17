@@ -203,6 +203,7 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../api.html">API reference</a><input aria-label="Toggle navigation of API reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../_autosummary/songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.parse.html">songleaf.parse</a></li>
@@ -297,6 +298,8 @@
     <span class="n">pick</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">refresh</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">layout</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"dense"</span><span class="p">,</span>
+    <span class="n">transpose</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="n">sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">renderer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -315,7 +318,12 @@
 <span class="sd">    line, before their syllable), ``packed`` (rows break where the lyrics do),</span>
 <span class="sd">    ``two-column``, ``shaded`` (sections, repeated lines and chord functions);</span>
 <span class="sd">    for example ``inline+packed+two-column``. A ``renderer`` decides the layout</span>
-<span class="sd">    itself, so it does not go with ``layout``.</span>
+<span class="sd">    itself, so it does not go with ``layout`` or ``scale``.</span>
+
+<span class="sd">    ``transpose`` moves every chord by that many semitones (spelled for the new</span>
+<span class="sd">    key); the stored song keeps its chords. ``scale`` multiplies the font size</span>
+<span class="sd">    that fills the page: ``0.8`` for smaller type, ``1.2`` for larger type over</span>
+<span class="sd">    more pages.</span>
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="n">pick</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"pick counts from 1, got </span><span class="si">{</span><span class="n">pick</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
@@ -323,23 +331,21 @@
     <span class="k">if</span> <span class="n">renderer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.render</span><span class="w"> </span><span class="kn">import</span> <span class="n">layout_spec</span><span class="p">,</span> <span class="n">make_renderer</span>
 
-        <span class="n">renderer</span> <span class="o">=</span> <span class="n">make_renderer</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span>  <span class="c1"># a bad layout fails before any search</span>
+        <span class="c1"># a bad layout fails before any search</span>
+        <span class="n">renderer</span> <span class="o">=</span> <span class="n">make_renderer</span><span class="p">(</span><span class="n">layout</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">)</span>
         <span class="n">layout_name</span> <span class="o">=</span> <span class="s2">""</span> <span class="k">if</span> <span class="n">layout_spec</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"dense"</span> <span class="k">else</span> <span class="n">layout_spec</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">layout</span> <span class="o">!=</span> <span class="s2">"dense"</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">layout</span> <span class="o">!=</span> <span class="s2">"dense"</span> <span class="ow">or</span> <span class="n">scale</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">"Pass a layout or a renderer, not both: the renderer decides the layout"</span>
+            <span class="s2">"Pass a layout and scale, or a renderer, not both: the renderer decides them"</span>
         <span class="p">)</span>
-    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
-    <span class="n">key</span> <span class="o">=</span> <span class="n">_key_named_by</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">hits</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">pick</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">pick</span><span class="p">:</span>
-            <span class="n">found</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span><span class="si">}</span><span class="s2"> match"</span> <span class="k">if</span> <span class="n">hits</span> <span class="k">else</span> <span class="s2">"nothing matches"</span>
-            <span class="k">raise</span> <span class="n">_sources</span><span class="o">.</span><span class="n">SongNotFound</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No song number </span><span class="si">{</span><span class="n">pick</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="n">query</span><span class="si">!r}</span><span class="s2">: </span><span class="si">{</span><span class="n">found</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="n">key</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="n">pick</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">key</span>
-    <span class="k">if</span> <span class="n">refresh</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">_is_stored</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">get_song</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">)</span>
-    <span class="n">song</span> <span class="o">=</span> <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="n">key</span><span class="p">,</span> <span class="n">song</span> <span class="o">=</span> <span class="n">_resolve</span><span class="p">(</span>
+        <span class="n">query</span><span class="p">,</span> <span class="n">pick</span><span class="o">=</span><span class="n">pick</span><span class="p">,</span> <span class="n">refresh</span><span class="o">=</span><span class="n">refresh</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">transpose</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.harmony</span><span class="w"> </span><span class="kn">import</span> <span class="n">transpose</span> <span class="k">as</span> <span class="n">transposed</span>
+
+        <span class="n">song</span> <span class="o">=</span> <span class="n">transposed</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">transpose</span><span class="p">)</span>
+        <span class="n">layout_name</span> <span class="o">=</span> <span class="s2">"+"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="p">(</span><span class="n">layout_name</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"t</span><span class="si">{</span><span class="n">transpose</span><span class="si">:</span><span class="s2">+d</span><span class="si">}</span><span class="s2">"</span><span class="p">)))</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">output</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
         <span class="n">data_dir</span><span class="p">(</span><span class="s2">"sheets"</span><span class="p">),</span> <span class="n">_file_name</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">layout_name</span><span class="p">)</span>
     <span class="p">)</span>
@@ -352,12 +358,87 @@
 
 
 
+<div class="viewcode-block" id="song">
+<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.song">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">song</span><span class="p">(</span>
+    <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">pick</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">refresh</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">transpositions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>
+    <span class="n">sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The song itself as JSON: lyrics text, chords and sections, and every key it can move to.</span>
+
+<span class="sd">    ``query`` is a song key or a search, as for ``sheet``; the song is stored</span>
+<span class="sd">    the same way. Besides the song's own fields (``text``, ``annotations``,</span>
+<span class="sd">    ``meta``, ``provenance``), the result has ``chords`` (the distinct chords,</span>
+<span class="sd">    in order of first appearance), ``song_key`` (the estimated key, ``""`` with</span>
+<span class="sd">    no chords) and ``transpositions``: one table per shift from</span>
+<span class="sd">    ``-transpositions + 1`` to ``transpositions`` semitones, each</span>
+<span class="sd">    ``{"semitones", "key", "chords": {original: transposed}}``.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.harmony</span><span class="w"> </span><span class="kn">import</span> <span class="n">transposition_table</span>
+
+    <span class="k">if</span> <span class="n">pick</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"pick counts from 1, got </span><span class="si">{</span><span class="n">pick</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">key</span><span class="p">,</span> <span class="n">found</span> <span class="o">=</span> <span class="n">_resolve</span><span class="p">(</span>
+        <span class="n">query</span><span class="p">,</span> <span class="n">pick</span><span class="o">=</span><span class="n">pick</span><span class="p">,</span> <span class="n">refresh</span><span class="o">=</span><span class="n">refresh</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span>
+    <span class="p">)</span>
+    <span class="n">symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="s2">"symbol"</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">found</span><span class="o">.</span><span class="n">of_kind</span><span class="p">(</span><span class="s2">"chord"</span><span class="p">)]</span>
+    <span class="n">shifts</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">transpositions</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">transpositions</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">tables</span> <span class="o">=</span> <span class="p">[</span><span class="n">transposition_table</span><span class="p">(</span><span class="n">symbols</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">shifts</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"key"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span>
+        <span class="s2">"title"</span><span class="p">:</span> <span class="n">found</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+        <span class="s2">"artist"</span><span class="p">:</span> <span class="n">found</span><span class="o">.</span><span class="n">artist</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">found</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+        <span class="s2">"chords"</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">symbols</span><span class="p">)),</span>
+        <span class="s2">"song_key"</span><span class="p">:</span> <span class="n">transposition_table</span><span class="p">(</span><span class="n">symbols</span><span class="p">,</span> <span class="mi">0</span><span class="p">)[</span><span class="s2">"key"</span><span class="p">],</span>
+        <span class="s2">"transpositions"</span><span class="p">:</span> <span class="n">tables</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">pick</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">refresh</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">store</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""``(key, song)`` for a song key or a search, fetching the song into the store if needed."""</span>
+    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">_key_named_by</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">hits</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">pick</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">pick</span><span class="p">:</span>
+            <span class="n">found</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span><span class="si">}</span><span class="s2"> match"</span> <span class="k">if</span> <span class="n">hits</span> <span class="k">else</span> <span class="s2">"nothing matches"</span>
+            <span class="k">raise</span> <span class="n">_sources</span><span class="o">.</span><span class="n">SongNotFound</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No song number </span><span class="si">{</span><span class="n">pick</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="n">query</span><span class="si">!r}</span><span class="s2">: </span><span class="si">{</span><span class="n">found</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="n">pick</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">key</span>
+    <span class="k">if</span> <span class="n">refresh</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">_is_stored</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">get_song</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">key</span><span class="p">,</span> <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+
 <div class="viewcode-block" id="songs">
 <a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.songs">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">songs</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""The keys of the stored songs."""</span>
     <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
     <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">store</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="build_index">
+<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.build_index">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_index</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Build the search index of the Kaggle corpus, once, where the corpus zip is.</span>
+
+<span class="sd">    Searching then reads the index instead of loading the whole corpus into</span>
+<span class="sd">    memory (tens of MB instead of over a GB per process). Run it again after</span>
+<span class="sd">    replacing the zip. ``path`` defaults to beside the zip under the data root.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.kaggle_index</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_kaggle_index</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">build_kaggle_index</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">_sources</span><span class="o">.</span><span class="n">default_sources</span><span class="o">.</span><span class="n">cache_clear</span><span class="p">()</span>  <span class="c1"># this process now searches the index too</span>
+    <span class="k">return</span> <span class="n">result</span></div>
 
 
 
@@ -388,7 +469,7 @@
 
 
 <span class="c1">#: Every operation, in the order the CLI lists them.</span>
-<span class="n">TOOLS</span> <span class="o">=</span> <span class="p">(</span><span class="n">search</span><span class="p">,</span> <span class="n">sheet</span><span class="p">,</span> <span class="n">songs</span><span class="p">)</span>
+<span class="n">TOOLS</span> <span class="o">=</span> <span class="p">(</span><span class="n">search</span><span class="p">,</span> <span class="n">sheet</span><span class="p">,</span> <span class="n">song</span><span class="p">,</span> <span class="n">songs</span><span class="p">,</span> <span class="n">build_index</span><span class="p">)</span>
 </pre></div>
         </article>
       </div>
@@ -417,7 +498,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=1d1a88ea"></script>
+</div><script src="../../_static/documentation_options.js?v=b45afc8c"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

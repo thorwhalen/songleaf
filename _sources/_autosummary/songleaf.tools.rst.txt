@@ -14,7 +14,9 @@ songleaf.tools
 
    .. autosummary::
    
+      build_index
       search
       sheet
+      song
       songs
    

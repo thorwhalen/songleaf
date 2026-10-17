@@ -9,6 +9,7 @@ songleaf.web
    .. autosummary::
    
       ERROR_STATUS
+      SHEET_LIMITS
    
    .. rubric:: Functions
 
@@ -18,4 +19,10 @@ songleaf.web
       page_shell
       pdf_page_png
       stored_songs
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      SheetRequest
    

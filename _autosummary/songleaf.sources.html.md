@@ -165,6 +165,10 @@ A source’s data cannot be loaded here (a corpus that is not on this machine, s
 
 The sources used when none are given, built once per process.
 
+The Kaggle corpus is read from its search index when one has been built
+(`songleaf build-index`): the same songs and keys, in tens of MB rather
+than the GB the whole corpus takes in memory.
+
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)
 

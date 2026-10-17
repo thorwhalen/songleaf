@@ -23,6 +23,7 @@ songleaf.render
       layout_named
       layout_spec
       make_renderer
+      on_paper
       render_dense_a4
       render_sheet
       section_family

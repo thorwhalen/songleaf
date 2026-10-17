@@ -47,6 +47,10 @@ python -m songleaf sheet "wonderwall oasis" --pick 2      # the second-best matc
 python -m songleaf songs                                  # songs already stored
 python -m songleaf sheet kaggle_chords:1234               # a song by its key: no search
 python -m songleaf sheet kaggle_chords:1234 --refresh     # fetch it again from its source
+python -m songleaf sheet "wonderwall oasis" --transpose 2 # chords up a whole tone, spelled for the new key
+python -m songleaf sheet "wonderwall oasis" --scale 0.8   # 80% of the size that fills the page
+python -m songleaf song kaggle_chords:1234                # the song as data: text, chords, every key's chord table
+python -m songleaf build-index                            # once: search from an index, not the whole corpus in memory
 ```
 
 The `songleaf` console script is the same command.
@@ -107,7 +111,7 @@ Songs are kept in a `MutableMapping` (`songleaf.song_store()`): one JSON file pe
 
 `KaggleChordsSource` reads the [chords-and-lyrics dataset](https://www.kaggle.com/datasets/eitanbentora/chords-and-lyrics-dataset) through `sung`. It needs a local copy of the zip: put it at `~/.local/share/songleaf/datasets/chords-and-lyrics/chords-and-lyrics-dataset.zip` (under the data root, so `SONGLEAF_DATA_DIR` moves it too), point `SUNG_CHORDS_AND_LYRICS_ZIP` at it, or keep it where `haggle` downloads it (`$HAGGLE_ROOTDIR/zips/eitanbentora/chords-and-lyrics-dataset.zip`). Without a local copy, `sung` downloads it from Kaggle, which needs Kaggle credentials. The corpus was scraped from a chords site, so keep it to personal use.
 
-Loading the corpus takes about five seconds on the first search in a process.
+Loading the corpus takes about five seconds on the first search in a process, and it stays in memory: about 1.1 GB, 1.6 GB once a lyrics search has run. Run `songleaf build-index` once to avoid that. It writes one SQLite file beside the zip (about 190 MB: titles, artists, compressed charts and a full-text index of the words), and from then on the default source reads it. A process then holds about 80 MB for search, a lyrics search takes milliseconds instead of seconds, and the songs and their keys are the same. Run it again after replacing the zip.
 
 Other sources surveyed, plus the Ultimate Guitar / MuseScore decisions, are in [`misc/docs/sources.md`]().
 
@@ -115,7 +119,7 @@ Other sources surveyed, plus the Ultimate Guitar / MuseScore decisions, are in [
 
 ## Web app
 
-`songleaf.web.mk_app()` is a FastAPI app over the same functions: search, the stored songs, the layout options, and the sheet as JSON, PDF and a PNG per page (for phone browsers that show no PDF inline). It also serves its own page, a search box and a sheet view with the layout options as toggles. The page is a two-line HTML shell that loads its script and style from the app, so it changes with the package.
+`songleaf.web.mk_app()` is a FastAPI app over the same functions: search, the stored songs, the layout options, and the sheet as JSON, PDF and a PNG per page (for phone browsers that show no PDF inline). It also serves its own page: a search box, and a song view with two modes. **Read** draws the song as text, with each chord over the syllable it lands on and lines wrapping between words, so it suits any screen. **Print** shows the PDF sheet with the layout options as toggles. Both share a size control (pixels when reading, a percentage of the page-filling size when printing), transposition (a key picker that lists every chord of the song beside what it becomes), and a “look” panel for the colour and opacity of lyrics and chords, chord size, line spacing and font. Opacity prints as the matching shade on white paper. The page is a two-line HTML shell that loads its script and style from the app, so it changes with the package.
 
 ```bash
 pip install "songleaf[web]"

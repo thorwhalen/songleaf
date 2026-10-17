@@ -10,7 +10,12 @@ songleaf.harmony
    
       chord_function
       estimate_key
+      key_name
       parse_chord
+      transpose
+      transpose_chord
+      transposition_table
+      uses_flats
    
    .. rubric:: Classes
 

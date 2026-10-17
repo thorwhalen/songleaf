@@ -70,6 +70,7 @@ not covered by either.
 | [`layout_named`](#songleaf.render.layout_named)(spec, \*[, style])                     | The layout of a spec: options of [`LAYOUT_OPTIONS`](#songleaf.render.LAYOUT_OPTIONS) joined by `+` (`"inline+two-column"`). |
 | [`layout_spec`](#songleaf.render.layout_spec)(spec)                                   | The one spelling of a layout spec, for names: `"Dense"` -> `"dense"`.                                                                   |
 | [`make_renderer`](#songleaf.render.make_renderer)([layout])                             | A `(song, output) -> dict` renderer for `layout`, the shape `sheet`'s `renderer=` takes.                                                |
+| [`on_paper`](#songleaf.render.on_paper)(color[, alpha, paper])                     | `color` at opacity `alpha` over `paper`, as one opaque colour: what ink at that opacity shows.                                          |
 | [`render_dense_a4`](#songleaf.render.render_dense_a4)(song, output, \*[, ...])            | Render `song` in the v1 layout as a PDF to `output` (a path or a binary file object).                                                   |
 | [`render_sheet`](#songleaf.render.render_sheet)(song, output, \*[, layout, ...])       | Render `song` in `layout` (a [`SheetLayout`](#songleaf.render.SheetLayout) or a spec) as a PDF to `output`.              |
 | [`section_family`](#songleaf.render.section_family)(label)                               | `"chorus"` for a chorus or refrain, `"bridge"` for a pre-chorus or bridge, else `""`.                                                   |
@@ -235,6 +236,18 @@ A `(song, output) -> dict` renderer for `layout`, the shape `sheet`’s `rendere
 * **Return type:**
   [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)
 
+### songleaf.render.on_paper(color, alpha=1.0, , paper='#ffffff')
+
+`color` at opacity `alpha` over `paper`, as one opaque colour: what ink at that opacity shows.
+
+```pycon
+>>> on_paper("#000000", 0.5), on_paper("#3b73c4"), on_paper("#ff0000", 0)
+('#808080', '#3b73c4', '#ffffff')
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 ### songleaf.render.render_dense_a4(song, output, , page_size='A4', margin=14.0, style=None, min_font_size=6.0, max_font_size=72.0)
 
 Render `song` in the v1 layout as a PDF to `output` (a path or a binary file object).
@@ -246,9 +259,13 @@ The same as [`render_sheet()`](#songleaf.render.render_sheet) with `layout="dens
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### songleaf.render.render_sheet(song, output, , layout='dense', page_size='A4', margin=14.0, min_font_size=6.0, max_font_size=72.0)
+### songleaf.render.render_sheet(song, output, , layout='dense', page_size='A4', margin=14.0, min_font_size=6.0, max_font_size=72.0, scale=1.0)
 
 Render `song` in `layout` (a [`SheetLayout`](#songleaf.render.SheetLayout) or a spec) as a PDF to `output`.
+
+The lyric font size is the largest that fits the song on one page, times
+`scale`: `1` fills the page, `0.8` leaves room, `1.2` is larger type
+that runs onto a second page. It never goes past `max_font_size`.
 
 `output` is a path or a binary file object. Returns
 `{"path", "font_size", "pages", "rows"}`; `path` is `None` when

@@ -206,6 +206,7 @@
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../api.html">API reference</a><input aria-label="Toggle navigation of API reference" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l2 current has-children"><a class="reference internal" href="songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="songleaf.harmony.html">songleaf.harmony</a></li>
+<li class="toctree-l3"><a class="reference internal" href="songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.parse.html">songleaf.parse</a></li>
@@ -265,11 +266,18 @@ apps.thorwhalen.com). Its routes:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/search?q=&amp;artist=&amp;lyrics=&amp;limit=</span></code>: hits, best first (<code class="docutils literal notranslate"><span class="pre">tools.search</span></code>)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/songs</span></code>: the stored songs, with title and artist</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/layouts</span></code>: the layout options a sheet can combine</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/sheet?key=&amp;layout=</span></code>: render the sheet; its title, artist, font size and pages</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/sheet.pdf?key=&amp;layout=</span></code>: the sheet itself</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/sheet.png?key=&amp;layout=&amp;page=</span></code>: one page of it as an image, for browsers that
+<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/layouts</span></code>: the layout options a sheet can combine, and the default colours</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/song?key=</span></code>: the song as JSON (<code class="docutils literal notranslate"><span class="pre">tools.song</span></code>): text, chords, sections, its
+key and a chord table for every key it can move to; the page draws it as text</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/sheet?key=&amp;...</span></code>: render the sheet; its title, artist, font size and pages</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/sheet.pdf?key=&amp;...</span></code>: the sheet itself</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/sheet.png?key=&amp;...&amp;page=</span></code>: one page of it as an image, for browsers that
 show no PDF inline (Android’s)</p></li>
+</ul>
+<p>The sheet routes take the parameters of <a class="reference internal" href="#songleaf.web.SheetRequest" title="songleaf.web.SheetRequest"><code class="xref py py-class docutils literal notranslate"><span class="pre">SheetRequest</span></code></a>: <code class="docutils literal notranslate"><span class="pre">layout</span></code>,
+<code class="docutils literal notranslate"><span class="pre">transpose</span></code> (semitones), <code class="docutils literal notranslate"><span class="pre">scale</span></code> (of the size that fills the page), and the
+colours, opacities and chord size the page’s reader uses.</p>
+<ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/ui/app.js</span></code>, <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/ui/style.css</span></code>: the page’s script and style</p></li>
 </ul>
 <p>The page is a two-path shell (<a class="reference internal" href="#songleaf.web.page_shell" title="songleaf.web.page_shell"><code class="xref py py-func docutils literal notranslate"><span class="pre">page_shell()</span></code></a>) that loads its script and
@@ -288,6 +296,9 @@ not import this module.</p>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.web.ERROR_STATUS" title="songleaf.web.ERROR_STATUS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ERROR_STATUS</span></code></a></p></td>
 <td><p>Failures a request can cause, and the HTTP status each becomes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.web.SHEET_LIMITS" title="songleaf.web.SHEET_LIMITS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SHEET_LIMITS</span></code></a></p></td>
+<td><p>(low, high).</p></td>
 </tr>
 </tbody>
 </table>
@@ -311,6 +322,16 @@ not import this module.</p>
 </tbody>
 </table>
 </div>
+<p class="rubric">Classes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.web.SheetRequest" title="songleaf.web.SheetRequest"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SheetRequest</span></code></a>(key[, layout, transpose, ...])</p></td>
+<td><p>What a sheet is made from: the song, its layout and the reader's look.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 <dl class="py data">
 <dt class="sig sig-object py" id="songleaf.web.ERROR_STATUS">
 <span class="sig-prename descclassname"><span class="pre">songleaf.web.</span></span><span class="sig-name descname"><span class="pre">ERROR_STATUS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{&lt;class</span> <span class="pre">'songleaf.sources.SongNotFound'&gt;:</span> <span class="pre">404,</span> <span class="pre">&lt;class</span> <span class="pre">'songleaf.sources.SourceUnavailable'&gt;:</span> <span class="pre">503}</span></span><a class="headerlink" href="#songleaf.web.ERROR_STATUS" title="Link to this definition">¶</a></dt>
@@ -318,9 +339,48 @@ not import this module.</p>
 a KeyError or ValueError from a bug must not read as “not found” or “your fault”.</p>
 </dd></dl>
 
+<dl class="py data">
+<dt class="sig sig-object py" id="songleaf.web.SHEET_LIMITS">
+<span class="sig-prename descclassname"><span class="pre">songleaf.web.</span></span><span class="sig-name descname"><span class="pre">SHEET_LIMITS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'chord_alpha':</span> <span class="pre">(0.0,</span> <span class="pre">1.0),</span> <span class="pre">'chord_scale':</span> <span class="pre">(0.3,</span> <span class="pre">1.5),</span> <span class="pre">'lyric_alpha':</span> <span class="pre">(0.0,</span> <span class="pre">1.0),</span> <span class="pre">'scale':</span> <span class="pre">(0.3,</span> <span class="pre">3.0),</span> <span class="pre">'transpose':</span> <span class="pre">(-11,</span> <span class="pre">11)}</span></span><a class="headerlink" href="#songleaf.web.SHEET_LIMITS" title="Link to this definition">¶</a></dt>
+<dd><p>(low, high).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Allowed ranges of the numeric sheet parameters</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="songleaf.web.SheetRequest">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.web.</span></span><span class="sig-name descname"><span class="pre">SheetRequest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dense'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transpose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lyric_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lyric_alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chord_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chord_alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chord_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/web.html#SheetRequest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.web.SheetRequest" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>What a sheet is made from: the song, its layout and the reader’s look.</p>
+<p>Empty colours and a zero <code class="docutils literal notranslate"><span class="pre">chord_scale</span></code> keep the layout’s own. Opacities are
+blended onto white paper. Frozen, so it is also the render cache’s key.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="songleaf.web.SheetRequest.checked">
+<span class="sig-name descname"><span class="pre">checked</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/web.html#SheetRequest.checked"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.web.SheetRequest.checked" title="Link to this definition">¶</a></dt>
+<dd><p>This request in its one spelling, or <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> naming what is wrong.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#songleaf.web.SheetRequest" title="songleaf.web.SheetRequest"><code class="xref py py-class docutils literal notranslate"><span class="pre">SheetRequest</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="songleaf.web.SheetRequest.renderer">
+<span class="sig-name descname"><span class="pre">renderer</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/web.html#SheetRequest.renderer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.web.SheetRequest.renderer" title="Link to this definition">¶</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">(song,</span> <span class="pre">output)</span> <span class="pre">-&gt;</span> <span class="pre">dict</span></code> renderer this request describes.</p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="songleaf.web.mk_app">
-<span class="sig-prename descclassname"><span class="pre">songleaf.web.</span></span><span class="sig-name descname"><span class="pre">mk_app</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'songleaf'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sheet_cache_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/web.html#mk_app"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.web.mk_app" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">songleaf.web.</span></span><span class="sig-name descname"><span class="pre">mk_app</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'songleaf'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sheet_cache_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_cache_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/web.html#mk_app"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.web.mk_app" title="Link to this definition">¶</a></dt>
 <dd><p>The FastAPI app. <code class="docutils literal notranslate"><span class="pre">sources</span></code> and <code class="docutils literal notranslate"><span class="pre">store</span></code> are the seams of <a class="reference internal" href="songleaf.tools.html#module-songleaf.tools" title="songleaf.tools"><code class="xref py py-mod docutils literal notranslate"><span class="pre">songleaf.tools</span></code></a>.</p>
 <p><code class="docutils literal notranslate"><span class="pre">image_scale</span></code> is pixels per PDF point for <code class="docutils literal notranslate"><span class="pre">/sheet.png</span></code> (2: an A4 page is
 1190 pixels wide, sharp on a phone).</p>
@@ -420,6 +480,12 @@ a KeyError or ValueError from a bug must not read as “not found” or “your 
             <ul>
 <li><a class="reference internal" href="#">songleaf.web</a><ul>
 <li><a class="reference internal" href="#songleaf.web.ERROR_STATUS"><code class="docutils literal notranslate"><span class="pre">ERROR_STATUS</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.web.SHEET_LIMITS"><code class="docutils literal notranslate"><span class="pre">SHEET_LIMITS</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.web.SheetRequest"><code class="docutils literal notranslate"><span class="pre">SheetRequest</span></code></a><ul>
+<li><a class="reference internal" href="#songleaf.web.SheetRequest.checked"><code class="docutils literal notranslate"><span class="pre">SheetRequest.checked()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.web.SheetRequest.renderer"><code class="docutils literal notranslate"><span class="pre">SheetRequest.renderer()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#songleaf.web.mk_app"><code class="docutils literal notranslate"><span class="pre">mk_app()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.web.page_shell"><code class="docutils literal notranslate"><span class="pre">page_shell()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.web.pdf_page_png"><code class="docutils literal notranslate"><span class="pre">pdf_page_png()</span></code></a></li>
@@ -435,7 +501,7 @@ a KeyError or ValueError from a bug must not read as “not found” or “your 
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=1d1a88ea"></script>
+</div><script src="../_static/documentation_options.js?v=b45afc8c"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

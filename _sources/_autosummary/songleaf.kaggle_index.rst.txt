@@ -1,0 +1,25 @@
+songleaf.kaggle\_index
+======================
+
+.. automodule:: songleaf.kaggle_index
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      KAGGLE_INDEX_NAME
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      build_kaggle_index
+      kaggle_index_path
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      KaggleChordsIndex
+   

@@ -203,6 +203,7 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../api.html">API reference</a><input aria-label="Toggle navigation of API reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../_autosummary/songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.parse.html">songleaf.parse</a></li>
@@ -389,6 +390,141 @@
                 <span class="n">best</span><span class="p">,</span> <span class="n">best_score</span> <span class="o">=</span> <span class="n">key</span><span class="p">,</span> <span class="n">score</span>
     <span class="k">return</span> <span class="n">best</span></div>
 
+
+
+<span class="c1"># --- transposition ----------------------------------------------------------------</span>
+
+<span class="n">_SHARP_NAMES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"C"</span><span class="p">,</span> <span class="s2">"C#"</span><span class="p">,</span> <span class="s2">"D"</span><span class="p">,</span> <span class="s2">"D#"</span><span class="p">,</span> <span class="s2">"E"</span><span class="p">,</span> <span class="s2">"F"</span><span class="p">,</span> <span class="s2">"F#"</span><span class="p">,</span> <span class="s2">"G"</span><span class="p">,</span> <span class="s2">"G#"</span><span class="p">,</span> <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"A#"</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">)</span>
+<span class="n">_FLAT_NAMES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"C"</span><span class="p">,</span> <span class="s2">"Db"</span><span class="p">,</span> <span class="s2">"D"</span><span class="p">,</span> <span class="s2">"Eb"</span><span class="p">,</span> <span class="s2">"E"</span><span class="p">,</span> <span class="s2">"F"</span><span class="p">,</span> <span class="s2">"Gb"</span><span class="p">,</span> <span class="s2">"G"</span><span class="p">,</span> <span class="s2">"Ab"</span><span class="p">,</span> <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"Bb"</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">)</span>
+<span class="c1">#: Keys whose signatures use flats (as tonic pitch classes): F Bb Eb Ab Db Gb, d g c f bb eb.</span>
+<span class="n">_FLAT_MAJOR_TONICS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">})</span>
+<span class="n">_FLAT_MINOR_TONICS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">3</span><span class="p">})</span>
+<span class="c1">#: The bass is only a final ``/note`` (``D/F#``); a slash inside the extension (``C6/9``,</span>
+<span class="c1">#: ``Bm5-/7``) belongs to the chord's suffix.</span>
+<span class="n">_TRANSPOSABLE_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s2">"(?P&lt;lead&gt;[*.(\s]*)(?P&lt;root&gt;[A-G][#b]?)(?P&lt;rest&gt;.*?)"</span>
+    <span class="sa">r</span><span class="s2">"(?:/(?P&lt;bass&gt;[A-G][#b]?)(?P&lt;tail&gt;[^/A-Za-z0-9#]*))?"</span><span class="p">,</span>
+    <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_pitch_class</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">_PITCH_CLASSES</span><span class="p">[</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="n">_ACCIDENTALS</span><span class="p">[</span><span class="n">name</span><span class="p">[</span><span class="mi">1</span><span class="p">:]])</span> <span class="o">%</span> <span class="mi">12</span>
+
+
+<div class="viewcode-block" id="uses_flats">
+<a class="viewcode-back" href="../../_autosummary/songleaf.harmony.html#songleaf.harmony.uses_flats">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">uses_flats</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="n">Key</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Whether chords in ``key`` are spelled with flats (Bb, Eb) rather than sharps.</span>
+
+<span class="sd">    &gt;&gt;&gt; uses_flats(Key(5)), uses_flats(Key(7)), uses_flats(Key(2, minor=True)), uses_flats(None)</span>
+<span class="sd">    (True, False, True, False)</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="n">key</span><span class="o">.</span><span class="n">tonic</span> <span class="ow">in</span> <span class="p">(</span><span class="n">_FLAT_MINOR_TONICS</span> <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">minor</span> <span class="k">else</span> <span class="n">_FLAT_MAJOR_TONICS</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="key_name">
+<a class="viewcode-back" href="../../_autosummary/songleaf.harmony.html#songleaf.harmony.key_name">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">key_name</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="n">Key</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flats</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``"G"``, ``"Bb"``, ``"F#m"``: the key spelled as its tonic chord.</span>
+
+<span class="sd">    &gt;&gt;&gt; key_name(Key(10)), key_name(Key(6, minor=True)), key_name(Key(6, minor=True), flats=True)</span>
+<span class="sd">    ('Bb', 'F#m', 'Gbm')</span>
+<span class="sd">    """</span>
+    <span class="n">flats</span> <span class="o">=</span> <span class="n">uses_flats</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">if</span> <span class="n">flats</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">flats</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">_FLAT_NAMES</span> <span class="k">if</span> <span class="n">flats</span> <span class="k">else</span> <span class="n">_SHARP_NAMES</span><span class="p">)[</span><span class="n">key</span><span class="o">.</span><span class="n">tonic</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span>
+        <span class="s2">"m"</span> <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">minor</span> <span class="k">else</span> <span class="s2">""</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="transpose_chord">
+<a class="viewcode-back" href="../../_autosummary/songleaf.harmony.html#songleaf.harmony.transpose_chord">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">transpose_chord</span><span class="p">(</span><span class="n">symbol</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">semitones</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flats</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``symbol`` moved by ``semitones``: root and bass move, the rest is kept as written.</span>
+
+<span class="sd">    ``flats`` spells moved notes with flats (choose it from the target key with</span>
+<span class="sd">    :func:`uses_flats`). What is not a chord comes back unchanged.</span>
+
+<span class="sd">    &gt;&gt;&gt; transpose_chord("G", 2), transpose_chord("F#m7", 1), transpose_chord("C/E", 3, flats=True)</span>
+<span class="sd">    ('A', 'Gm7', 'Eb/G')</span>
+<span class="sd">    &gt;&gt;&gt; transpose_chord("Bbmaj7", -1, flats=True), transpose_chord("N.C.", 4), transpose_chord("Am", 0)</span>
+<span class="sd">    ('Amaj7', 'N.C.', 'Am')</span>
+<span class="sd">    &gt;&gt;&gt; [transpose_chord(c, 2) for c in ("D7/9", "Bm5-/7", "C6/9", "C(4/9)", "(Em7)", "Am7/G)")]</span>
+<span class="sd">    ['E7/9', 'C#m5-/7', 'D6/9', 'D(4/9)', '(F#m7)', 'Bm7/A)']</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">semitones</span> <span class="o">%</span> <span class="mi">12</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">parse_chord</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">symbol</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">_TRANSPOSABLE_RE</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">symbol</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="n">_FLAT_NAMES</span> <span class="k">if</span> <span class="n">flats</span> <span class="k">else</span> <span class="n">_SHARP_NAMES</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">moved</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">names</span><span class="p">[(</span><span class="n">_pitch_class</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="o">+</span> <span class="n">semitones</span><span class="p">)</span> <span class="o">%</span> <span class="mi">12</span><span class="p">]</span>
+
+    <span class="n">parts</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="s2">"lead"</span><span class="p">]</span> <span class="o">+</span> <span class="n">moved</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="s2">"root"</span><span class="p">])</span> <span class="o">+</span> <span class="n">parts</span><span class="p">[</span><span class="s2">"rest"</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">parts</span><span class="p">[</span><span class="s2">"bass"</span><span class="p">]:</span>
+        <span class="n">out</span> <span class="o">+=</span> <span class="s2">"/"</span> <span class="o">+</span> <span class="n">moved</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="s2">"bass"</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="s2">"tail"</span><span class="p">]</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="transposition_table">
+<a class="viewcode-back" href="../../_autosummary/songleaf.harmony.html#songleaf.harmony.transposition_table">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">transposition_table</span><span class="p">(</span>
+    <span class="n">symbols</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">semitones</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">Key</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The chords of a song moved by ``semitones``, spelled for the new key.</span>
+
+<span class="sd">    ``symbols`` are the song's chords in order (they give the key when ``key`` is</span>
+<span class="sd">    not given). Returns ``{"semitones", "key", "chords"}``: the new key's name</span>
+<span class="sd">    (``""`` when there are no chords) and ``{original: transposed}`` over the</span>
+<span class="sd">    distinct chords, in order of first appearance.</span>
+
+<span class="sd">    &gt;&gt;&gt; transposition_table(["G", "D", "Em", "C", "G"], 3)</span>
+<span class="sd">    {'semitones': 3, 'key': 'Bb', 'chords': {'G': 'Bb', 'D': 'F', 'Em': 'Gm', 'C': 'Eb'}}</span>
+<span class="sd">    """</span>
+    <span class="n">symbols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">key</span> <span class="ow">or</span> <span class="n">estimate_key</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">Key</span><span class="p">((</span><span class="n">key</span><span class="o">.</span><span class="n">tonic</span> <span class="o">+</span> <span class="n">semitones</span><span class="p">)</span> <span class="o">%</span> <span class="mi">12</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">minor</span><span class="p">)</span> <span class="k">if</span> <span class="n">key</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">flats</span> <span class="o">=</span> <span class="n">uses_flats</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+    <span class="n">chords</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">symbol</span><span class="p">:</span> <span class="n">transpose_chord</span><span class="p">(</span><span class="n">symbol</span><span class="p">,</span> <span class="n">semitones</span><span class="p">,</span> <span class="n">flats</span><span class="o">=</span><span class="n">flats</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"semitones"</span><span class="p">:</span> <span class="n">semitones</span><span class="p">,</span>
+        <span class="s2">"key"</span><span class="p">:</span> <span class="n">key_name</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="k">if</span> <span class="n">target</span> <span class="k">else</span> <span class="s2">""</span><span class="p">,</span>
+        <span class="s2">"chords"</span><span class="p">:</span> <span class="n">chords</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="transpose">
+<a class="viewcode-back" href="../../_autosummary/songleaf.harmony.html#songleaf.harmony.transpose">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">transpose</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">semitones</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""A copy of ``song`` with every chord moved by ``semitones``, spelled for the new key."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">replace</span>
+
+    <span class="k">if</span> <span class="n">semitones</span> <span class="o">%</span> <span class="mi">12</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">song</span>
+    <span class="n">chords</span> <span class="o">=</span> <span class="n">song</span><span class="o">.</span><span class="n">of_kind</span><span class="p">(</span><span class="s2">"chord"</span><span class="p">)</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">transposition_table</span><span class="p">([</span><span class="n">a</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="s2">"symbol"</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">chords</span><span class="p">],</span> <span class="n">semitones</span><span class="p">)[</span><span class="s2">"chords"</span><span class="p">]</span>
+    <span class="n">annotations</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">replace</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">body</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">a</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="s2">"symbol"</span><span class="p">:</span> <span class="n">table</span><span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="s2">"symbol"</span><span class="p">]]})</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">"chord"</span>
+        <span class="k">else</span> <span class="n">a</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">song</span><span class="o">.</span><span class="n">annotations</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="n">replace</span><span class="p">(</span>
+        <span class="n">song</span><span class="p">,</span> <span class="n">annotations</span><span class="o">=</span><span class="n">annotations</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">song</span><span class="o">.</span><span class="n">meta</span><span class="p">,</span> <span class="s2">"transposed"</span><span class="p">:</span> <span class="n">semitones</span><span class="p">}</span>
+    <span class="p">)</span></div>
+
 </pre></div>
         </article>
       </div>
@@ -417,7 +553,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=1d1a88ea"></script>
+</div><script src="../../_static/documentation_options.js?v=b45afc8c"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

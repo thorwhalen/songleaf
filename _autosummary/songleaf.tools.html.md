@@ -15,14 +15,27 @@ than dicts uses [`songleaf.sources`](songleaf.sources.html.md#module-songleaf.so
 
 ### Functions
 
-| [`search`](#songleaf.tools.search)([query, title, artist, lyrics, ...])    | Find songs: fuzzy title and artist (`query`), or by title, artist, or whole words of the lyrics.   |
-|-------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
-| [`sheet`](#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...]) | Make a one-page song sheet (PDF) for the best match of `query`.                                    |
-| [`songs`](#songleaf.tools.songs)(\*[, store])                             | The keys of the stored songs.                                                                      |
+| [`build_index`](#songleaf.tools.build_index)(\*[, path])                        | Build the search index of the Kaggle corpus, once, where the corpus zip is.                      |
+|-------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| [`search`](#songleaf.tools.search)([query, title, artist, lyrics, ...])    | Find songs: fuzzy title and artist (`query`), or by title, artist, or whole words of the lyrics. |
+| [`sheet`](#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...]) | Make a one-page song sheet (PDF) for the best match of `query`.                                  |
+| [`song`](#songleaf.tools.song)(query, \*[, pick, refresh, ...])          | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.         |
+| [`songs`](#songleaf.tools.songs)(\*[, store])                             | The keys of the stored songs.                                                                    |
 
-### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function songs>)*
+### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function song>, <function songs>, <function build_index>)*
 
 Every operation, in the order the CLI lists them.
+
+### songleaf.tools.build_index(, path='')
+
+Build the search index of the Kaggle corpus, once, where the corpus zip is.
+
+Searching then reads the index instead of loading the whole corpus into
+memory (tens of MB instead of over a GB per process). Run it again after
+replacing the zip. `path` defaults to beside the zip under the data root.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### songleaf.tools.search(query='', , title='', artist='', lyrics='', limit=10, sources=None)
 
@@ -31,7 +44,7 @@ Find songs: fuzzy title and artist (`query`), or by title, artist, or whole word
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
-### songleaf.tools.sheet(query, , output='', pick=1, refresh=False, layout='dense', sources=None, store=None, renderer=None)
+### songleaf.tools.sheet(query, , output='', pick=1, refresh=False, layout='dense', transpose=0, scale=1.0, sources=None, store=None, renderer=None)
 
 Make a one-page song sheet (PDF) for the best match of `query`.
 
@@ -47,7 +60,27 @@ fetches it from its source again, replacing the stored copy. The PDF goes to
 line, before their syllable), `packed` (rows break where the lyrics do),
 `two-column`, `shaded` (sections, repeated lines and chord functions);
 for example `inline+packed+two-column`. A `renderer` decides the layout
-itself, so it does not go with `layout`.
+itself, so it does not go with `layout` or `scale`.
+
+`transpose` moves every chord by that many semitones (spelled for the new
+key); the stored song keeps its chords. `scale` multiplies the font size
+that fills the page: `0.8` for smaller type, `1.2` for larger type over
+more pages.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.song(query, , pick=1, refresh=False, transpositions=6, sources=None, store=None)
+
+The song itself as JSON: lyrics text, chords and sections, and every key it can move to.
+
+`query` is a song key or a search, as for `sheet`; the song is stored
+the same way. Besides the song’s own fields (`text`, `annotations`,
+`meta`, `provenance`), the result has `chords` (the distinct chords,
+in order of first appearance), `song_key` (the estimated key, `""` with
+no chords) and `transpositions`: one table per shift from
+`-transpositions + 1` to `transpositions` semitones, each
+`{"semitones", "key", "chords": {original: transposed}}`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

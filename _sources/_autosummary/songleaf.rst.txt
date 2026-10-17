@@ -42,6 +42,7 @@
    :recursive:
 
    harmony
+   kaggle_index
    model
    packing
    parse

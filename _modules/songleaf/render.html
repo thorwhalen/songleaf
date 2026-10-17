@@ -203,6 +203,7 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../api.html">API reference</a><input aria-label="Toggle navigation of API reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../_autosummary/songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.parse.html">songleaf.parse</a></li>
@@ -1435,8 +1436,13 @@
     <span class="n">margin</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">DFLT_MARGIN</span><span class="p">,</span>
     <span class="n">min_font_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">6.0</span><span class="p">,</span>
     <span class="n">max_font_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">72.0</span><span class="p">,</span>
+    <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Render ``song`` in ``layout`` (a :class:`SheetLayout` or a spec) as a PDF to ``output``.</span>
+
+<span class="sd">    The lyric font size is the largest that fits the song on one page, times</span>
+<span class="sd">    ``scale``: ``1`` fills the page, ``0.8`` leaves room, ``1.2`` is larger type</span>
+<span class="sd">    that runs onto a second page. It never goes past ``max_font_size``.</span>
 
 <span class="sd">    ``output`` is a path or a binary file object. Returns</span>
 <span class="sd">    ``{"path", "font_size", "pages", "rows"}``; ``path`` is ``None`` when</span>
@@ -1457,6 +1463,9 @@
         <span class="n">min_font_size</span><span class="o">=</span><span class="n">min_font_size</span><span class="p">,</span>
         <span class="n">max_font_size</span><span class="o">=</span><span class="n">max_font_size</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">scale</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># also refuses NaN</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"scale must be positive, got </span><span class="si">{</span><span class="n">scale</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">size</span> <span class="o">*</span> <span class="n">scale</span><span class="p">,</span> <span class="n">max_font_size</span><span class="p">)</span>
     <span class="n">heading</span> <span class="o">=</span> <span class="n">_heading</span><span class="p">(</span><span class="n">song</span><span class="p">)</span>
     <span class="n">paint</span> <span class="o">=</span> <span class="n">_paint</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">style</span><span class="p">,</span> <span class="n">layout</span><span class="o">.</span><span class="n">shading</span><span class="p">)</span>
     <span class="n">flow</span> <span class="o">=</span> <span class="n">_flow</span><span class="p">(</span>
@@ -1552,6 +1561,29 @@
 
 
 
+<div class="viewcode-block" id="on_paper">
+<a class="viewcode-back" href="../../_autosummary/songleaf.render.html#songleaf.on_paper">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">on_paper</span><span class="p">(</span><span class="n">color</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">paper</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"#ffffff"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``color`` at opacity ``alpha`` over ``paper``, as one opaque colour: what ink at that opacity shows.</span>
+
+<span class="sd">    &gt;&gt;&gt; on_paper("#000000", 0.5), on_paper("#3b73c4"), on_paper("#ff0000", 0)</span>
+<span class="sd">    ('#808080', '#3b73c4', '#ffffff')</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">alpha</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"alpha goes from 0 to 1, got </span><span class="si">{</span><span class="n">alpha</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">ink</span><span class="p">,</span> <span class="n">ground</span> <span class="o">=</span> <span class="n">_rgb</span><span class="p">(</span><span class="n">color</span><span class="p">),</span> <span class="n">_rgb</span><span class="p">(</span><span class="n">paper</span><span class="p">)</span>
+    <span class="n">mixed</span> <span class="o">=</span> <span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="n">alpha</span> <span class="o">+</span> <span class="n">g</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ink</span><span class="p">,</span> <span class="n">ground</span><span class="p">))</span>
+    <span class="k">return</span> <span class="s2">"#"</span> <span class="o">+</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">channel</span><span class="si">:</span><span class="s2">02x</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="n">mixed</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_rgb</span><span class="p">(</span><span class="n">color</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="n">digits</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">"#"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">digits</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">6</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="s2">"0123456789abcdefABCDEF"</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">digits</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"A colour is #rrggbb, got </span><span class="si">{</span><span class="n">color</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">digits</span><span class="p">[</span><span class="n">i</span> <span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+
+
 <div class="viewcode-block" id="make_renderer">
 <a class="viewcode-back" href="../../_autosummary/songleaf.render.html#songleaf.make_renderer">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">make_renderer</span><span class="p">(</span><span class="n">layout</span><span class="p">:</span> <span class="n">SheetLayout</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"dense"</span><span class="p">,</span> <span class="o">**</span><span class="n">render_options</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
@@ -1595,7 +1627,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=1d1a88ea"></script>
+</div><script src="../../_static/documentation_options.js?v=b45afc8c"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

@@ -7,11 +7,18 @@ apps.thorwhalen.com). Its routes:
 
 - `GET /search?q=&artist=&lyrics=&limit=`: hits, best first (`tools.search`)
 - `GET /songs`: the stored songs, with title and artist
-- `GET /layouts`: the layout options a sheet can combine
-- `GET /sheet?key=&layout=`: render the sheet; its title, artist, font size and pages
-- `GET /sheet.pdf?key=&layout=`: the sheet itself
-- `GET /sheet.png?key=&layout=&page=`: one page of it as an image, for browsers that
+- `GET /layouts`: the layout options a sheet can combine, and the default colours
+- `GET /song?key=`: the song as JSON (`tools.song`): text, chords, sections, its
+  key and a chord table for every key it can move to; the page draws it as text
+- `GET /sheet?key=&...`: render the sheet; its title, artist, font size and pages
+- `GET /sheet.pdf?key=&...`: the sheet itself
+- `GET /sheet.png?key=&...&page=`: one page of it as an image, for browsers that
   show no PDF inline (Android’s)
+
+The sheet routes take the parameters of [`SheetRequest`](#songleaf.web.SheetRequest): `layout`,
+`transpose` (semitones), `scale` (of the size that fills the page), and the
+colours, opacities and chord size the page’s reader uses.
+
 - `GET /ui/app.js`, `GET /ui/style.css`: the page’s script and style
 
 The page is a two-path shell ([`page_shell()`](#songleaf.web.page_shell)) that loads its script and
@@ -32,6 +39,7 @@ not import this module.
 
 | [`ERROR_STATUS`](#songleaf.web.ERROR_STATUS)   | Failures a request can cause, and the HTTP status each becomes.   |
 |-----------------------------------------------------------------|-------------------------------------------------------------------|
+| [`SHEET_LIMITS`](#songleaf.web.SHEET_LIMITS)   | (low, high).                                                      |
 
 ### Functions
 
@@ -41,12 +49,44 @@ not import this module.
 | [`pdf_page_png`](#songleaf.web.pdf_page_png)(pdf[, page, scale])           | One page (from 1) of a PDF as PNG bytes, `scale` pixels per point.                                                                     |
 | [`stored_songs`](#songleaf.web.stored_songs)(\*[, store])                  | Every stored song as `{key, title, artist}`, by artist then title.                                                                     |
 
+### Classes
+
+| [`SheetRequest`](#songleaf.web.SheetRequest)(key[, layout, transpose, ...])   | What a sheet is made from: the song, its layout and the reader's look.   |
+|------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|
+
 ### songleaf.web.ERROR_STATUS *= {<class 'songleaf.sources.SongNotFound'>: 404, <class 'songleaf.sources.SourceUnavailable'>: 503}*
 
 Failures a request can cause, and the HTTP status each becomes. Nothing broader:
 a KeyError or ValueError from a bug must not read as “not found” or “your fault”.
 
-### songleaf.web.mk_app(, sources=None, store=None, title='songleaf', sheet_cache_size=32, image_scale=2.0)
+### songleaf.web.SHEET_LIMITS *= {'chord_alpha': (0.0, 1.0), 'chord_scale': (0.3, 1.5), 'lyric_alpha': (0.0, 1.0), 'scale': (0.3, 3.0), 'transpose': (-11, 11)}*
+
+(low, high).
+
+* **Type:**
+  Allowed ranges of the numeric sheet parameters
+
+### *class* songleaf.web.SheetRequest(key, layout='dense', transpose=0, scale=1.0, lyric_color='', lyric_alpha=1.0, chord_color='', chord_alpha=1.0, chord_scale=0.0)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+What a sheet is made from: the song, its layout and the reader’s look.
+
+Empty colours and a zero `chord_scale` keep the layout’s own. Opacities are
+blended onto white paper. Frozen, so it is also the render cache’s key.
+
+#### checked()
+
+This request in its one spelling, or `ValueError` naming what is wrong.
+
+* **Return type:**
+  [`SheetRequest`](#songleaf.web.SheetRequest)
+
+#### renderer()
+
+The `(song, output) -> dict` renderer this request describes.
+
+### songleaf.web.mk_app(, sources=None, store=None, title='songleaf', sheet_cache_size=32, image_cache_size=8, image_scale=2.0)
 
 The FastAPI app. `sources` and `store` are the seams of [`songleaf.tools`](songleaf.tools.html.md#module-songleaf.tools).
 

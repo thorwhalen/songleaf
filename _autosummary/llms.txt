@@ -7,6 +7,7 @@
 
 - [songleaf](songleaf.html.md): songleaf: dense, readable one-page song sheets from searchable sources.
 - [songleaf.harmony](songleaf.harmony.html.md): What a chord does in its song’s key, so that sheets can shade chords by function.
+- [songleaf.kaggle_index](songleaf.kaggle_index.html.md): A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.
 - [songleaf.model](songleaf.model.html.md): The linked-artifact model: a song is lyrics text plus standoff annotations.
 - [songleaf.packing](songleaf.packing.html.md): Line packing: which consecutive lines of a paragraph share a row.
 - [songleaf.parse](songleaf.parse.html.md): Parse chords-over-lyrics text into a &#96;Song&#96;.

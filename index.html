@@ -206,6 +206,7 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="api.html">API reference</a><input aria-label="Toggle navigation of API reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.parse.html">songleaf.parse</a></li>
@@ -320,6 +321,10 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>songs<span class="w">                                  </span><span class="c1"># songs already stored</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span>kaggle_chords:1234<span class="w">               </span><span class="c1"># a song by its key: no search</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span>kaggle_chords:1234<span class="w"> </span>--refresh<span class="w">     </span><span class="c1"># fetch it again from its source</span>
+python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span><span class="s2">"wonderwall oasis"</span><span class="w"> </span>--transpose<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="c1"># chords up a whole tone, spelled for the new key</span>
+python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span><span class="s2">"wonderwall oasis"</span><span class="w"> </span>--scale<span class="w"> </span><span class="m">0</span>.8<span class="w">   </span><span class="c1"># 80% of the size that fills the page</span>
+python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>song<span class="w"> </span>kaggle_chords:1234<span class="w">                </span><span class="c1"># the song as data: text, chords, every key's chord table</span>
+python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>build-index<span class="w">                            </span><span class="c1"># once: search from an index, not the whole corpus in memory</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">songleaf</span></code> console script is the same command.</p>
@@ -376,13 +381,13 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 <section id="sources">
 <h2>Sources<a class="headerlink" href="#sources" title="Link to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">KaggleChordsSource</span></code> reads the <a class="reference external" href="https://www.kaggle.com/datasets/eitanbentora/chords-and-lyrics-dataset">chords-and-lyrics dataset</a> through <code class="docutils literal notranslate"><span class="pre">sung</span></code>. It needs a local copy of the zip: put it at <code class="docutils literal notranslate"><span class="pre">~/.local/share/songleaf/datasets/chords-and-lyrics/chords-and-lyrics-dataset.zip</span></code> (under the data root, so <code class="docutils literal notranslate"><span class="pre">SONGLEAF_DATA_DIR</span></code> moves it too), point <code class="docutils literal notranslate"><span class="pre">SUNG_CHORDS_AND_LYRICS_ZIP</span></code> at it, or keep it where <code class="docutils literal notranslate"><span class="pre">haggle</span></code> downloads it (<code class="docutils literal notranslate"><span class="pre">$HAGGLE_ROOTDIR/zips/eitanbentora/chords-and-lyrics-dataset.zip</span></code>). Without a local copy, <code class="docutils literal notranslate"><span class="pre">sung</span></code> downloads it from Kaggle, which needs Kaggle credentials. The corpus was scraped from a chords site, so keep it to personal use.</p>
-<p>Loading the corpus takes about five seconds on the first search in a process.</p>
+<p>Loading the corpus takes about five seconds on the first search in a process, and it stays in memory: about 1.1 GB, 1.6 GB once a lyrics search has run. Run <code class="docutils literal notranslate"><span class="pre">songleaf</span> <span class="pre">build-index</span></code> once to avoid that. It writes one SQLite file beside the zip (about 190 MB: titles, artists, compressed charts and a full-text index of the words), and from then on the default source reads it. A process then holds about 80 MB for search, a lyrics search takes milliseconds instead of seconds, and the songs and their keys are the same. Run it again after replacing the zip.</p>
 <p>Other sources surveyed, plus the Ultimate Guitar / MuseScore decisions, are in <a class="reference internal" href="#misc/docs/sources.md"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">misc/docs/sources.md</span></code></span></a>.</p>
 <p><code class="docutils literal notranslate"><span class="pre">LocalFolderSource</span></code> indexes a folder of files you exported yourself from a paid chords/tab or score site (Ultimate Guitar, MuseScore, …) — text charts are parsed like the Kaggle corpus, score/tab files (Guitar Pro, MusicXML, MSCZ, MIDI, PDF) are attached as a score link. Default folder: <code class="docutils literal notranslate"><span class="pre">~/.local/share/songleaf/imports/</span></code> (moved by <code class="docutils literal notranslate"><span class="pre">SONGLEAF_DATA_DIR</span></code>).</p>
 </section>
 <section id="web-app">
 <h2>Web app<a class="headerlink" href="#web-app" title="Link to this heading">¶</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">songleaf.web.mk_app()</span></code> is a FastAPI app over the same functions: search, the stored songs, the layout options, and the sheet as JSON, PDF and a PNG per page (for phone browsers that show no PDF inline). It also serves its own page, a search box and a sheet view with the layout options as toggles. The page is a two-line HTML shell that loads its script and style from the app, so it changes with the package.</p>
+<p><code class="docutils literal notranslate"><span class="pre">songleaf.web.mk_app()</span></code> is a FastAPI app over the same functions: search, the stored songs, the layout options, and the sheet as JSON, PDF and a PNG per page (for phone browsers that show no PDF inline). It also serves its own page: a search box, and a song view with two modes. <strong>Read</strong> draws the song as text, with each chord over the syllable it lands on and lines wrapping between words, so it suits any screen. <strong>Print</strong> shows the PDF sheet with the layout options as toggles. Both share a size control (pixels when reading, a percentage of the page-filling size when printing), transposition (a key picker that lists every chord of the song beside what it becomes), and a “look” panel for the colour and opacity of lyrics and chords, chord size, line spacing and font. Opacity prints as the matching shade on white paper. The page is a two-line HTML shell that loads its script and style from the app, so it changes with the package.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"songleaf[web]"</span>
 </pre></div>
 </div>
@@ -416,7 +421,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-17 10:54 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/ef7f63ab3c8283023066a25a7aac4e86ccbae196">ef7f63a</a> (main) · songleaf 0.0.6 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-17 12:10 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/809644256078e831f7f3d78ef9801a931d097b57">8096442</a> (main) · songleaf 0.0.7 · <a href="about-this-build.html">about this build</a></p>
         </article>
       </div>
       <footer>
@@ -479,7 +484,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=1d1a88ea"></script>
+</div><script src="_static/documentation_options.js?v=b45afc8c"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

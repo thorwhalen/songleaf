@@ -7,7 +7,7 @@
 <link rel="alternate" type="text/markdown" href="songleaf.harmony.html.md">
 <link rel="describedby" href="../llms.txt" type="text/markdown">
 <link rel="alternate" type="text/markdown" href="songleaf.harmony.html.md">
-<link rel="describedby" href="llms.txt"><link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="songleaf.model" href="songleaf.model.html"><link rel="prev" title="songleaf" href="songleaf.html">
+<link rel="describedby" href="llms.txt"><link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="songleaf.kaggle_index" href="songleaf.kaggle_index.html"><link rel="prev" title="songleaf" href="songleaf.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
         <title>songleaf.harmony - songleaf</title>
@@ -206,6 +206,7 @@
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../api.html">API reference</a><input aria-label="Toggle navigation of API reference" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l2 current has-children"><a class="reference internal" href="songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l3 current current-page"><a class="current reference internal" href="#">songleaf.harmony</a></li>
+<li class="toctree-l3"><a class="reference internal" href="songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.parse.html">songleaf.parse</a></li>
@@ -283,8 +284,23 @@ the key (borrowed, secondary dominant, chromatic).</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#songleaf.harmony.estimate_key" title="songleaf.harmony.estimate_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">estimate_key</span></code></a>(symbols)</p></td>
 <td><p>The key that best explains a song's chords, in order; None if there are no chords.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.harmony.parse_chord" title="songleaf.harmony.parse_chord"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_chord</span></code></a>(symbol)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.harmony.key_name" title="songleaf.harmony.key_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">key_name</span></code></a>(key, *[, flats])</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;G&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Bb&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;F#m&quot;</span></code>: the key spelled as its tonic chord.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.harmony.parse_chord" title="songleaf.harmony.parse_chord"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_chord</span></code></a>(symbol)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">(root</span> <span class="pre">pitch</span> <span class="pre">class,</span> <span class="pre">quality)</span></code>, or None for what is not a chord.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.harmony.transpose" title="songleaf.harmony.transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transpose</span></code></a>(song, semitones)</p></td>
+<td><p>A copy of <code class="docutils literal notranslate"><span class="pre">song</span></code> with every chord moved by <code class="docutils literal notranslate"><span class="pre">semitones</span></code>, spelled for the new key.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.harmony.transpose_chord" title="songleaf.harmony.transpose_chord"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transpose_chord</span></code></a>(symbol, semitones, *[, flats])</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">symbol</span></code> moved by <code class="docutils literal notranslate"><span class="pre">semitones</span></code>: root and bass move, the rest is kept as written.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.harmony.transposition_table" title="songleaf.harmony.transposition_table"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transposition_table</span></code></a>(symbols, semitones, *[, key])</p></td>
+<td><p>The chords of a song moved by <code class="docutils literal notranslate"><span class="pre">semitones</span></code>, spelled for the new key.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.harmony.uses_flats" title="songleaf.harmony.uses_flats"><code class="xref py py-obj docutils literal notranslate"><span class="pre">uses_flats</span></code></a>(key)</p></td>
+<td><p>Whether chords in <code class="docutils literal notranslate"><span class="pre">key</span></code> are spelled with flats (Bb, Eb) rather than sharps.</p></td>
 </tr>
 </tbody>
 </table>
@@ -334,6 +350,21 @@ that key. Ties go to the major key, and to the lower tonic.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="songleaf.harmony.key_name">
+<span class="sig-prename descclassname"><span class="pre">songleaf.harmony.</span></span><span class="sig-name descname"><span class="pre">key_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">flats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/harmony.html#key_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.harmony.key_name" title="Link to this definition">¶</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">&quot;G&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Bb&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;F#m&quot;</span></code>: the key spelled as its tonic chord.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">key_name</span><span class="p">(</span><span class="n">Key</span><span class="p">(</span><span class="mi">10</span><span class="p">)),</span> <span class="n">key_name</span><span class="p">(</span><span class="n">Key</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="n">minor</span><span class="o">=</span><span class="kc">True</span><span class="p">)),</span> <span class="n">key_name</span><span class="p">(</span><span class="n">Key</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="n">minor</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">flats</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">('Bb', 'F#m', 'Gbm')</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="songleaf.harmony.parse_chord">
 <span class="sig-prename descclassname"><span class="pre">songleaf.harmony.</span></span><span class="sig-name descname"><span class="pre">parse_chord</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbol</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/harmony.html#parse_chord"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.harmony.parse_chord" title="Link to this definition">¶</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">(root</span> <span class="pre">pitch</span> <span class="pre">class,</span> <span class="pre">quality)</span></code>, or None for what is not a chord.</p>
@@ -353,6 +384,69 @@ the chart parser would not read as a chord (<code class="docutils literal notran
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="songleaf.harmony.transpose">
+<span class="sig-prename descclassname"><span class="pre">songleaf.harmony.</span></span><span class="sig-name descname"><span class="pre">transpose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">song</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">semitones</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/harmony.html#transpose"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.harmony.transpose" title="Link to this definition">¶</a></dt>
+<dd><p>A copy of <code class="docutils literal notranslate"><span class="pre">song</span></code> with every chord moved by <code class="docutils literal notranslate"><span class="pre">semitones</span></code>, spelled for the new key.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="songleaf.harmony.transpose_chord">
+<span class="sig-prename descclassname"><span class="pre">songleaf.harmony.</span></span><span class="sig-name descname"><span class="pre">transpose_chord</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">semitones</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">flats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/harmony.html#transpose_chord"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.harmony.transpose_chord" title="Link to this definition">¶</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">symbol</span></code> moved by <code class="docutils literal notranslate"><span class="pre">semitones</span></code>: root and bass move, the rest is kept as written.</p>
+<p><code class="docutils literal notranslate"><span class="pre">flats</span></code> spells moved notes with flats (choose it from the target key with
+<a class="reference internal" href="#songleaf.harmony.uses_flats" title="songleaf.harmony.uses_flats"><code class="xref py py-func docutils literal notranslate"><span class="pre">uses_flats()</span></code></a>). What is not a chord comes back unchanged.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">transpose_chord</span><span class="p">(</span><span class="s2">"G"</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">transpose_chord</span><span class="p">(</span><span class="s2">"F#m7"</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">transpose_chord</span><span class="p">(</span><span class="s2">"C/E"</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">flats</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">('A', 'Gm7', 'Eb/G')</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">transpose_chord</span><span class="p">(</span><span class="s2">"Bbmaj7"</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">flats</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">transpose_chord</span><span class="p">(</span><span class="s2">"N.C."</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">transpose_chord</span><span class="p">(</span><span class="s2">"Am"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="go">('Amaj7', 'N.C.', 'Am')</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">transpose_chord</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"D7/9"</span><span class="p">,</span> <span class="s2">"Bm5-/7"</span><span class="p">,</span> <span class="s2">"C6/9"</span><span class="p">,</span> <span class="s2">"C(4/9)"</span><span class="p">,</span> <span class="s2">"(Em7)"</span><span class="p">,</span> <span class="s2">"Am7/G)"</span><span class="p">)]</span>
+<span class="go">['E7/9', 'C#m5-/7', 'D6/9', 'D(4/9)', '(F#m7)', 'Bm7/A)']</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="songleaf.harmony.transposition_table">
+<span class="sig-prename descclassname"><span class="pre">songleaf.harmony.</span></span><span class="sig-name descname"><span class="pre">transposition_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">semitones</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/harmony.html#transposition_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.harmony.transposition_table" title="Link to this definition">¶</a></dt>
+<dd><p>The chords of a song moved by <code class="docutils literal notranslate"><span class="pre">semitones</span></code>, spelled for the new key.</p>
+<p><code class="docutils literal notranslate"><span class="pre">symbols</span></code> are the song’s chords in order (they give the key when <code class="docutils literal notranslate"><span class="pre">key</span></code> is
+not given). Returns <code class="docutils literal notranslate"><span class="pre">{&quot;semitones&quot;,</span> <span class="pre">&quot;key&quot;,</span> <span class="pre">&quot;chords&quot;}</span></code>: the new key’s name
+(<code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> when there are no chords) and <code class="docutils literal notranslate"><span class="pre">{original:</span> <span class="pre">transposed}</span></code> over the
+distinct chords, in order of first appearance.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">transposition_table</span><span class="p">([</span><span class="s2">"G"</span><span class="p">,</span> <span class="s2">"D"</span><span class="p">,</span> <span class="s2">"Em"</span><span class="p">,</span> <span class="s2">"C"</span><span class="p">,</span> <span class="s2">"G"</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">{'semitones': 3, 'key': 'Bb', 'chords': {'G': 'Bb', 'D': 'F', 'Em': 'Gm', 'C': 'Eb'}}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="songleaf.harmony.uses_flats">
+<span class="sig-prename descclassname"><span class="pre">songleaf.harmony.</span></span><span class="sig-name descname"><span class="pre">uses_flats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/harmony.html#uses_flats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.harmony.uses_flats" title="Link to this definition">¶</a></dt>
+<dd><p>Whether chords in <code class="docutils literal notranslate"><span class="pre">key</span></code> are spelled with flats (Bb, Eb) rather than sharps.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">uses_flats</span><span class="p">(</span><span class="n">Key</span><span class="p">(</span><span class="mi">5</span><span class="p">)),</span> <span class="n">uses_flats</span><span class="p">(</span><span class="n">Key</span><span class="p">(</span><span class="mi">7</span><span class="p">)),</span> <span class="n">uses_flats</span><span class="p">(</span><span class="n">Key</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">minor</span><span class="o">=</span><span class="kc">True</span><span class="p">)),</span> <span class="n">uses_flats</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+<span class="go">(True, False, True, False)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
         </article>
@@ -360,12 +454,12 @@ the chart parser would not read as a chord (<code class="docutils literal notran
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="songleaf.model.html">
+          <a class="next-page" href="songleaf.kaggle_index.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">songleaf.model</div>
+                <div class="title">songleaf.kaggle_index</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -410,7 +504,12 @@ the chart parser would not read as a chord (<code class="docutils literal notran
 <li><a class="reference internal" href="#songleaf.harmony.Key"><code class="docutils literal notranslate"><span class="pre">Key</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.harmony.chord_function"><code class="docutils literal notranslate"><span class="pre">chord_function()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.harmony.estimate_key"><code class="docutils literal notranslate"><span class="pre">estimate_key()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.harmony.key_name"><code class="docutils literal notranslate"><span class="pre">key_name()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.harmony.parse_chord"><code class="docutils literal notranslate"><span class="pre">parse_chord()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.harmony.transpose"><code class="docutils literal notranslate"><span class="pre">transpose()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.harmony.transpose_chord"><code class="docutils literal notranslate"><span class="pre">transpose_chord()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.harmony.transposition_table"><code class="docutils literal notranslate"><span class="pre">transposition_table()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.harmony.uses_flats"><code class="docutils literal notranslate"><span class="pre">uses_flats()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -422,7 +521,7 @@ the chart parser would not read as a chord (<code class="docutils literal notran
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=1d1a88ea"></script>
+</div><script src="../_static/documentation_options.js?v=b45afc8c"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

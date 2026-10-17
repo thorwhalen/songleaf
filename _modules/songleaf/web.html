@@ -203,6 +203,7 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../api.html">API reference</a><input aria-label="Toggle navigation of API reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../_autosummary/songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.parse.html">songleaf.parse</a></li>
@@ -256,11 +257,17 @@
 
 <span class="sd">- ``GET /search?q=&amp;artist=&amp;lyrics=&amp;limit=``: hits, best first (``tools.search``)</span>
 <span class="sd">- ``GET /songs``: the stored songs, with title and artist</span>
-<span class="sd">- ``GET /layouts``: the layout options a sheet can combine</span>
-<span class="sd">- ``GET /sheet?key=&amp;layout=``: render the sheet; its title, artist, font size and pages</span>
-<span class="sd">- ``GET /sheet.pdf?key=&amp;layout=``: the sheet itself</span>
-<span class="sd">- ``GET /sheet.png?key=&amp;layout=&amp;page=``: one page of it as an image, for browsers that</span>
+<span class="sd">- ``GET /layouts``: the layout options a sheet can combine, and the default colours</span>
+<span class="sd">- ``GET /song?key=``: the song as JSON (``tools.song``): text, chords, sections, its</span>
+<span class="sd">  key and a chord table for every key it can move to; the page draws it as text</span>
+<span class="sd">- ``GET /sheet?key=&amp;...``: render the sheet; its title, artist, font size and pages</span>
+<span class="sd">- ``GET /sheet.pdf?key=&amp;...``: the sheet itself</span>
+<span class="sd">- ``GET /sheet.png?key=&amp;...&amp;page=``: one page of it as an image, for browsers that</span>
 <span class="sd">  show no PDF inline (Android's)</span>
+
+<span class="sd">The sheet routes take the parameters of :class:`SheetRequest`: ``layout``,</span>
+<span class="sd">``transpose`` (semitones), ``scale`` (of the size that fills the page), and the</span>
+<span class="sd">colours, opacities and chord size the page's reader uses.</span>
 <span class="sd">- ``GET /ui/app.js``, ``GET /ui/style.css``: the page's script and style</span>
 
 <span class="sd">The page is a two-path shell (:func:`page_shell`) that loads its script and</span>
@@ -285,13 +292,22 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">replace</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">lru_cache</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">importlib.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">files</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">quote</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf</span><span class="w"> </span><span class="kn">import</span> <span class="n">tools</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.render</span><span class="w"> </span><span class="kn">import</span> <span class="n">LAYOUT_OPTIONS</span><span class="p">,</span> <span class="n">layout_spec</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.render</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">LAYOUT_OPTIONS</span><span class="p">,</span>
+    <span class="n">DenseStyle</span><span class="p">,</span>
+    <span class="n">layout_named</span><span class="p">,</span>
+    <span class="n">layout_spec</span><span class="p">,</span>
+    <span class="n">make_renderer</span><span class="p">,</span>
+    <span class="n">on_paper</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.sources</span><span class="w"> </span><span class="kn">import</span> <span class="n">SongNotFound</span><span class="p">,</span> <span class="n">SourceUnavailable</span>
 
 <span class="c1">#: Failures a request can cause, and the HTTP status each becomes. Nothing broader:</span>
@@ -300,6 +316,78 @@
 <span class="n">_UI_FILES</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"app.js"</span><span class="p">:</span> <span class="s2">"text/javascript"</span><span class="p">,</span> <span class="s2">"style.css"</span><span class="p">:</span> <span class="s2">"text/css"</span><span class="p">}</span>
 <span class="n">_MAX_LIMIT</span> <span class="o">=</span> <span class="mi">50</span>
 <span class="n">_PRIVATE_CACHE</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"Cache-Control"</span><span class="p">:</span> <span class="s2">"private, max-age=300"</span><span class="p">}</span>
+<span class="n">_COLOR_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"#[0-9a-fA-F]</span><span class="si">{6}</span><span class="s2">"</span><span class="p">)</span>
+<span class="c1">#: Allowed ranges of the numeric sheet parameters: (low, high).</span>
+<span class="n">SHEET_LIMITS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"transpose"</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">11</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span>
+    <span class="s2">"scale"</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">),</span>
+    <span class="s2">"lyric_alpha"</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+    <span class="s2">"chord_alpha"</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+    <span class="s2">"chord_scale"</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">),</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="SheetRequest">
+<a class="viewcode-back" href="../../_autosummary/songleaf.web.html#songleaf.web.SheetRequest">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SheetRequest</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""What a sheet is made from: the song, its layout and the reader's look.</span>
+
+<span class="sd">    Empty colours and a zero ``chord_scale`` keep the layout's own. Opacities are</span>
+<span class="sd">    blended onto white paper. Frozen, so it is also the render cache's key.</span>
+<span class="sd">    """</span>
+
+    <span class="n">key</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">layout</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"dense"</span>
+    <span class="n">transpose</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">lyric_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">lyric_alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">chord_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">chord_alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">chord_scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+<div class="viewcode-block" id="SheetRequest.checked">
+<a class="viewcode-back" href="../../_autosummary/songleaf.web.html#songleaf.web.SheetRequest.checked">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">checked</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SheetRequest</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""This request in its one spelling, or ``ValueError`` naming what is wrong."""</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">)</span> <span class="ow">in</span> <span class="n">SHEET_LIMITS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">"chord_scale"</span> <span class="ow">and</span> <span class="n">value</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">low</span> <span class="o">&lt;=</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="n">high</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> goes from </span><span class="si">{</span><span class="n">low</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">high</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"lyric_color"</span><span class="p">,</span> <span class="s2">"chord_color"</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">_COLOR_RE</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> is #rrggbb, got </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">replace</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">layout</span><span class="o">=</span><span class="n">layout_spec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="p">),</span>
+            <span class="n">lyric_color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lyric_color</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+            <span class="n">chord_color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chord_color</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SheetRequest.renderer">
+<a class="viewcode-back" href="../../_autosummary/songleaf.web.html#songleaf.web.SheetRequest.renderer">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">renderer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""The ``(song, output) -&gt; dict`` renderer this request describes."""</span>
+        <span class="n">layout</span> <span class="o">=</span> <span class="n">layout_named</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="p">)</span>
+        <span class="n">style</span><span class="p">,</span> <span class="n">base</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">DenseStyle</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lyric_color</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">lyric_alpha</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">style</span><span class="p">[</span><span class="s2">"lyric_color"</span><span class="p">]</span> <span class="o">=</span> <span class="n">on_paper</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">lyric_color</span> <span class="ow">or</span> <span class="n">base</span><span class="o">.</span><span class="n">lyric_color</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lyric_alpha</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">chord_color</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">chord_alpha</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">style</span><span class="p">[</span><span class="s2">"chord_color"</span><span class="p">]</span> <span class="o">=</span> <span class="n">on_paper</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">chord_color</span> <span class="ow">or</span> <span class="n">base</span><span class="o">.</span><span class="n">chord_color</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chord_alpha</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">chord_scale</span><span class="p">:</span>
+            <span class="n">style</span><span class="p">[</span><span class="s2">"chord_scale"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chord_scale</span>
+        <span class="n">layout</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">layout</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="n">replace</span><span class="p">(</span><span class="n">layout</span><span class="o">.</span><span class="n">style</span><span class="p">,</span> <span class="o">**</span><span class="n">style</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">make_renderer</span><span class="p">(</span><span class="n">layout</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span></div>
+</div>
+
 
 
 <div class="viewcode-block" id="mk_app">
@@ -310,6 +398,7 @@
     <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"songleaf"</span><span class="p">,</span>
     <span class="n">sheet_cache_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+    <span class="n">image_cache_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
     <span class="n">image_scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">"""The FastAPI app. ``sources`` and ``store`` are the seams of :mod:`songleaf.tools`.</span>
@@ -317,13 +406,11 @@
 <span class="sd">    ``image_scale`` is pixels per PDF point for ``/sheet.png`` (2: an A4 page is</span>
 <span class="sd">    1190 pixels wide, sharp on a phone).</span>
 <span class="sd">    """</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span><span class="p">,</span> <span class="n">HTTPException</span><span class="p">,</span> <span class="n">Query</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span><span class="p">,</span> <span class="n">FastAPI</span><span class="p">,</span> <span class="n">HTTPException</span><span class="p">,</span> <span class="n">Query</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">fastapi.responses</span><span class="w"> </span><span class="kn">import</span> <span class="n">JSONResponse</span><span class="p">,</span> <span class="n">Response</span>
 
     <span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">)</span>
-    <span class="n">pdfium_lock</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
-    <span class="p">)</span>  <span class="c1"># pdfium is not thread-safe; reportlab renders need none</span>
+    <span class="n">pdfium_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>  <span class="c1"># pdfium is not thread-safe; reportlab needs none</span>
 
     <span class="k">for</span> <span class="n">error_type</span><span class="p">,</span> <span class="n">status</span> <span class="ow">in</span> <span class="n">ERROR_STATUS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
 
@@ -359,49 +446,71 @@
             <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">changes</span> <span class="ow">in</span> <span class="n">LAYOUT_OPTIONS</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">name</span> <span class="o">!=</span> <span class="s2">"dense"</span>
         <span class="p">]</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">"default"</span><span class="p">:</span> <span class="s2">"dense"</span><span class="p">,</span> <span class="s2">"options"</span><span class="p">:</span> <span class="n">options</span><span class="p">}</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="n">DenseStyle</span><span class="p">()</span>
+        <span class="n">style</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"lyric_color"</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">lyric_color</span><span class="p">,</span>
+            <span class="s2">"chord_color"</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">chord_color</span><span class="p">,</span>
+            <span class="s2">"chord_scale"</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">chord_scale</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"dense"</span><span class="p">,</span>
+            <span class="s2">"options"</span><span class="p">:</span> <span class="n">options</span><span class="p">,</span>
+            <span class="s2">"style"</span><span class="p">:</span> <span class="n">style</span><span class="p">,</span>
+            <span class="s2">"limits"</span><span class="p">:</span> <span class="n">SHEET_LIMITS</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"/song"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">song</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tools</span><span class="o">.</span><span class="n">song</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">)</span>
 
     <span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="n">sheet_cache_size</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">rendered</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">layout</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rendered</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">SheetRequest</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
         <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span> <span class="k">as</span> <span class="n">tmp</span><span class="p">:</span>
             <span class="n">output</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="s2">"sheet.pdf"</span><span class="p">)</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">sheet</span><span class="p">(</span>
-                <span class="n">key</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">output</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="n">layout</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span>
+                <span class="n">request</span><span class="o">.</span><span class="n">key</span><span class="p">,</span>
+                <span class="n">output</span><span class="o">=</span><span class="n">output</span><span class="p">,</span>
+                <span class="n">transpose</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">transpose</span><span class="p">,</span>
+                <span class="n">renderer</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">renderer</span><span class="p">(),</span>
+                <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">,</span>
+                <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
                 <span class="n">pdf</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
         <span class="n">name</span> <span class="o">=</span> <span class="s2">" - "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">"artist"</span><span class="p">],</span> <span class="n">result</span><span class="p">[</span><span class="s2">"title"</span><span class="p">])))</span> <span class="ow">or</span> <span class="s2">"sheet"</span>
+        <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">transpose</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">" (</span><span class="si">{</span><span class="n">request</span><span class="o">.</span><span class="n">transpose</span><span class="si">:</span><span class="s2">+d</span><span class="si">}</span><span class="s2">)"</span>
         <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="o">**</span><span class="n">asdict</span><span class="p">(</span><span class="n">request</span><span class="p">),</span>
             <span class="s2">"key"</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">"key"</span><span class="p">],</span>
             <span class="s2">"title"</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
             <span class="s2">"artist"</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">"artist"</span><span class="p">],</span>
-            <span class="s2">"layout"</span><span class="p">:</span> <span class="n">layout</span><span class="p">,</span>
             <span class="s2">"font_size"</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"font_size"</span><span class="p">),</span>
             <span class="s2">"pages"</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"pages"</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">"file_name"</span><span class="p">:</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">".pdf"</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">pdf</span><span class="p">,</span> <span class="n">info</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">sheet_of</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">layout</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sheet_of</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">SheetRequest</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">spec</span> <span class="o">=</span> <span class="n">layout_spec</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span>  <span class="c1"># one spelling, so one cache entry, per layout</span>
+            <span class="n">request</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">checked</span><span class="p">()</span>  <span class="c1"># one spelling, so one cache entry</span>
         <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">error</span><span class="p">))</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
-        <span class="k">return</span> <span class="n">rendered</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rendered</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
 
-    <span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="n">sheet_cache_size</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">page_image</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">layout</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">page</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-        <span class="n">pdf</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">rendered</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">layout</span><span class="p">)</span>
+    <span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="n">image_cache_size</span><span class="p">)</span>  <span class="c1"># PNGs are ~10x a PDF's size: keep fewer</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">page_image</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">SheetRequest</span><span class="p">,</span> <span class="n">page</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+        <span class="n">pdf</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">rendered</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
         <span class="k">with</span> <span class="n">pdfium_lock</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">pdf_page_png</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">page</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">image_scale</span><span class="p">)</span>
 
     <span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"/sheet"</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">sheet</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">layout</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"dense"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">sheet_of</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">layout</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sheet</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">SheetRequest</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">())</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">sheet_of</span><span class="p">(</span><span class="n">request</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"/sheet.pdf"</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">sheet_pdf</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">layout</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"dense"</span><span class="p">):</span>
-        <span class="n">pdf</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">sheet_of</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">layout</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sheet_pdf</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">SheetRequest</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">()):</span>
+        <span class="n">pdf</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">sheet_of</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
         <span class="n">disposition</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"inline; filename*=UTF-8''</span><span class="si">{</span><span class="n">quote</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s1">'file_name'</span><span class="p">],</span><span class="w"> </span><span class="n">safe</span><span class="o">=</span><span class="s1">''</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         <span class="k">return</span> <span class="n">Response</span><span class="p">(</span>
             <span class="n">pdf</span><span class="p">,</span>
@@ -410,14 +519,14 @@
         <span class="p">)</span>
 
     <span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"/sheet.png"</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">sheet_png</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">layout</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"dense"</span><span class="p">,</span> <span class="n">page</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">)):</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">sheet_of</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">layout</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sheet_png</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">SheetRequest</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(),</span> <span class="n">page</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">)):</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">sheet_of</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">page</span> <span class="o">&gt;</span> <span class="n">info</span><span class="p">[</span><span class="s2">"pages"</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span>
                 <span class="mi">404</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"The sheet has </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s1">'pages'</span><span class="p">]</span><span class="si">}</span><span class="s2"> page(s), not </span><span class="si">{</span><span class="n">page</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">Response</span><span class="p">(</span>
-            <span class="n">page_image</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">info</span><span class="p">[</span><span class="s2">"layout"</span><span class="p">],</span> <span class="n">page</span><span class="p">),</span>
+            <span class="n">page_image</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">checked</span><span class="p">(),</span> <span class="n">page</span><span class="p">),</span>
             <span class="n">media_type</span><span class="o">=</span><span class="s2">"image/png"</span><span class="p">,</span>
             <span class="n">headers</span><span class="o">=</span><span class="n">_PRIVATE_CACHE</span><span class="p">,</span>
         <span class="p">)</span>
@@ -526,7 +635,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=1d1a88ea"></script>
+</div><script src="../../_static/documentation_options.js?v=b45afc8c"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
