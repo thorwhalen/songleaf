@@ -1,4 +1,7 @@
-"""The library's groups: which stored songs are in which groups, shared by everyone using it.
+"""The library's lists: which stored songs are in which lists, shared by everyone using it.
+
+The page calls them *lists*; the model and the stored file keep the name zodal-groups gives
+them (groups), so this module and ``groups.json`` say "groups".
 
 The groups are a zodal-groups snapshot (``{"nodes": [...], "edges": [...]}``: songs and
 groups are nodes, a membership is an edge from a group to a song or to another group). The
@@ -107,6 +110,88 @@ def drop_item(item: str, *, root: str | None = None) -> dict:
         return _write({"revision": current["revision"] + 1, "snapshot": pruned}, root)
 
 
+def list_names(snapshot: dict) -> dict[str, str]:
+    """``{id: name}`` of every list (group) in a snapshot: its nodes, and every edge's parent.
+
+    >>> list_names({"nodes": [{"id": "a", "label": "Campfire"}],
+    ...             "edges": [{"id": "e", "parent": "b", "child": "x:1", "kind": "contains"}]})
+    {'a': 'Campfire', 'b': 'b'}
+    """
+    names = {n["id"]: n.get("label") or n["id"] for n in snapshot.get("nodes", [])}
+    for edge in snapshot.get("edges", []):
+        names.setdefault(edge["parent"], edge["parent"])
+    return names
+
+
+def list_members(snapshot: dict, list_id: str) -> list[str]:
+    """The songs in a list or in any list inside it, each once, in the order they were added.
+
+    >>> snap = {"nodes": [], "edges": [
+    ...     {"id": "1", "parent": "Campfire", "child": "x:1", "kind": "contains"},
+    ...     {"id": "2", "parent": "Campfire", "child": "Slow", "kind": "contains"},
+    ...     {"id": "3", "parent": "Slow", "child": "x:2", "kind": "contains"},
+    ...     {"id": "4", "parent": "Slow", "child": "x:1", "kind": "contains"}]}
+    >>> list_members(snap, "Campfire")
+    ['x:1', 'x:2']
+    """
+    lists = set(list_names(snapshot))
+    children: dict[str, list[str]] = {}
+    for edge in snapshot.get("edges", []):
+        children.setdefault(edge["parent"], []).append(edge["child"])
+    songs, seen, stack = [], {list_id}, [list_id]
+    order: list[str] = []
+    while stack:  # depth-first, in edge order, without recursion
+        node = stack.pop()
+        order.append(node)
+        for child in reversed(children.get(node, [])):
+            if child not in seen:
+                seen.add(child)
+                stack.append(child)
+    for node in order:
+        for child in children.get(node, []):
+            if child not in lists and child not in songs:
+                songs.append(child)
+    return songs
+
+
+def lists_matching(query: str, snapshot: dict, *, min_ratio: float = 80) -> list[dict]:
+    """The lists whose name the query names, best first: ``[{"id", "name", "spans"}]``.
+
+    A list matches when every word of the query starts a word of its name (``"camp"``
+    finds Campfire, ``"to le"`` finds To learn), or when the whole name is the query give
+    or take a typo (``fuzz.ratio`` of at least ``min_ratio``). A word of the query that is
+    longer than any word of the name never matches, so a short name (``Fun``) is not found
+    by every query that contains it (``funeral``). ``spans`` are the matched parts of the name.
+
+    >>> snap = {"nodes": [{"id": "Campfire"}, {"id": "To learn"}, {"id": "Fun"}], "edges": []}
+    >>> [m["id"] for m in lists_matching("camp", snap)]
+    ['Campfire']
+    >>> [m["id"] for m in lists_matching("campfier", snap)], lists_matching("funeral", snap)
+    (['Campfire'], [])
+    """
+    from rapidfuzz import fuzz, utils
+
+    from songleaf.match import query_words, word_spans
+
+    words = query_words(query)
+    if not words:
+        return []
+    wanted = utils.default_process(query)
+    found = []
+    for list_id, name in list_names(snapshot).items():
+        name_words = query_words(name)
+        prefixes = all(any(n.startswith(w) for n in name_words) for w in words)
+        ratio = fuzz.ratio(wanted, utils.default_process(name))
+        if not (prefixes or ratio >= min_ratio):
+            continue
+        exact = utils.default_process(name) == wanted
+        rank = (not exact, not prefixes, -ratio, name.lower())
+        found.append(
+            (rank, {"id": list_id, "name": name, "spans": word_spans(name, query)})
+        )
+    return [entry for _, entry in sorted(found, key=lambda pair: pair[0])]
+
+
 def checked_snapshot(snapshot) -> dict:
     """``snapshot`` if it has the shape of a zodal-groups snapshot, else ``ValueError``.
 
@@ -196,28 +281,36 @@ def _path(root: str | None) -> str:
 
 
 def _write(document: dict, root: str | None) -> dict:
-    path = _path(root)
+    return write_json_atomically(_path(root), document)
+
+
+def write_json_atomically(path: str, document: dict) -> dict:
+    """Write ``document`` to ``path`` so that readers see the old file or the new one, never half."""
     temporary = f"{path}.{os.getpid()}.{threading.get_ident()}.tmp"
     with open(temporary, "w", encoding="utf-8") as file:
         json.dump(document, file)
         file.flush()
         os.fsync(file.fileno())
-    os.replace(
-        temporary, path
-    )  # readers see the old document or the new one, never half
+    os.replace(temporary, path)
     return document
 
 
 @contextmanager
 def _locked(root: str | None):
-    """One writer at a time: threads of this process, and other processes where fcntl exists."""
+    with file_lock(_path(root)):
+        yield
+
+
+@contextmanager
+def file_lock(path: str):
+    """One writer of ``path`` at a time: threads of this process, and other processes where fcntl exists."""
     with _thread_lock:
         try:
             import fcntl
         except ImportError:  # Windows: one process is all a local run has
             yield
             return
-        with open(_path(root) + ".lock", "w") as handle:
+        with open(path + ".lock", "w") as handle:
             fcntl.flock(handle, fcntl.LOCK_EX)
             try:
                 yield

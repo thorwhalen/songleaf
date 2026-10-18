@@ -18,6 +18,7 @@
   --gutter: 16px;
   --panel-bg: #ffffff;
   --skeleton: rgba(0, 0, 0, 0.07);
+  --mark: rgba(42, 93, 176, 0.14); /* a matched word in search results */
   --chorus-band: #f3efe4; /* the printed sheet's shades */
   --bridge-band: #e8eef6;
   --tap: 36px; /* the smallest control; 44px on a touch screen (below) */
@@ -36,6 +37,7 @@
     --error-fg: #f5b7ae;
     --panel-bg: #1f1f1d;
     --skeleton: rgba(255, 255, 255, 0.08);
+    --mark: rgba(122, 167, 240, 0.24);
     --chorus-band: rgba(255, 196, 120, 0.10);
     --bridge-band: rgba(130, 170, 255, 0.12);
     color-scheme: dark;
@@ -52,6 +54,7 @@
   --error-fg: #f5b7ae;
   --panel-bg: #1f1f1d;
   --skeleton: rgba(255, 255, 255, 0.08);
+  --mark: rgba(122, 167, 240, 0.24);
   --chorus-band: rgba(255, 196, 120, 0.10);
   --bridge-band: rgba(130, 170, 255, 0.12);
   color-scheme: dark;
@@ -105,6 +108,47 @@ input[type="search"]:focus { outline: 2px solid var(--accent); outline-offset: -
 .songs .title { font-weight: 600; }
 .songs .artist { color: var(--muted); font-size: 0.92em; }
 .songs .in-groups { flex-basis: 100%; font-size: 0.82em; color: var(--muted); }
+/* A lyrics match: the line that matched, quiet, under the title. */
+.songs .snippet { flex-basis: 100%; font-size: 0.86em; color: var(--muted); font-style: italic; overflow-wrap: anywhere; }
+.songs .snippet::before { content: "“"; }
+.songs .snippet::after { content: "”"; }
+mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1px; }
+/* Viewed: a row with a button that takes the song out (beside the link, never inside it). */
+.songs.removable li { display: flex; align-items: stretch; }
+.songs.removable li > a { flex: 1; min-width: 0; }
+.songs button.remove {
+  flex: none; width: 44px; min-height: 44px; padding: 0; margin-right: -10px;
+  border: 0; background: none; color: var(--muted); font-size: 1.35em; line-height: 1; border-radius: var(--radius);
+}
+.songs button.remove:active { color: var(--fg); background: var(--line); }
+@media (hover: hover) { .songs button.remove:hover { color: var(--fg); background: var(--line); } }
+
+/* The home control: a house in a full-size target, first in the header of every other view. */
+.home {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 44px; height: 44px; margin-left: -10px; border-radius: var(--radius); color: var(--accent);
+}
+.home svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.home:active { background: var(--line); }
+@media (hover: hover) { .home:hover { background: var(--line); } }
+.app-head { display: flex; align-items: center; gap: 2px; }
+.app-head h1 { margin: 0.2em 0; }
+
+/* Search results: one muted heading per kind of match, and one quiet line when no title matched. */
+.match-section + .match-section { margin-top: 4px; }
+.section-head {
+  font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--muted); font-weight: 600; margin: 1.1em 0 0;
+}
+.no-title { font-size: 0.86em; margin: 10px 0 0; }
+/* A list whose name matched: the list itself (it opens the library on it), then a few of its songs. */
+.list-entry {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 0.6em;
+  min-height: 44px; padding: 12px 2px; color: var(--accent); text-decoration: none; font-weight: 600;
+  border-bottom: 1px solid var(--line);
+}
+.list-entry .list-count { font-weight: 400; font-size: 0.9em; white-space: nowrap; }
+.list-match .songs { margin-left: 12px; }
 
 /* The library while it loads: rows of its own shape, so nothing jumps when it arrives. */
 .songs.skeleton li { display: flex; flex-direction: column; gap: 8px; padding: 14px 2px; }
@@ -190,9 +234,10 @@ button.text { background: none; border: 0; color: var(--accent); padding: 6px 0;
 }
 /* Content first: back, title, one line of byline, one row of tools, then the song. The back
    link and the groups line keep a full-size target by reaching into the space around them. */
+.song-nav { display: flex; align-items: center; gap: 2px; margin: -8px 0 -6px; }
 .song-head .back {
   display: inline-flex; align-items: center; min-height: 44px;
-  margin: -8px 0 -6px; padding: 0 12px 0 0;
+  padding: 0 12px 0 4px;
   color: var(--accent); text-decoration: none;
 }
 .song-head h1 { margin: 0; line-height: 1.2; }
@@ -343,7 +388,7 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 .reader .line.chords-only { display: flex; flex-wrap: wrap; gap: 0 0.2em; }
 .reader .line.chords-only .ch { padding-right: 0.6em; }
 @media print {
-  .toolbar-wrap, .song-head .back, .scroll-pill, .in-groups-button, .toast { display: none; }
+  .toolbar-wrap, .song-nav, .home, .scroll-pill, .in-groups-button, .toast { display: none; }
 }
 .reader .ch.in {
   display: inline;
@@ -420,6 +465,11 @@ button.danger:disabled { opacity: 0.4; cursor: default; }
   position: fixed; left: 50%; bottom: max(80px, env(safe-area-inset-bottom)); transform: translateX(-50%);
   z-index: 4; max-width: min(90vw, 480px); padding: 10px 14px; border-radius: var(--radius);
   background: var(--fg); color: var(--bg); font-size: 0.92em; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  display: flex; align-items: center; gap: 12px;
+}
+.toast .toast-action {
+  flex: none; min-height: 44px; margin: -10px -8px -10px 0; padding: 0 10px;
+  border: 0; background: none; color: inherit; font-weight: 700; text-decoration: underline;
 }
 
 /* --- zodal-groups, themed ---------------------------------------------------------------

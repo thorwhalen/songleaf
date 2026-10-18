@@ -26,12 +26,97 @@ def search(
     lyrics: str = "",
     limit: int = 10,
     sources=None,
+    store=None,
+    library_root=None,
 ) -> list[dict]:
-    """Find songs: fuzzy title and artist (``query``), or by title, artist, or whole words of the lyrics."""
-    hits = _sources.search(
-        query, title=title, artist=artist, lyrics=lyrics, limit=limit, sources=sources
-    )
-    return [hit.to_dict() for hit in hits]
+    """Find songs with one query: in your lists' names, then titles, artists and lyrics.
+
+    With only ``query``, every song comes once, tagged with where it matched (``match``):
+    ``"list"`` (a stored song in a list whose name the query names; ``list`` and
+    ``list_name`` say which), then ``"title"``, ``"artist"`` and ``"lyrics"``, in that order,
+    at most ``limit`` of each, best first within each. A song that matches its title and
+    its lyrics is a title match only. ``highlight`` holds the matched words of the title and
+    artist (and of ``list_name``) as ``[start, end]`` spans; a lyrics match carries
+    ``snippet``, the line that matched, with its spans.
+
+    With ``title``, ``artist`` or ``lyrics``, it is a narrower search instead: songs that
+    match every field given (and ``query``, fuzzily over title and artist), ``match: ""``.
+    """
+    if title or artist or lyrics:
+        hits = _sources.search(
+            query,
+            title=title,
+            artist=artist,
+            lyrics=lyrics,
+            limit=limit,
+            sources=sources,
+        )
+        return [_tagged(hit.to_dict(), "", query) for hit in hits]
+    if not query.strip():
+        return []
+    rows = _list_hits(query, limit=limit, store=store, library_root=library_root)
+    seen = {row["key"] for row in rows}
+    for kind, hits in _sources.search_tiers(
+        query, limit=limit, sources=sources
+    ).items():
+        for hit in hits:
+            if hit.key in seen:
+                continue
+            seen.add(hit.key)
+            row = _tagged(hit.to_dict(), kind, query)
+            snippet = row["meta"].pop("snippet", None)
+            if snippet:
+                row["snippet"] = snippet
+            rows.append(row)
+    return rows
+
+
+def _tagged(row: dict, kind: str, query: str) -> dict:
+    from songleaf.match import word_spans
+
+    row["match"] = kind
+    row["highlight"] = {
+        "title": word_spans(row["title"], query),
+        "artist": word_spans(row.get("artist", ""), query),
+    }
+    return row
+
+
+def _list_hits(query: str, *, limit: int, store, library_root) -> list[dict]:
+    """The stored songs of the lists whose name ``query`` names, at most ``limit`` per list."""
+    from songleaf.library import list_members, lists_matching, read_groups
+
+    snapshot = read_groups(root=library_root)["snapshot"]
+    matched = lists_matching(query, snapshot)
+    if not matched:
+        return []
+    store = song_store() if store is None else store
+    rows, seen = [], set()
+    for found in matched:
+        taken = 0
+        for key in list_members(snapshot, found["id"]):
+            if taken >= limit:
+                break
+            if key in seen or not _is_stored(store, key):
+                continue
+            song = store[key]
+            source, _, song_id = key.partition(":")
+            row = {
+                "key": key,
+                "source": source,
+                "id": song_id,
+                "title": song.title,
+                "artist": song.artist,
+                "score": 1.0,
+                "meta": {},
+            }
+            row = _tagged(row, "list", query)
+            row.update(list=found["id"], list_name=found["name"])
+            row["highlight"]["list_name"] = found["spans"]
+            rows.append(row)
+            seen.add(key)
+            taken += 1
+    return rows
 
 
 def sheet(
@@ -168,12 +253,13 @@ def _resolve(query: str, *, pick: int, refresh: bool, sources, store):
 
 
 def forget(key: str, *, store=None, library_root=None) -> dict:
-    """Remove a song from the stored songs and from every group it was in.
+    """Remove a song from the stored songs, from every list it was in, and from every Viewed list.
 
     It can be found and stored again by searching. Returns ``{"key", "deleted"}``;
     ``deleted`` is False when it was not stored.
     """
     from songleaf.library import drop_item
+    from songleaf.viewed import drop_everywhere
 
     store = song_store() if store is None else store
     try:
@@ -182,7 +268,55 @@ def forget(key: str, *, store=None, library_root=None) -> dict:
     except (KeyError, FileNotFoundError, ValueError):
         deleted = False
     drop_item(key, root=library_root)
+    drop_everywhere(key, root=library_root)
     return {"key": key, "deleted": deleted}
+
+
+def viewed(*, user: str = "", store=None, library_root=None) -> list[dict]:
+    """The songs ``user`` opened, the most recent first: ``key``, ``title``, ``artist``, ``viewed_at``.
+
+    ``user`` is who the host says is asking (no one: the list everyone shares). Songs no
+    longer stored are left out. ``viewed_at`` is in seconds since the epoch.
+    """
+    from songleaf.viewed import read_viewed
+
+    store = song_store() if store is None else store
+    rows = []
+    for entry in read_viewed(user=user, root=library_root):
+        if not _is_stored(store, entry["key"]):
+            continue
+        song = store[entry["key"]]
+        rows.append({**entry, "title": song.title, "artist": song.artist})
+    return rows
+
+
+def view(
+    key: str, *, user: str = "", at: float = 0.0, store=None, library_root=None
+) -> dict:
+    """Put a stored song at the top of ``user``'s Viewed list: they just opened it.
+
+    ``at`` (seconds since the epoch) records that time instead, which is how an undo puts
+    a song it took out back where it was. Returns ``{"key", "viewed_at"}``.
+    """
+    from songleaf.viewed import record_view
+
+    store = song_store() if store is None else store
+    if not _is_stored(store, key):
+        raise _sources.SongNotFound(f"{key!r} is not among the stored songs")
+    when = record_view(key, user=user, at=at or None, root=library_root)
+    return {"key": key, "viewed_at": when}
+
+
+def unview(key: str, *, user: str = "", library_root=None) -> dict:
+    """Take a song out of ``user``'s Viewed list. It stays stored, and in its lists.
+
+    Returns ``{"key", "removed", "viewed_at"}``: when it had been viewed, so the same
+    time can be given back to :func:`view` to undo.
+    """
+    from songleaf.viewed import remove_view
+
+    at = remove_view(key, user=user, root=library_root)
+    return {"key": key, "removed": at is not None, "viewed_at": at}
 
 
 def songs(*, store=None) -> list[str]:
@@ -232,4 +366,4 @@ def _file_name(song, key: str, layout: str = "") -> str:
 
 
 #: Every operation, in the order the CLI lists them.
-TOOLS = (search, sheet, song, songs, forget, build_index)
+TOOLS = (search, sheet, song, songs, viewed, view, unview, forget, build_index)

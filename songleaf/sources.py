@@ -10,6 +10,11 @@ corpus, read through ``sung``.
 
 A hit's :attr:`Hit.key` (``"<source>:<id>"``) names the song everywhere: it is
 what :func:`get_song` resolves and what the store is keyed by.
+
+:func:`search_tiers` is the one-field search: the songs whose title, artist or lyrics
+match a query, each reported once, in the first of those that matches. A source may answer
+it itself with a ``search_tiers(query, *, limit)`` method (the Kaggle sources do, in one
+pass); any other source is asked three times through ``search``.
 """
 
 from __future__ import annotations
@@ -236,6 +241,119 @@ class KaggleChordsSource:
 
         ranked = sorted(rows, key=lambda r: (-relevance(r), -self._popularity[r]))
         return [self._hit(row, relevance(row)) for row in ranked[:limit]]
+
+    def search_tiers(self, query: str, *, limit: int = 10) -> dict[str, list[Hit]]:
+        """The songs whose title, artist or lyrics match ``query``, by where they match.
+
+        ``{"title": [...], "artist": [...], "lyrics": [...]}``, at most ``limit`` in each,
+        best first. A song is in the first kind it matches, even when it ranks below the
+        limit there, so a song is never shown as an artist match because more titles
+        matched.
+
+        Title and artist match word by word (:class:`~songleaf.match.WordIndex`): the query
+        is inside the field (``"wonder"`` finds *Wonderwall*) or the field is inside the
+        query (``"wonderwall oasis"`` finds the title *Wonderwall* and the artist *Oasis*),
+        a word of four letters or more forgiving a typo; or every word of the query is in
+        the title or in the artist (``"paper boats invented band"``). A song whose title
+        holds a word of the query that its artist does not is a title match
+        (``"wonderwall oasis"``: *Wonderwall (ver. 2)* by Oasis), otherwise an artist match. Within each kind, the songs whose
+        title and artist together hold the most words of the query come first (so
+        *Wonderwall* by Oasis leads), then the closest by fuzzy score (of the title, or of
+        title and artist, whichever is closer; of the artist), then the most popular.
+        Lyrics hold every word of the query, rank by popularity, and carry
+        ``meta["snippet"]``: the line that matched, with its spans.
+        """
+        from songleaf.match import lyric_snippet, shared_words
+
+        if not query.strip():
+            return {"title": [], "artist": [], "lyrics": []}
+        popularity = self._popularity
+        title_rows, artist_rows = self._title_and_artist_rows(query)
+        title_score = {
+            row: max(score, label)
+            for (row, score), label in zip(
+                self._scores(query, self._titles, title_rows).items(),
+                self._scores(query, self._labels, title_rows).values(),
+            )
+        }
+        artist_score = self._scores(query, self._artists, artist_rows)
+        labels = self._labels
+
+        def best(scores):
+            # the song whose title and artist hold the most query words, then the closest
+            shared = {r: shared_words(query, labels[r]) for r in scores}
+            ranked = sorted(
+                scores, key=lambda r: (-shared[r], -scores[r], -popularity[r], r)
+            )
+            return [self._hit(r, scores[r]) for r in ranked[:limit]]
+
+        lyric_rows = sorted(
+            (
+                r
+                for r in self._containing(query)
+                if r not in title_rows and r not in artist_rows
+            ),
+            key=lambda r: (-popularity[r], r),
+        )[:limit]
+        lyric_hits = []
+        for row in lyric_rows:
+            hit = self._hit(row, 100.0)
+            text = _KAGGLE_SITE_NOISE.sub("", self._text(row))
+            snippet = lyric_snippet(text, query)
+            if snippet:
+                hit.meta["snippet"] = snippet
+            lyric_hits.append(hit)
+        return {
+            "title": best(title_score),
+            "artist": best(artist_score),
+            "lyrics": lyric_hits,
+        }
+
+    def _title_and_artist_rows(self, query: str) -> tuple[set[int], set[int]]:
+        """The rows that are title matches, and those that are artist matches (none in both)."""
+        from songleaf.match import query_words
+
+        titles, artists = self._title_words, self._artist_words
+        in_either, title_only = None, set()
+        for word in query_words(query):
+            in_title, in_artist = titles.rows_with(word), artists.rows_with(word)
+            either = in_title | in_artist
+            in_either = either if in_either is None else in_either & either
+            title_only |= in_title - in_artist
+        # "wonderwall oasis", "paper boats invented band": every word is in the title or the
+        # artist, and the title holds one the artist does not: a title match. "ed sheeran"
+        # finds a song called Edge by its artist only.
+        candidates = artists.matching(query) | (in_either or set())
+        title_rows = titles.matching(query) | (candidates & title_only)
+        return title_rows, candidates - title_rows
+
+    @cached_property
+    def _title_words(self):
+        from songleaf.match import WordIndex
+
+        return WordIndex(self._titles)
+
+    @cached_property
+    def _artist_words(self):
+        from songleaf.match import WordIndex
+
+        return WordIndex(self._artists)
+
+    @staticmethod
+    def _scores(query: str, texts: list[str], rows) -> dict[int, float]:
+        """``{row: fuzzy score of query against texts[row]}`` for the given rows, in row order."""
+        from rapidfuzz import fuzz, process, utils
+
+        choices = {row: texts[row] for row in sorted(rows)}
+        scored = process.extract(
+            query,
+            choices,
+            scorer=fuzz.WRatio,
+            processor=utils.default_process,
+            limit=None,
+        )
+        found = {row: score for _, score, row in scored}
+        return {row: found.get(row, 0.0) for row in choices}
 
     def _hit(self, row: int, score: float) -> Hit:
         return Hit(
@@ -467,6 +585,70 @@ def search(
         )
     ]
     return sorted(hits, key=lambda hit: hit.score, reverse=True)[:limit]
+
+
+#: The kinds of match :func:`search_tiers` reports, in order: a song is in the first that fits.
+SONG_TIERS = ("title", "artist", "lyrics")
+
+
+def search_tiers(
+    query: str, *, limit: int = 10, sources: Sequence | None = None
+) -> dict[str, list[Hit]]:
+    """Every source's songs whose title, artist or lyrics match ``query``, by where they match.
+
+    ``{"title": [...], "artist": [...], "lyrics": [...]}`` (:data:`SONG_TIERS`), at most
+    ``limit`` in each; each song in the first kind it matches. Within a kind, each
+    source's hits come in its own ranking, the sources in the order given.
+
+    >>> search_tiers("paper boats", sources=[])
+    {'title': [], 'artist': [], 'lyrics': []}
+    """
+    sources = default_sources() if sources is None else sources
+    found = {kind: [] for kind in SONG_TIERS}
+    for source in sources:
+        if hasattr(source, "search_tiers"):
+            tiers = source.search_tiers(query, limit=limit)
+        else:
+            tiers = _tiers_through_search(source, query, limit=limit)
+        for kind in SONG_TIERS:
+            found[kind].extend(tiers.get(kind, ()))
+    seen: set[str] = set()
+    for kind in SONG_TIERS:
+        # each source ranks its own (a score alone is not its order); sources in the order given
+        ranked = found[kind]
+        found[kind] = [hit for hit in ranked if hit.key not in seen][:limit]
+        seen.update(hit.key for hit in ranked)
+    return found
+
+
+def _tiers_through_search(source, query: str, *, limit: int) -> dict[str, list[Hit]]:
+    """The tiers of a source with only ``search``: one call per field, plus the free query.
+
+    The free query catches a source that reads no fields; each of its hits goes to the
+    field it is closer to. A song past the limit of one kind may show up in a later one.
+    """
+    from rapidfuzz import fuzz, utils
+
+    tiers = {
+        "title": source.search(title=query, limit=limit),
+        "artist": source.search(artist=query, limit=limit),
+        "lyrics": source.search(lyrics=query, limit=limit),
+    }
+    known = {hit.key for hits in tiers.values() for hit in hits}
+
+    def closeness(text):
+        return fuzz.WRatio(query, text, processor=utils.default_process)
+
+    for hit in source.search(query, limit=limit):
+        if hit.key in known:
+            continue
+        kind = "title" if closeness(hit.title) >= closeness(hit.artist) else "artist"
+        tiers[kind].append(hit)
+    seen: set[str] = set()
+    for kind in SONG_TIERS:
+        tiers[kind] = [hit for hit in tiers[kind] if hit.key not in seen]
+        seen.update(hit.key for hit in tiers[kind])
+    return tiers
 
 
 def get_song(key: str, *, sources: Sequence | None = None) -> Song:

@@ -1,13 +1,17 @@
 // songleaf page: search the corpus, read a song with its chords, transpose it, print it.
 //
-// The URL is the state: `?q=..&lyrics=..` is the search view, `?group=<id>` (or
-// `?ungrouped=1`) the library narrowed to a group; `?song=<key>` opens a song, with
-// `t=<semitones>` (transposition), `view=print` (the PDF) and `layout=<spec>` (a print layout
-// chosen by hand; without it the sheet follows the reader's settings).
-// Opening a song and choosing a group push a history entry (Back returns to the list, at the
-// place it was left); everything done on the song (transpose, layout, view) replaces it. The
-// reader's look (size, colours, opacity) is per viewer, kept through `prefs`, the one place
-// that touches browser storage.
+// The URL is the state: no parameters is home (the library on Viewed, the songs you opened,
+// the latest first); `?q=..` is a search over list names, titles, artists and lyrics at once;
+// `?group=<id>` (or `?ungrouped=1`) is the library narrowed to a list (the model and the URL
+// say "group", the page says "list"); `?song=<key>` opens a song, with `t=<semitones>`
+// (transposition), `view=print` (the PDF) and `layout=<spec>` (a print layout chosen by
+// hand; without it the sheet follows the reader's settings).
+// Opening a song, choosing a list and starting a search push a history entry (Back returns
+// to where you were, at the place it was left); refining a search and everything done on the
+// song (transpose, layout, view) replace it. Every entry this page makes knows how far back
+// home is (`home` in history.state), so the home control walks back to it when it can.
+// The reader's look (size, colours, opacity) is per viewer, kept through `prefs`, the one
+// place that touches browser storage; Viewed is kept by the server.
 //
 // No music logic lives here: the server sends each key's chord table (`/song`), and the
 // page only looks chords up in it.
@@ -321,7 +325,7 @@
       try {
         next = build(doc.snapshot);
       } catch (error) {
-        notify({ type: "error", message: `The saved groups could not be read (${error.message}).`, fatal: true });
+        notify({ type: "error", message: `Your saved lists could not be read (${error.message}).`, fatal: true });
         return false;
       }
       const mine = intents;
@@ -379,7 +383,7 @@
             keepalive: keepalive && body.length < 60000, // a save as the page goes away
           });
         } catch (_) {
-          return retry("The groups could not be saved: no connection. Trying again…");
+          return retry("Your lists could not be saved: no connection. Trying again…");
         }
         if (response.status === 409) {
           const current = (await response.json()).current;
@@ -401,13 +405,13 @@
           return;
         }
         const detail = await errorText(response);
-        if (response.status >= 500) return retry(`The groups could not be saved (${detail}). Trying again…`);
+        if (response.status >= 500) return retry(`Your lists could not be saved (${detail}). Trying again…`);
         blocked = response.status === 401 || response.status === 403 ? "session" : "refused";
         notify({
           type: "error",
           message: blocked === "session"
-            ? "Your sign-in has expired: reload the page to keep changing groups."
-            : `That change to the groups was refused (${detail}); it will be undone when the groups reload.`,
+            ? "Your sign-in has expired: reload the page to keep changing your lists."
+            : `That change to your lists was refused (${detail}); it will be undone when the lists reload.`,
         });
       })();
       try { await saving; } finally { saving = null; }
@@ -446,12 +450,19 @@
   window.addEventListener("pagehide", () => groups.flush()); // last chance to save
 
   // A small message at the bottom of the screen: a filing done, a save that failed, a merge.
-  function toast(text) {
+  // With `action` (a word, "Undo") and `onAction`, it holds a button that does it once and
+  // closes, and it stays longer, so there is time to reach it.
+  const TOAST_MS = 5000;
+  const TOAST_ACTION_MS = 8000;
+  function toast(text, { action = "", onAction = null } = {}) {
     const old = document.querySelector(".toast");
     if (old) old.remove();
-    const el = h("div", { class: "toast", role: "status" }, text);
+    const el = h("div", { class: "toast", role: "status" }, h("span", {}, text));
+    if (action && onAction) {
+      el.append(h("button", { type: "button", class: "toast-action", onclick: () => { el.remove(); onAction(); } }, action));
+    }
     document.body.append(el);
-    setTimeout(() => el.remove(), 5000);
+    setTimeout(() => el.remove(), action ? TOAST_ACTION_MS : TOAST_MS);
   }
   let lastToast = "";
   groups.onChange((event) => {
@@ -459,8 +470,8 @@
     else if (event.type === "saved") lastToast = "";
     else if (event.type === "merged") {
       toast(event.refused
-        ? `The groups were changed elsewhere; ${event.refused} of your changes no longer applied.`
-        : "The groups were changed elsewhere; your changes were added to them.");
+        ? `Your lists were changed elsewhere; ${event.refused} of your changes no longer applied.`
+        : "Your lists were changed elsewhere; your changes were added to them.");
     }
   });
 
@@ -471,8 +482,7 @@
     const song = params.get("song") || "";
     const t = params.has("t") ? Math.round(Number(params.get("t"))) || 0 : (song ? prefs.transposeOf(song) : 0);
     return {
-      q: params.get("q") || "",
-      lyrics: params.get("lyrics") || "",
+      q: (params.get("q") || params.get("lyrics") || "").trim(), // `lyrics=`: links from before one field
       group: params.get("ungrouped") ? UNGROUPED : params.get("group") || "",
       song,
       t,
@@ -489,28 +499,73 @@
       if (route.t) params.set("t", String(route.t));
       if (route.view === "print") params.set("view", "print");
       if (route.layout) params.set("layout", route.layout);
-    } else {
-      if (route.q) params.set("q", route.q);
-      if (route.lyrics) params.set("lyrics", route.lyrics);
-      if (route.group === UNGROUPED) params.set("ungrouped", "1");
-      else if (route.group) params.set("group", route.group);
+    } else if (route.q) {
+      params.set("q", route.q); // a search is over everything: no list narrows it
+    } else if (route.group === UNGROUPED) {
+      params.set("ungrouped", "1");
+    } else if (route.group) {
+      params.set("group", route.group);
     }
     const query = params.toString();
     return location.pathname + (query ? "?" + query : "");
   }
 
+  // Home: the library on Viewed, no parameters. Every entry records how many steps back the
+  // nearest home entry is (`home`), when this page made the entries in between; `null` when it
+  // cannot know (a pasted link). Nothing else calls history.pushState or replaceState.
+  const isHome = (route) => !route.song && !route.q && !route.group;
+  const homeDistance = () => (history.state && Number.isInteger(history.state.home) ? history.state.home : null);
+  function pushRoute(route, state = {}) {
+    const url = formatRoute(route);
+    if (url === location.pathname + location.search) { replaceRoute(route, { ...(history.state || {}), ...state }); return; }
+    const from = homeDistance();
+    history.pushState({ ...state, home: isHome(route) ? 0 : from === null ? null : from + 1 }, "", url);
+  }
+  function replaceRoute(route, state = history.state || {}) {
+    const from = homeDistance();
+    // a home entry turned into another view no longer is one; any other keeps its distance
+    const home = isHome(route) ? 0 : from === 0 ? null : from;
+    history.replaceState({ ...state, home }, "", formatRoute(route));
+  }
+
   function navigate(route, { replace = false, state = {} } = {}) {
     clearTimeout(scrollSaveTimer);
-    const url = formatRoute(route);
-    if (replace || url === location.pathname + location.search) history.replaceState(state, "", url);
-    else history.pushState(state, "", url);
+    if (replace) replaceRoute(route, state);
+    else pushRoute(route, state);
     render();
+  }
+
+  // The home control: back along history when home is a known number of steps behind (it then
+  // returns as it was left, scroll and all), otherwise a new entry for home.
+  function goHome(event) {
+    if (event && (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0)) return; // a new tab
+    if (event) event.preventDefault();
+    const distance = homeDistance();
+    if (distance > 0) { history.go(-distance); return; }
+    rememberScroll();
+    navigate({});
+  }
+  function homeLink() {
+    return h("a", {
+      href: location.pathname, class: "home", title: "Home: Viewed and your lists", "aria-label": "Home: Viewed and your lists", onclick: goHome,
+    }, homeIcon());
+  }
+  function homeIcon() { // a house, drawn in the text colour
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("focusable", "false");
+    const path = document.createElementNS(ns, "path");
+    path.setAttribute("d", "M3 10.5 12 3l9 7.5M5.5 8.6V20h5v-6h3v6h5V8.6");
+    svg.append(path);
+    return svg;
   }
 
   // The page redraws a list it returns to, so the browser cannot put the scroll back: the
   // entry being left keeps its scroll, and the list restores it once drawn.
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-  function rememberScroll() {
+  function rememberScroll() { // the same entry, with where it was scrolled to (its `home` kept)
     history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, "", location.href);
   }
   // A phone may discard a hidden tab and reload it later: every entry keeps its place, saved
@@ -533,7 +588,7 @@
   window.addEventListener("popstate", () => {
     // Back or Forward between two groups of the library on screen: refine it in place.
     const route = readRoute();
-    if (!route.song && !route.q && !route.lyrics && activeLibrary && activeLibrary.element.isConnected) {
+    if (!route.song && !route.q && activeLibrary && activeLibrary.element.isConnected) {
       activeLibrary.setGroup(route.group);
       window.scrollTo(0, savedScroll() || 0);
       return;
@@ -613,6 +668,11 @@
     const route = readRoute();
     const fresh = firstRender;
     firstRender = false;
+    // The entry the page was opened on: home is 0 steps back from itself; from any other view
+    // it is unknown (a pasted link), so the home control makes a new entry there.
+    if (fresh && !(history.state && "home" in history.state)) {
+      history.replaceState({ ...(history.state || {}), home: isHome(route) ? 0 : null }, "", location.href);
+    }
     if (!route.song) { // a song left (Back, or the link): opening it again starts afresh
       delete app.dataset.song;
       if (currentPanels) currentPanels.dispose();
@@ -627,72 +687,76 @@
 
   function renderSearch(route, gen, fresh) {
     activeLibrary = null;
-    const restoreY = savedScroll(); // set when this entry was left for a song or a group
+    const restoreY = savedScroll(); // set when this entry was left for a song or a list
     if (restoreY === null) window.scrollTo(0, 0);
-    document.title = route.q || route.lyrics ? `${route.q || route.lyrics} · ${CONFIG.title}` : CONFIG.title;
+    if (new URLSearchParams(location.search).has("lyrics")) replaceRoute(route); // one spelling: `q`
+    const titleOf = (q) => (q ? `${q} · ${CONFIG.title}` : CONFIG.title);
+    document.title = titleOf(route.q);
     const results = h("section", { class: "results", "aria-live": "polite" });
-    // A refinement replaces the URL and refreshes the results only: the inputs stay as
-    // they are, so typing (and a phone's keyboard) is never interrupted.
+    const home = homeLink();
+    home.hidden = isHome(route);
+    // A refinement refreshes the results only: the input stays as it is, so typing (and a
+    // phone's keyboard) is never interrupted. Starting a search from a view without one is
+    // going somewhere (a new entry, so Back returns there); refining it replaces the entry.
     const refine = () => {
       clearTimeout(searchTimer);
-      const next = { q: query.value.trim(), lyrics: lyrics.value.trim(), group: readRoute().group };
-      history.replaceState({}, "", formatRoute(next));
-      document.title = next.q || next.lyrics ? `${next.q || next.lyrics} · ${CONFIG.title}` : CONFIG.title;
+      const current = readRoute();
+      const next = { q: query.value.trim(), group: current.group };
+      if (next.q && !current.q) { rememberScroll(); pushRoute(next); } else replaceRoute(next);
+      document.title = titleOf(next.q);
+      home.hidden = isHome(readRoute());
       generation += 1;
-      showResults(next, results, generation, { clear });
+      showResults(readRoute(), results, generation, { clear });
     };
-    const clear = (input) => { input.value = ""; refine(); };
+    const clear = () => { query.value = ""; refine(); query.focus(); };
     const onInput = () => {
       clearTimeout(searchTimer);
       searchTimer = setTimeout(refine, SEARCH_DEBOUNCE_MS);
     };
     const query = h("input", {
-      type: "search", name: "q", value: route.q, placeholder: "Title or artist",
-      "aria-label": "Title or artist", autocomplete: "off", enterkeyhint: "search", oninput: onInput,
+      type: "search", name: "q", value: route.q, placeholder: "Title, artist, lyrics or list",
+      "aria-label": "Search titles, artists, lyrics and your lists", autocomplete: "off", enterkeyhint: "search", oninput: onInput,
     });
-    const lyrics = h("input", {
-      type: "search", name: "lyrics", value: route.lyrics, placeholder: "Words in the lyrics",
-      "aria-label": "Words in the lyrics", autocomplete: "off", enterkeyhint: "search", oninput: onInput,
-    });
-    const form = h("form", { class: "search", role: "search", onsubmit: (e) => { e.preventDefault(); refine(); query.blur(); lyrics.blur(); } },
-      query, lyrics);
-    app.replaceChildren(h("header", {}, h("h1", {}, CONFIG.title)), form, results);
+    const form = h("form", { class: "search", role: "search", onsubmit: (e) => { e.preventDefault(); refine(); query.blur(); } }, query);
+    app.replaceChildren(h("header", { class: "app-head" }, home, h("h1", {}, CONFIG.title)), form, results);
     // Focus the search only on a fresh page with nothing in the library: never on Back, where
     // a phone would raise its keyboard over the list the reader came back to.
     showResults(route, results, gen, {
-      clear: (name) => clear(name === "lyrics" ? lyrics : query),
+      clear,
       restoreY,
       onEmpty: fresh && restoreY === null ? () => query.focus() : null,
     });
   }
 
   function showResults(route, results, gen, after = {}) {
-    if (route.q || route.lyrics) showHits(route, results, gen, after);
+    if (route.q) showHits(route, results, gen, after);
     else showStored(results, gen, route, after);
   }
 
-  // What was searched, in words, for the message that says nothing matched.
+  // Nothing matched anywhere: say what was searched, and how to widen it.
   function noMatch(route, clear) {
-    const quoted = (text) => `“${text}”`;
-    const message = route.q && route.lyrics
-      ? `No song has ${quoted(route.q)} in its title or artist and ${quoted(route.lyrics)} in its lyrics.`
-      : route.q
-        ? `No song has ${quoted(route.q)} in its title or artist. Try fewer words, or check the spelling.`
-        : `No song has the words ${quoted(route.lyrics)} in its lyrics. Try fewer words.`;
-    // Offer to relax the narrower field: the lyrics when both are set.
-    const relax = route.q && route.lyrics ? ["lyrics", "Search without the lyrics"] : null;
-    return h("div", { class: "empty" }, h("p", { class: "muted" }, message),
-      relax && clear && h("button", { type: "button", class: "text", onclick: () => clear(relax[0]) }, relax[1]));
+    return h("div", { class: "empty" },
+      h("p", { class: "muted" }, `No list, title, artist or lyrics matches “${route.q}”. Try fewer words, or check the spelling.`),
+      clear && h("button", { type: "button", class: "text", onclick: clear }, "Clear the search"));
   }
+
+  // Where a hit matched, in the order the server ranks them (`match`), and what each section says.
+  const MATCH_SECTIONS = [
+    { kind: "list", label: "In your lists" },
+    { kind: "title", label: "Titles" },
+    { kind: "artist", label: "Artists" },
+    { kind: "lyrics", label: "Lyrics" },
+  ];
+  const LIST_PREVIEW = 3; // songs shown under a list whose name matched; the list itself opens the rest
 
   async function showHits(route, results, gen, after = {}) {
     const spinner = loading("Searching…", "The first search after a restart loads the song index, which takes a few seconds.");
     results.replaceChildren(spinner);
-    const params = new URLSearchParams({ q: route.q, lyrics: route.lyrics, limit: "25" });
+    const params = new URLSearchParams({ q: route.q, limit: "25" });
     try {
       const hits = await getJSON("/search?" + params);
       if (gen !== generation) return;
-      results.replaceChildren(hits.length ? songList(hits) : noMatch(route, after.clear));
+      results.replaceChildren(...(hits.length ? hitSections(hits) : [noMatch(route, after.clear)]));
       if (after.restoreY != null) window.scrollTo(0, after.restoreY);
     } catch (error) {
       if (gen !== generation) return;
@@ -701,6 +765,68 @@
     } finally {
       spinner.stop();
     }
+  }
+
+  // The hits in sections, each with a small muted heading: lists, titles, artists, lyrics. With
+  // no title match, one quiet line says so, so the first section is not taken for one.
+  function hitSections(hits) {
+    const byKind = new Map(MATCH_SECTIONS.map((s) => [s.kind, []]));
+    for (const hit of hits) (byKind.get(hit.match) || byKind.get("title")).push(hit);
+    const out = [];
+    if (!byKind.get("title").length) {
+      const others = MATCH_SECTIONS.filter((s) => s.kind !== "title" && byKind.get(s.kind).length)
+        .map((s) => ({ list: "list", artist: "artist", lyrics: "lyrics" })[s.kind]);
+      const words = others.length > 1 ? `${others.slice(0, -1).join(", ")} and ${others[others.length - 1]}` : others[0];
+      out.push(h("p", { class: "no-title muted" }, `No title matches — showing ${words} matches`));
+    }
+    for (const section of MATCH_SECTIONS) {
+      const items = byKind.get(section.kind);
+      if (!items.length) continue;
+      const body = section.kind === "list" ? listMatches(items) : songList(items, { fromLabel: "Results" });
+      out.push(h("section", { class: `match-section match-${section.kind}`, "aria-label": section.label },
+        h("h2", { class: "section-head" }, section.label), body));
+    }
+    return out;
+  }
+
+  // Songs found through a list's name: the list itself first (it opens the library on that
+  // list), then its first few songs.
+  function listMatches(hits) {
+    const byList = new Map();
+    for (const hit of hits) {
+      if (!byList.has(hit.list)) byList.set(hit.list, { name: hit.list_name || hit.list, spans: (hit.highlight || {}).list_name, songs: [] });
+      byList.get(hit.list).songs.push(hit);
+    }
+    return [...byList].map(([id, found]) => {
+      const total = groups.space ? groups.songsIn(id).length : found.songs.length;
+      const route = { group: id };
+      const entry = h("a", {
+        class: "list-entry", href: formatRoute(route),
+        onclick: (e) => {
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+          e.preventDefault();
+          rememberScroll();
+          navigate(route);
+        },
+      }, h("span", { class: "list-name" }, marked(found.name, found.spans)),
+      h("span", { class: "list-count muted" }, `${total} song${total === 1 ? "" : "s"} ›`));
+      return h("div", { class: "list-match" }, entry, songList(found.songs.slice(0, LIST_PREVIEW), { fromLabel: "Results" }));
+    });
+  }
+
+  // Text with its matched parts in <mark> (spans from the server, [start, end] each).
+  function marked(text, spans) {
+    if (!spans || !spans.length) return text;
+    const out = [];
+    let at = 0;
+    for (const [start, end] of spans) {
+      if (start < at || end > text.length) continue;
+      if (start > at) out.push(text.slice(at, start));
+      out.push(h("mark", {}, text.slice(start, end)));
+      at = end;
+    }
+    if (at < text.length) out.push(text.slice(at));
+    return out;
   }
 
   // Grey rows in the shape of the list, while it loads: the list then replaces them in place.
@@ -719,6 +845,8 @@
     results.replaceChildren(librarySkeleton());
     const retry = () => { generation += 1; showStored(results, generation, readRoute(), after); };
     let songs;
+    let viewedError = null;
+    const viewedRows = getJSON("/viewed").catch((error) => { viewedError = error; return []; });
     try {
       songs = await getJSON("/songs");
     } catch (error) {
@@ -728,7 +856,7 @@
     }
     if (gen !== generation) return;
     if (!songs.length) {
-      results.replaceChildren(h("p", { class: "muted" }, "Search by title or artist, or by words of the lyrics. The songs you open are kept here."));
+      results.replaceChildren(h("p", { class: "muted" }, "Search by title, artist, words of the lyrics, or the name of one of your lists. The songs you open are kept here, the latest first."));
       if (after.onEmpty) after.onEmpty();
       return;
     }
@@ -737,17 +865,19 @@
       groups.load(songs).catch((error) => { groupsError = error; }),
       new Promise((resolve) => setTimeout(resolve, GROUPS_WAIT_MS)),
     ]);
+    const viewed = await viewedRows;
     if (gen !== generation) return;
-    const shelf = library(songs, retry, route);
+    const shelf = library(songs, viewed, retry, route);
     results.replaceChildren(shelf.element);
     activeLibrary = shelf;
-    if (groupsError) toast(`The groups could not be loaded (${groupsError.message}). The songs are all here.`);
+    if (groupsError) toast(`Your lists could not be loaded (${groupsError.message}). The songs are all here.`);
+    else if (viewedError) toast(`Viewed could not be loaded (${viewedError.message}). Your lists are all here.`);
     if (after.restoreY != null) window.scrollTo(0, after.restoreY);
   }
 
-  // File songs into groups: the zodal-groups tag menu over `keys`, staged until Apply (the
-  // same menu from the library's Group… and from a song's page). It closes after an Apply that
-  // went through, and a toast says what changed.
+  // File songs into lists: the zodal-groups tag menu over `keys`, staged until Apply (the
+  // same menu from the library's Lists… and from a song's page). It closes after an Apply that
+  // went through, and a toast says what changed. Its words are the page's: lists and songs.
   const coarsePointer = window.matchMedia ? window.matchMedia("(pointer: coarse)") : null;
   function openTagMenu(host, keys, { onClose = () => {}, opener = null } = {}) {
     if (!groups.space || !keys.length) return null;
@@ -774,8 +904,9 @@
     panel.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && canApply()) applied = true; }, true);
     menu = groups.zg.renderTagMenu(panel, handle, {
       selection: keys,
-      candidates: () => groups.list().map((g) => g.id), // groups only: never a song
-      label: keys.length === 1 ? "Groups of this song" : `Groups of ${keys.length} songs`,
+      candidates: () => groups.list().map((g) => g.id), // lists only: never a song
+      label: keys.length === 1 ? "Lists of this song" : `Lists of ${keys.length} songs`,
+      messages: { tagging: LIST_MENU_WORDS },
       autoFocus: !(coarsePointer && coarsePointer.matches), // a phone would cover the menu with its keyboard
       onClose: close,
       onChange: () => {
@@ -788,6 +919,31 @@
     });
     return { close, get open() { return !!menu; } };
   }
+
+  // The tag menu's words where it says "group" or "item": the page calls them lists and songs.
+  const songs_ = (n) => `${n} song${n === 1 ? "" : "s"}`;
+  const LIST_MENU_WORDS = {
+    searchLabel: "Search lists",
+    searchPlaceholder: (canCreate) => (canCreate ? "Search or create a list…" : "Search lists…"),
+    listLabel: (n) => `Lists for ${songs_(n)}`,
+    rowLabel: (row) => {
+      const now = row.isNew ? "new list" : row.count === 0 ? "on none" : row.count >= row.total ? `on all ${row.total}` : `on ${row.count} of ${row.total}`;
+      const staged = row.pending ? [row.change.add ? `will add to ${row.change.add}` : "", row.change.remove ? `will remove from ${row.change.remove}` : ""] : [];
+      return [row.path || row.label, now, ...staged].filter(Boolean).join(", ");
+    },
+    createNotAllowed: "New lists can’t be created here.",
+    createNeedsSelection: "Pick songs first, then create a list for them.",
+    nameTaken: (label) => `“${label}” is already the name of a song here, not a list.`,
+    noMatches: (query) => `No list matches “${query}”.`,
+    noGroups: "No lists yet.",
+    noSelection: "Pick songs to put them in lists.",
+    summaryAdd: (label, n) => `Add ${songs_(n)} to “${label}”`,
+    summaryRemove: (label, n) => `Remove ${songs_(n)} from “${label}”`,
+    applyButton: (n) => (n === 0 ? "Apply" : `Apply to ${songs_(n)}`),
+    applied: ({ changed, verb }) => `Applied: ${verb} ${songs_(changed)}`,
+    labelNotStored: (label, id) => `Lists are kept by name, so “${label}” would be kept as “${id}”. Type “${id}” to create it.`,
+    nothingToApply: "Nothing to apply yet: tick or untick a list first.",
+  };
 
   // "Added to To learn, removed from Campfire.": what a filing changed, from before and after.
   function filingSentence(keys, before) {
@@ -808,29 +964,43 @@
     return text.charAt(0).toUpperCase() + text.slice(1) + ".";
   }
 
-  // Your songs: one list, narrowed by the group chips (the chosen group is in the URL), and an
-  // Edit mode to pick songs and group or delete them. On a wide screen, "Arrange groups" holds
-  // the zodal-groups tree, for dragging a song or a group onto a group (nesting groups is done
-  // there). A change to the groups redraws the counts and the list; a rebuilt space (a reload,
-  // a merge) re-binds everything to the new one.
-  let activeLibrary = null; // the library on screen, refined in place by Back between groups
+  // Your songs: home is Viewed (the songs you opened, the latest first); the list chips narrow
+  // the library to a list instead (the chosen list is in the URL). Edit picks songs to put in
+  // lists or delete. On a wide screen, "Arrange lists" holds the zodal-groups tree, for dragging
+  // a song or a list onto a list (nesting lists is done there). A change to the lists redraws
+  // the counts and the songs; a rebuilt space (a reload, a merge) re-binds everything to it.
+  let activeLibrary = null; // the library on screen, refined in place by Back between lists
   const wideScreen = window.matchMedia ? window.matchMedia("(min-width: 700px)") : null;
   if (wideScreen && wideScreen.addEventListener) {
     wideScreen.addEventListener("change", () => { if (activeLibrary && activeLibrary.element.isConnected) activeLibrary.redraw(); });
   }
-  function library(songs, refresh, route) {
+  // The chips' words: the All chip is Viewed (it stands for the viewed songs, not every song).
+  const CHIP_WORDS = {
+    all: "Viewed",
+    allOf: (list) => `All of ${list}`,
+    ungrouped: "Not in a list",
+    rootRow: "Lists",
+    subRow: (list) => `In ${list}`,
+    count: (n) => `${n} song${n === 1 ? "" : "s"}`,
+  };
+  function library(songs, viewedRows, refresh, route) {
     const selected = new Set();
     let editing = false;
     let busy = false;
     let group = route.group || "";
-    let tree = null; // the arrange tree, kept across data redraws so expanded groups stay open
+    let tree = null; // the arrange tree, kept across data redraws so expanded lists stay open
     let menu = null; // the tag menu, while open
     let chips = null; // the zodal-groups chip navigation, {renderer, space}
-    // The chips speak in selections ({path, ungrouped}), the URL in one group id.
+    const byKey = new Map(songs.map((song) => [song.key, song]));
+    // Viewed, the latest first: only stored songs (the server leaves deleted ones out too).
+    let viewedAt = new Map(viewedRows.filter((v) => byKey.has(v.key)).map((v) => [v.key, v.viewed_at]));
+    const viewedKeys = () => [...viewedAt].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).map(([key]) => key);
+    // The chips speak in selections ({path, ungrouped}), the URL in one list id.
     const selectionOf = (value) => (value === UNGROUPED ? { ungrouped: true } : { path: value ? [value] : [] });
     const valueOf = (sel) => (sel.ungrouped ? UNGROUPED : sel.path.length ? sel.path[sel.path.length - 1] : "");
+    const viewName = () => (group === UNGROUPED ? CHIP_WORDS.ungrouped : group ? groups.labelOf(group) : CHIP_WORDS.all);
     const listHost = h("div");
-    const navHost = h("nav", { class: "group-nav", "aria-label": "Groups" });
+    const navHost = h("nav", { class: "group-nav", "aria-label": "Viewed and your lists" });
     const menuHost = h("div", { class: "group-menu-host" });
     const arrangeHost = h("div");
     const count = h("span", { class: "muted" });
@@ -841,7 +1011,7 @@
         const keys = [...selected]; // what was confirmed is what is deleted
         const one = keys.length === 1 && songs.find((s) => s.key === keys[0]);
         const what = one ? `“${one.title || one.key}”` : `these ${keys.length} songs`;
-        if (!window.confirm(`Delete ${what} from your songs? Search finds ${one ? "it" : "them"} again.`)) return;
+        if (!window.confirm(`Delete ${what} from your songs? ${one ? "It leaves" : "They leave"} your lists and Viewed. Search finds ${one ? "it" : "them"} again.`)) return;
         busy = true;
         listHost.inert = true; edit.disabled = true; // nothing changes while deleting
         remove.disabled = true; label.disabled = true;
@@ -866,7 +1036,7 @@
         if (menu) menu.close();
         menu = openTagMenu(menuHost, [...selected], { opener: label, onClose: () => { menu = null; redraw(); } });
       },
-    }, "Group…");
+    }, "Lists…");
     const actions = h("div", { class: "edit-actions", hidden: true }, count, h("div", { class: "edit-buttons" }, label, remove));
     const edit = h("button", {
       type: "button", class: "text",
@@ -878,22 +1048,25 @@
       remove.disabled = busy || !selected.size;
       label.disabled = busy || !selected.size || !groups.space;
     };
-    function shown() { // the songs the chosen group lets through, in library order
-      if (!group || !chips) return songs;
+    function shown() { // Viewed by last opened; a list's songs (or those in no list) in library order
+      if (!group) return viewedKeys().map((key) => byKey.get(key));
+      if (!chips) return songs;
       const keep = new Set(chips.renderer.items());
       return songs.filter((s) => keep.has(s.key));
     }
     // A tap on a chip is a deliberate change (pushed); the chips also move by themselves when
-    // the chosen group goes away (replaced).
+    // the chosen list goes away (replaced).
     let tapped = false;
     navHost.addEventListener("click", () => { tapped = true; }, true);
     navHost.addEventListener("click", () => { tapped = false; });
-    const corrected = (value) => { // the chips showed another group than the URL named
+    const corrected = (value) => { // the chips showed another list than the URL named
       group = value;
-      history.replaceState(history.state, "", formatRoute({ group }));
+      replaceRoute({ group });
     };
+    // The chips show once there is somewhere else to go: a list, or songs Viewed does not hold.
+    const navWanted = () => !!groups.space && (groups.list().length > 0 || viewedAt.size < songs.length || !!group);
     function drawNav() {
-      if (!groups.space || !groups.list().length) {
+      if (!navWanted()) {
         if (chips) chips.renderer.destroy();
         chips = null;
         navHost.hidden = true;
@@ -902,15 +1075,17 @@
       navHost.hidden = false;
       if (chips && chips.space === groups.space) {
         chips.renderer.render();
-        if (valueOf(chips.renderer.selection) !== group) corrected(valueOf(chips.renderer.selection)); // the group went away
+        if (valueOf(chips.renderer.selection) !== group) corrected(valueOf(chips.renderer.selection)); // the list went away
         revealChosen();
         return;
       }
       if (chips) chips.renderer.destroy();
       const renderer = groups.zg.renderGroupChips(navHost, groups.space, {
         items: () => songs.map((s) => s.key),
+        allChipItems: viewedKeys,
+        labels: CHIP_WORDS,
         selection: selectionOf(group),
-        label: "Groups",
+        label: "Viewed and your lists",
         onNavigate: (sel) => {
           if (tapped) { tapped = false; pick(valueOf(sel)); return; }
           corrected(valueOf(sel));
@@ -933,10 +1108,10 @@
         if (chip.left < box.left || chip.right > box.right) row.scrollLeft += chip.left - box.left - 16;
       }
     }
-    // A deliberate change of group is a history entry: Back undoes it, a reload keeps it.
+    // A deliberate change of list is a history entry: Back undoes it, a reload keeps it.
     function pick(id) {
       rememberScroll();
-      history.pushState({}, "", formatRoute({ group: id }));
+      pushRoute({ group: id });
       setGroup(id);
     }
     function setGroup(id) {
@@ -949,16 +1124,65 @@
       redraw();
     }
     function emptyNote() {
-      const text = group === UNGROUPED ? "Every song is in a group." : `No songs in ${groups.labelOf(group)} yet.`;
+      if (!group) {
+        return h("div", { class: "empty" }, h("p", { class: "muted" },
+          "Nothing in Viewed. The songs you open appear here, the latest first; your lists are in the chips above."));
+      }
+      const text = group === UNGROUPED ? "Every song is in a list." : `No songs in ${groups.labelOf(group)} yet.`;
       return h("div", { class: "empty" }, h("p", { class: "muted" }, text),
-        h("button", { type: "button", class: "text", onclick: () => pick("") }, "Show all songs"));
+        h("button", { type: "button", class: "text", onclick: () => pick("") }, "Back to Viewed"));
+    }
+    // Out of Viewed at once, with an Undo in the toast; the song stays stored and in its lists.
+    async function removeFromViewed(song) {
+      const at = viewedAt.get(song.key);
+      if (at === undefined) return;
+      const hadFocus = listHost.contains(document.activeElement);
+      const index = viewedKeys().indexOf(song.key);
+      viewedAt.delete(song.key);
+      redraw();
+      if (hadFocus) { // keep the keyboard where it was: the next row's button, or the last one
+        const buttons = listHost.querySelectorAll("button.remove");
+        const next = buttons[Math.min(index, buttons.length - 1)];
+        if (next) next.focus();
+      }
+      const name = `“${song.title || song.key}”`;
+      let gone = false;
+      try {
+        const response = await fetch(CONFIG.api + "/viewed?" + new URLSearchParams({ key: song.key }), { method: "DELETE", credentials: "same-origin" });
+        gone = response.ok || response.status === 404;
+      } catch (_) { /* no connection: put it back below */ }
+      if (!gone) {
+        viewedAt.set(song.key, at);
+        redraw();
+        toast(`${name} could not be taken out of Viewed. Check the connection and try again.`);
+        return;
+      }
+      toast(`Removed ${name} from Viewed.`, { action: "Undo", onAction: () => putBack(song, at) });
+    }
+    async function putBack(song, at) {
+      viewedAt.set(song.key, at);
+      redraw();
+      try {
+        const response = await fetch(CONFIG.api + "/viewed?" + new URLSearchParams({ key: song.key, at: String(at) }), { method: "POST", credentials: "same-origin" });
+        if (response.ok) return;
+      } catch (_) { /* below */ }
+      viewedAt.delete(song.key);
+      redraw();
+      toast(`“${song.title || song.key}” could not be put back in Viewed.`);
     }
     function drawList() {
       const items = shown();
       const visible = new Set(items.map((s) => s.key));
       for (const key of [...selected]) if (!visible.has(key)) selected.delete(key); // never act on a hidden song
       if (!items.length) listHost.replaceChildren(emptyNote());
-      else listHost.replaceChildren(editing ? pickList(items, selected, sync) : songList(items));
+      else if (editing) listHost.replaceChildren(pickList(items, selected, sync));
+      else {
+        listHost.replaceChildren(songList(items, {
+          fromLabel: viewName(),
+          onRemove: group ? null : removeFromViewed,
+          removeLabel: "Remove from Viewed",
+        }));
+      }
     }
     function drawArrange() {
       if (!wideScreen || !wideScreen.matches || !groups.space || !groups.list().length) {
@@ -969,8 +1193,8 @@
       if (tree && tree.space === groups.space) { tree.renderer.render(); return; }
       const host = h("div", { class: "group-tree" });
       const details = h("details", { class: "arrange", ontoggle: () => { arrangeOpen = details.open; } },
-        h("summary", {}, "Arrange groups"),
-        h("p", { class: "muted hint" }, "Drag a song or a group onto a group to add it there. Tap a song to open it."),
+        h("summary", {}, "Arrange lists"),
+        h("p", { class: "muted hint" }, "Drag a song or a list onto a list to add it there. Tap a song to open it."),
         host);
       details.open = arrangeOpen;
       const renderer = groups.zg.renderTree(host, groups.space, {
@@ -983,9 +1207,9 @@
     }
     function openSong(song) {
       rememberScroll();
-      navigate({ song: song.key, t: prefs.transposeOf(song.key) }, { state: { from: "search", title: song.title, artist: song.artist } });
+      navigate({ song: song.key, t: prefs.transposeOf(song.key) }, { state: { from: "list", fromLabel: viewName(), title: song.title, artist: song.artist } });
     }
-    // Counts, chips, list and tree: after any change to the groups. The menu stays.
+    // Counts, chips, list and tree: after any change to the lists or to Viewed. The menu stays.
     function redraw() {
       drawNav();
       drawList();
@@ -1011,7 +1235,7 @@
       navHost, actions, menuHost, listHost, arrangeHost);
     return { element, setGroup, redraw };
   }
-  let arrangeOpen = false; // "Arrange groups" stays open across redraws, for this page's lifetime
+  let arrangeOpen = false; // "Arrange lists" stays open across redraws, for this page's lifetime
 
   function pickList(songs, selected, onChange) {
     return h("ul", { class: "songs picking" }, songs.map((song) => h("li", {}, h("label", {},
@@ -1023,19 +1247,33 @@
       song.artist && h("span", { class: "artist" }, song.artist)))));
   }
 
-  function songList(songs) {
-    return h("ul", { class: "songs" }, songs.map((song) => {
+  // Songs as rows that open them. `fromLabel` names this list on the song's way back ("← Results");
+  // a hit's `highlight` marks the matched words and a lyrics hit shows the line that matched;
+  // `onRemove(song, row)` adds a button that takes the song out of this list (Viewed).
+  function songList(songs, { fromLabel = "", onRemove = null, removeLabel = "" } = {}) {
+    return h("ul", { class: "songs" + (onRemove ? " removable" : "") }, songs.map((song) => {
       const route = { song: song.key, t: prefs.transposeOf(song.key) };
-      return h("li", {}, h("a", {
+      const marks = song.highlight || {};
+      const snippet = song.snippet && h("span", { class: "snippet" }, marked(song.snippet.text, song.snippet.spans));
+      const link = h("a", {
         href: formatRoute(route),
         onclick: (e) => {
           if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // let new-tab work
           e.preventDefault();
           rememberScroll();
-          navigate(route, { state: { from: "search", title: song.title, artist: song.artist } });
+          navigate(route, { state: { from: "list", fromLabel, title: song.title, artist: song.artist } });
         },
-      }, h("span", { class: "title" }, song.title || song.key), song.artist && h("span", { class: "artist" }, song.artist),
-        groupLine(song.key)));
+      }, h("span", { class: "title" }, marked(song.title || song.key, marks.title)),
+      song.artist && h("span", { class: "artist" }, marked(song.artist, marks.artist)),
+      snippet, groupLine(song.key));
+      const row = h("li", {}, link);
+      if (onRemove) {
+        row.append(h("button", {
+          type: "button", class: "icon remove", title: removeLabel, "aria-label": `${removeLabel}: ${song.title || song.key}`,
+          onclick: () => onRemove(song, row),
+        }, "×"));
+      }
+      return row;
     }));
   }
 
@@ -1097,18 +1335,17 @@
     const groupsButton = h("button", { type: "button", class: "in-groups-button", hidden: true, "aria-expanded": "false", "data-panel": "groups" });
     const byline = h("p", { class: "byline" }, artist, capo, groupsButton);
     document.title = `${known.title || route.song} · ${CONFIG.title}`;
-    const back = h("a", {
+    // Home is always one tap away. "← Results" (or the list's name) goes back to the list this
+    // song was opened from, when that is the entry underneath and is not home itself (the home
+    // control does that); a song reached by a pasted link has only home.
+    const cameFrom = (known.from === "list" || known.from === "search") && homeDistance() !== 1;
+    const back = cameFrom && h("a", {
       href: location.pathname, class: "back",
-      onclick: (e) => {
-        e.preventDefault();
-        // Back to the list this song was opened from, when it is the page underneath; a song
-        // reached by a pasted link has nothing of ours underneath, so go to search
-        if (known.from === "search") history.back();
-        else { delete app.dataset.song; navigate({ q: "", lyrics: "" }); }
-      },
-    }, "← Search");
+      onclick: (e) => { e.preventDefault(); history.back(); },
+    }, `← ${known.fromLabel || "Back"}`);
     const body = h("section", { class: "song-body" });
-    app.replaceChildren(h("header", { class: "song-head" }, back, heading, byline), body);
+    const nav = h("div", { class: "song-nav" }, homeLink(), back);
+    app.replaceChildren(h("header", { class: "song-head" }, nav, heading, byline), body);
     if (!sameSong) heading.focus({ preventScroll: true });
 
     const spinner = loading("Opening the song…");
@@ -1126,6 +1363,7 @@
     }
     if (gen !== generation) return;
     songCache.set(route.song, song);
+    if (!sameSong) recordView(route.song); // after /song, which stores it: only stored songs are viewed
     const t = wrapShift(route.t, song); // a URL may name any shift; the song offers -5..+6
     if (t !== route.t) {
       route = { ...route, t };
@@ -1170,15 +1408,22 @@
     }
   }
 
+  // Opening a song puts it at the top of Viewed, on the server (so every device of the viewer
+  // shows it). A failure costs nothing but the order of that list: no retry, no message.
+  function recordView(key) {
+    fetch(CONFIG.api + "/viewed?" + new URLSearchParams({ key }), { method: "POST", credentials: "same-origin", keepalive: true })
+      .catch(() => {});
+  }
+
   // The song's groups, as a muted line under the title ("in Campfire · Slow ones", or "Add to
   // a group"): it opens the same tag menu as the library's Group….
   function drawGroupsButton(button, key) {
     if (!groups.space) { button.hidden = true; return; }
     const names = groups.groupsOf(key).map((id) => groups.labelOf(id));
     button.hidden = false;
-    button.textContent = names.length ? `in ${names.join(" · ")}` : "Add to a group";
+    button.textContent = names.length ? `in ${names.join(" · ")}` : "Add to a list";
     button.classList.toggle("none", !names.length);
-    button.title = names.length ? "Change this song's groups" : "Put this song in a group";
+    button.title = names.length ? "Change this song's lists" : "Put this song in a list";
   }
 
   let stopSongGroups = null;
@@ -1257,7 +1502,7 @@
     }, "Aa");
     const more = h("button", {
       type: "button", class: "text tool", "aria-expanded": "false", "data-panel": "more",
-      title: reading ? "Print, groups" : "Back to reading, groups", "aria-label": "More",
+      title: reading ? "Print, lists" : "Back to reading, lists", "aria-label": "More",
       onclick: () => panels.toggle("more", builders.more),
     }, "⋯");
 
@@ -1274,7 +1519,7 @@
       reading
         ? item("Print or save as PDF", "One A4 page, the lyrics as large as fit", () => { openPanel = null; goSong(route, { view: "print" }); })
         : item("Back to reading", null, () => { openPanel = null; goSong(route, { view: "read" }); }),
-      groups.space && item("Groups…", "Put this song in a group, or take it out", openGroups));
+      groups.space && item("Lists…", "Put this song in a list, or take it out", openGroups));
   }
 
   // Auto-scroll: a ▶ that floats over the song. While it runs (and for a moment after a tap)
