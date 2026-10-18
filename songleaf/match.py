@@ -34,6 +34,8 @@ TYPO_MIN_LENGTH = 4
 TWO_TYPOS_MIN_LENGTH = 10
 #: A query word shorter than this finds only itself, not every word it starts ("a").
 PREFIX_MIN_LENGTH = 2
+#: The words of a query that are matched against titles and artists: a pasted verse stops here.
+MAX_QUERY_WORDS = 12
 
 
 def query_words(query: str) -> list[str]:
@@ -131,8 +133,8 @@ class WordIndex:
 
     A text matches a query when the query is *inside* it (every query word is a word of the
     text, or starts one: ``"paper bo"`` finds *Paper Boats*) or the text is inside the query
-    (every word of the text is a word of the query: ``"paper boats band"`` finds *Paper
-    Boats*). In the first direction, a query word of :data:`TYPO_MIN_LENGTH` letters or more
+    (every word of the text is a word of the query, two at least: ``"paper boats band"``
+    finds *Paper Boats*). In the first direction, a query word of :data:`TYPO_MIN_LENGTH` letters or more
     also matches the words it is a typo of; in the second, the text's words must be there as
     typed, or every short title would be a typo of some word of a long query. Unlike a fuzzy score over the whole string, a word is never matched by
     a piece of another word, so *As* is not a match for ``"oasis"``.
@@ -147,6 +149,8 @@ class WordIndex:
     ([0], [0])
     >>> sorted(WordIndex(["Scream"]).matching("silver stream"))  # one letter from "stream"
     []
+    >>> sorted(WordIndex(["Day", "The Day"]).matching("is gonna be the day"))  # one word is not enough
+    [1]
     >>> sorted(titles.matching("oasis")), sorted(titles.matching("qui"))
     ([], [1])
     """
@@ -206,7 +210,7 @@ class WordIndex:
 
     def matching(self, query: str) -> set[int]:
         """The rows whose text holds the query, or is held by it, word by word."""
-        words = query_words(query)
+        words = query_words(query)[:MAX_QUERY_WORDS]
         if not words:
             return set()
         inside = None  # rows holding every query word (or a word it starts)
@@ -221,5 +225,10 @@ class WordIndex:
         for position in exact_ids:
             for row in self._rows[position]:
                 covered[row] = covered.get(row, 0) + 1
-        held = {row for row, n in covered.items() if n >= self._sizes[row]}
+        # a whole text inside a longer query must hold two of its words: one word ("Day",
+        # "Be") is inside almost any line of lyrics typed as a query
+        least = min(2, len(words))
+        held = {
+            row for row, n in covered.items() if n >= self._sizes[row] and n >= least
+        }
         return (inside or set()) | held

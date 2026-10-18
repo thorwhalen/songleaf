@@ -177,3 +177,22 @@ def test_identity_comes_from_the_host_never_from_a_header(client):
     client.post("/viewed", params={"key": "memory:1"}, headers={"x-user-id": "a"})
     assert [v["key"] for v in client.get("/viewed").json()] == ["memory:1"]
     assert client.get("/viewed", headers={"x-test-session": "a"}).json() == []
+
+
+def test_a_damaged_viewed_file_starts_afresh_and_never_blocks_a_delete(store, root):
+    tools.view("memory:1", user="a", store=store, library_root=root)
+    folder = os.path.join(root, "library", "viewed")
+    for name in os.listdir(folder):
+        if name.endswith(".json"):
+            with open(os.path.join(folder, name), "w") as file:
+                file.write("{not json")
+    assert tools.viewed(user="a", store=store, library_root=root) == []
+    assert tools.forget("memory:1", store=store, library_root=root)["deleted"]
+    tools.view("memory:2", user="a", store=store, library_root=root)
+    assert [
+        v["key"] for v in tools.viewed(user="a", store=store, library_root=root)
+    ] == ["memory:2"]
+
+
+def test_a_search_longer_than_a_line_is_refused(client):
+    assert client.get("/search", params={"q": "word " * 100}).status_code == 422

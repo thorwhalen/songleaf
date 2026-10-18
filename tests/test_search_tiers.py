@@ -174,3 +174,26 @@ def test_hits_mark_the_words_that_matched(library):
 def test_the_narrower_field_search_still_works(library):
     rows = tools.search(lyrics="silver light", **library)
     assert [(r["key"], r["match"]) for r in rows] == [("kaggle_chords:3", "")]
+
+
+def test_only_the_first_songs_of_a_list_are_list_hits_the_rest_keep_their_kind(
+    library,
+):
+    edges = [
+        {"id": "a", "parent": "Paper", "child": "kaggle_chords:0", "kind": "contains"},
+        {"id": "b", "parent": "Paper", "child": "kaggle_chords:4", "kind": "contains"},
+    ]
+    save_groups({"nodes": [], "edges": edges}, revision=1, root=library["library_root"])
+    rows = tools.search("paper", list_songs=1, **library)
+    assert [(r["match"], r["key"]) for r in rows][:2] == [
+        ("list", "kaggle_chords:0"),
+        ("title", "kaggle_chords:1"),
+    ]
+    assert ("list", "kaggle_chords:4") not in [(r["match"], r["key"]) for r in rows]
+
+
+def test_a_one_word_title_inside_a_long_query_is_not_a_title_match(corpus):
+    # "As" would be inside "as long as the road": a lyric typed whole finds lyrics, not "As"
+    titles = _keys(corpus.search_tiers("as long as the quiet road")["title"])
+    assert "5" not in titles  # "As": one word
+    assert titles == ["2"]  # "Quiet Road": two words of the query, a title inside it

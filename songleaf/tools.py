@@ -25,6 +25,7 @@ def search(
     artist: str = "",
     lyrics: str = "",
     limit: int = 10,
+    list_songs: int = 3,
     sources=None,
     store=None,
     library_root=None,
@@ -32,8 +33,9 @@ def search(
     """Find songs with one query: in your lists' names, then titles, artists and lyrics.
 
     With only ``query``, every song comes once, tagged with where it matched (``match``):
-    ``"list"`` (a stored song in a list whose name the query names; ``list`` and
-    ``list_name`` say which), then ``"title"``, ``"artist"`` and ``"lyrics"``, in that order,
+    ``"list"`` (the first ``list_songs`` stored songs of each list whose name the query
+    names; ``list`` and ``list_name`` say which, and the list's other songs are found in
+    the later kinds as usual), then ``"title"``, ``"artist"`` and ``"lyrics"``, in that order,
     at most ``limit`` of each, best first within each. A song that matches its title and
     its lyrics is a title match only. ``highlight`` holds the matched words of the title and
     artist (and of ``list_name``) as ``[start, end]`` spans; a lyrics match carries
@@ -54,7 +56,9 @@ def search(
         return [_tagged(hit.to_dict(), "", query) for hit in hits]
     if not query.strip():
         return []
-    rows = _list_hits(query, limit=limit, store=store, library_root=library_root)
+    rows = _list_hits(
+        query, per_list=list_songs, store=store, library_root=library_root
+    )
     seen = {row["key"] for row in rows}
     for kind, hits in _sources.search_tiers(
         query, limit=limit, sources=sources
@@ -82,8 +86,8 @@ def _tagged(row: dict, kind: str, query: str) -> dict:
     return row
 
 
-def _list_hits(query: str, *, limit: int, store, library_root) -> list[dict]:
-    """The stored songs of the lists whose name ``query`` names, at most ``limit`` per list."""
+def _list_hits(query: str, *, per_list: int, store, library_root) -> list[dict]:
+    """The first stored songs of the lists whose name ``query`` names, ``per_list`` of each."""
     from songleaf.library import list_members, lists_matching, read_groups
 
     snapshot = read_groups(root=library_root)["snapshot"]
@@ -95,7 +99,7 @@ def _list_hits(query: str, *, limit: int, store, library_root) -> list[dict]:
     for found in matched:
         taken = 0
         for key in list_members(snapshot, found["id"]):
-            if taken >= limit:
+            if taken >= per_list:
                 break
             if key in seen or not _is_stored(store, key):
                 continue

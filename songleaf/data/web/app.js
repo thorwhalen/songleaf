@@ -463,6 +463,7 @@
     }
     document.body.append(el);
     setTimeout(() => el.remove(), action ? TOAST_ACTION_MS : TOAST_MS);
+    return el;
   }
   let lastToast = "";
   groups.onChange((event) => {
@@ -511,21 +512,23 @@
   }
 
   // Home: the library on Viewed, no parameters. Every entry records how many steps back the
-  // nearest home entry is (`home`), when this page made the entries in between; `null` when it
-  // cannot know (a pasted link). Nothing else calls history.pushState or replaceState.
+  // nearest home entry is: `behind` (strictly behind it, fixed when the entry is made) and
+  // `home` (0 when the entry shows home itself, else `behind`); `null` when this page cannot
+  // know (it was opened on a pasted link). A replace never moves an entry, so it keeps
+  // `behind`. Nothing else calls history.pushState or replaceState.
   const isHome = (route) => !route.song && !route.q && !route.group;
   const homeDistance = () => (history.state && Number.isInteger(history.state.home) ? history.state.home : null);
+  const homeBehind = () => (history.state && Number.isInteger(history.state.behind) ? history.state.behind : null);
   function pushRoute(route, state = {}) {
     const url = formatRoute(route);
     if (url === location.pathname + location.search) { replaceRoute(route, { ...(history.state || {}), ...state }); return; }
     const from = homeDistance();
-    history.pushState({ ...state, home: isHome(route) ? 0 : from === null ? null : from + 1 }, "", url);
+    const behind = from === null ? null : from + 1;
+    history.pushState({ ...state, behind, home: isHome(route) ? 0 : behind }, "", url);
   }
   function replaceRoute(route, state = history.state || {}) {
-    const from = homeDistance();
-    // a home entry turned into another view no longer is one; any other keeps its distance
-    const home = isHome(route) ? 0 : from === 0 ? null : from;
-    history.replaceState({ ...state, home }, "", formatRoute(route));
+    const behind = homeBehind();
+    history.replaceState({ ...state, behind, home: isHome(route) ? 0 : behind }, "", formatRoute(route));
   }
 
   function navigate(route, { replace = false, state = {} } = {}) {
@@ -671,7 +674,7 @@
     // The entry the page was opened on: home is 0 steps back from itself; from any other view
     // it is unknown (a pasted link), so the home control makes a new entry there.
     if (fresh && !(history.state && "home" in history.state)) {
-      history.replaceState({ ...(history.state || {}), home: isHome(route) ? 0 : null }, "", location.href);
+      history.replaceState({ ...(history.state || {}), behind: null, home: isHome(route) ? 0 : null }, "", location.href);
     }
     if (!route.song) { // a song left (Back, or the link): opening it again starts afresh
       delete app.dataset.song;
@@ -698,11 +701,19 @@
     // A refinement refreshes the results only: the input stays as it is, so typing (and a
     // phone's keyboard) is never interrupted. Starting a search from a view without one is
     // going somewhere (a new entry, so Back returns there); refining it replaces the entry.
+    // The view a search was started from (`searchFrom`, a list or "" for home) is where clearing
+    // it returns, in the same entry: typing again refines that entry instead of pushing another.
     const refine = () => {
       clearTimeout(searchTimer);
       const current = readRoute();
-      const next = { q: query.value.trim(), group: current.group };
-      if (next.q && !current.q) { rememberScroll(); pushRoute(next); } else replaceRoute(next);
+      const state = history.state || {};
+      const startedHere = typeof state.searchFrom === "string";
+      const q = query.value.trim();
+      const next = { q, group: q ? current.group : startedHere ? state.searchFrom : current.group };
+      if (q && !current.q && !startedHere) {
+        rememberScroll();
+        pushRoute(next, { searchFrom: current.group });
+      } else replaceRoute(next);
       document.title = titleOf(next.q);
       home.hidden = isHome(readRoute());
       generation += 1;
@@ -752,7 +763,7 @@
   async function showHits(route, results, gen, after = {}) {
     const spinner = loading("Searching…", "The first search after a restart loads the song index, which takes a few seconds.");
     results.replaceChildren(spinner);
-    const params = new URLSearchParams({ q: route.q, limit: "25" });
+    const params = new URLSearchParams({ q: route.q, limit: "25", list_songs: String(LIST_PREVIEW) });
     try {
       const hits = await getJSON("/search?" + params);
       if (gen !== generation) return;
@@ -810,22 +821,25 @@
         },
       }, h("span", { class: "list-name" }, marked(found.name, found.spans)),
       h("span", { class: "list-count muted" }, `${total} song${total === 1 ? "" : "s"} ›`));
-      return h("div", { class: "list-match" }, entry, songList(found.songs.slice(0, LIST_PREVIEW), { fromLabel: "Results" }));
+      return h("div", { class: "list-match" }, entry, songList(found.songs, { fromLabel: "Results" }));
     });
   }
 
-  // Text with its matched parts in <mark> (spans from the server, [start, end] each).
+  // Text with its matched parts in <mark> (spans from the server, [start, end] each, counted
+  // in characters as Python counts them, so an emoji before a match does not shift it).
   function marked(text, spans) {
     if (!spans || !spans.length) return text;
+    const chars = Array.from(text);
+    const piece = (a, b) => chars.slice(a, b).join("");
     const out = [];
     let at = 0;
     for (const [start, end] of spans) {
-      if (start < at || end > text.length) continue;
-      if (start > at) out.push(text.slice(at, start));
-      out.push(h("mark", {}, text.slice(start, end)));
+      if (start < at || end > chars.length) continue;
+      if (start > at) out.push(piece(at, start));
+      out.push(h("mark", {}, piece(start, end)));
       at = end;
     }
-    if (at < text.length) out.push(text.slice(at));
+    if (at < chars.length) out.push(piece(at));
     return out;
   }
 
@@ -1157,7 +1171,13 @@
         toast(`${name} could not be taken out of Viewed. Check the connection and try again.`);
         return;
       }
-      toast(`Removed ${name} from Viewed.`, { action: "Undo", onAction: () => putBack(song, at) });
+      // Removals in quick succession share one toast, and its Undo puts them all back.
+      const batch = undoBatch && undoBatch.toast.isConnected ? undoBatch : { removed: [] };
+      batch.removed.push({ song, at });
+      const text = batch.removed.length === 1 ? `Removed ${name} from Viewed.` : `Removed ${batch.removed.length} songs from Viewed.`;
+      const removed = batch.removed;
+      batch.toast = toast(text, { action: "Undo", onAction: () => { undoBatch = null; removed.forEach((r) => putBack(r.song, r.at)); } });
+      undoBatch = batch;
     }
     async function putBack(song, at) {
       viewedAt.set(song.key, at);
@@ -1236,6 +1256,7 @@
     return { element, setGroup, redraw };
   }
   let arrangeOpen = false; // "Arrange lists" stays open across redraws, for this page's lifetime
+  let undoBatch = null; // the songs the Undo toast on screen would put back in Viewed: {removed, toast}
 
   function pickList(songs, selected, onChange) {
     return h("ul", { class: "songs picking" }, songs.map((song) => h("li", {}, h("label", {},

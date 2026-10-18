@@ -154,24 +154,33 @@ def list_members(snapshot: dict, list_id: str) -> list[str]:
     return songs
 
 
-def lists_matching(query: str, snapshot: dict, *, min_ratio: float = 80) -> list[dict]:
+def lists_matching(query: str, snapshot: dict) -> list[dict]:
     """The lists whose name the query names, best first: ``[{"id", "name", "spans"}]``.
 
     A list matches when every word of the query starts a word of its name (``"camp"``
-    finds Campfire, ``"to le"`` finds To learn), or when the whole name is the query give
-    or take a typo (``fuzz.ratio`` of at least ``min_ratio``). A word of the query that is
-    longer than any word of the name never matches, so a short name (``Fun``) is not found
-    by every query that contains it (``funeral``). ``spans`` are the matched parts of the name.
+    finds Campfire, ``"to le"`` finds To learn; a one-letter word must be a whole word), or
+    when the whole name, four letters or more, is the query give or take one typo (a
+    letter added, dropped, changed or two swapped). So a short name (``Fun``) is not found
+    by every query that holds it (``funeral``, ``funk``). ``spans`` are the matched parts
+    of the name.
 
     >>> snap = {"nodes": [{"id": "Campfire"}, {"id": "To learn"}, {"id": "Fun"}], "edges": []}
     >>> [m["id"] for m in lists_matching("camp", snap)]
     ['Campfire']
-    >>> [m["id"] for m in lists_matching("campfier", snap)], lists_matching("funeral", snap)
+    >>> [m["id"] for m in lists_matching("campfier", snap)], lists_matching("funk", snap)
     (['Campfire'], [])
+    >>> lists_matching("t", snap)
+    []
     """
-    from rapidfuzz import fuzz, utils
+    from rapidfuzz import utils
+    from rapidfuzz.distance import DamerauLevenshtein
 
-    from songleaf.match import query_words, word_spans
+    from songleaf.match import (
+        PREFIX_MIN_LENGTH,
+        TYPO_MIN_LENGTH,
+        query_words,
+        word_spans,
+    )
 
     words = query_words(query)
     if not words:
@@ -180,12 +189,19 @@ def lists_matching(query: str, snapshot: dict, *, min_ratio: float = 80) -> list
     found = []
     for list_id, name in list_names(snapshot).items():
         name_words = query_words(name)
-        prefixes = all(any(n.startswith(w) for n in name_words) for w in words)
-        ratio = fuzz.ratio(wanted, utils.default_process(name))
-        if not (prefixes or ratio >= min_ratio):
+        prefixes = all(
+            any(
+                n.startswith(w) if len(w) >= PREFIX_MIN_LENGTH else n == w
+                for n in name_words
+            )
+            for w in words
+        )
+        whole = utils.default_process(name)
+        edits = DamerauLevenshtein.distance(wanted, whole)
+        typo = len(whole) >= TYPO_MIN_LENGTH and edits <= 1
+        if not (prefixes or typo):
             continue
-        exact = utils.default_process(name) == wanted
-        rank = (not exact, not prefixes, -ratio, name.lower())
+        rank = (edits != 0, not prefixes, edits, name.lower())
         found.append(
             (rank, {"id": list_id, "name": name, "spans": word_spans(name, query)})
         )

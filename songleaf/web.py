@@ -110,6 +110,7 @@ READER_LAYOUT: dict[str, dict[str, str]] = {
     "shade": {"true": "shaded"},
 }
 _MAX_LIMIT = 50
+_MAX_QUERY_CHARS = 200  # a remembered line, not a pasted song
 _CLOCK_SLACK_SECONDS = (
     300  # an undo's ``at`` may be this far ahead of the server's clock
 )
@@ -211,11 +212,12 @@ def mk_app(
 
     @app.get("/search")
     def search(
-        q: str = "",
+        q: str = Query("", max_length=_MAX_QUERY_CHARS),
         title: str = "",
         artist: str = "",
         lyrics: str = "",
         limit: int = Query(20, ge=1, le=_MAX_LIMIT),
+        list_songs: int = Query(3, ge=0, le=_MAX_LIMIT),
     ) -> list[dict]:
         q, title, artist, lyrics = (text.strip() for text in (q, title, artist, lyrics))
         if not (q or title or artist or lyrics):
@@ -230,7 +232,12 @@ def mk_app(
                 sources=sources,
             )
         return tools.search(
-            q, limit=limit, sources=sources, store=store, library_root=library_root
+            q,
+            limit=limit,
+            list_songs=list_songs,
+            sources=sources,
+            store=store,
+            library_root=library_root,
         )
 
     @app.get("/viewed")

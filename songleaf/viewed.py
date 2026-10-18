@@ -144,9 +144,15 @@ def _read(path: str) -> dict[str, float]:
             document = json.load(file)
     except FileNotFoundError:
         return {}
-    views = document.get("views", {}) if isinstance(document, dict) else {}
+    except (
+        OSError,
+        ValueError,
+    ):  # unreadable or not JSON: start that viewer's list afresh
+        return {}
+    if not isinstance(document, dict) or not isinstance(document.get("views"), dict):
+        return {}
     return {
         str(key): float(at)
-        for key, at in views.items()
-        if isinstance(at, (int, float)) and not isinstance(at, bool)
+        for key, at in document["views"].items()
+        if isinstance(at, (int, float)) and not isinstance(at, bool) and at == at
     }

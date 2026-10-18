@@ -311,11 +311,11 @@ class KaggleChordsSource:
 
     def _title_and_artist_rows(self, query: str) -> tuple[set[int], set[int]]:
         """The rows that are title matches, and those that are artist matches (none in both)."""
-        from songleaf.match import query_words
+        from songleaf.match import MAX_QUERY_WORDS, query_words
 
         titles, artists = self._title_words, self._artist_words
         in_either, title_only = None, set()
-        for word in query_words(query):
+        for word in query_words(query)[:MAX_QUERY_WORDS]:
             in_title, in_artist = titles.rows_with(word), artists.rows_with(word)
             either = in_title | in_artist
             in_either = either if in_either is None else in_either & either
