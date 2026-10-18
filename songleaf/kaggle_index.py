@@ -196,6 +196,8 @@ class KaggleChordsIndex(KaggleChordsSource):
         "_popularity",
         "_labels",
         "_row_of_id",
+        "_title_words",
+        "_artist_words",
     )
 
     def _version(self):
@@ -216,6 +218,10 @@ class KaggleChordsIndex(KaggleChordsSource):
     def search(self, query: str = "", **constraints):
         self._reload_if_rebuilt()
         return super().search(query, **constraints)
+
+    def search_tiers(self, query: str, *, limit: int = 10):
+        self._reload_if_rebuilt()
+        return super().search_tiers(query, limit=limit)
 
     def get(self, song_id: str):
         self._reload_if_rebuilt()

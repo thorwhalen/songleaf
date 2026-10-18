@@ -8,7 +8,7 @@
 # Needs git, node and npm. Builds in a temporary directory; touches nothing but the two
 # vendored files. Once zodal-groups >= 0.2.0 is on npm, build from the npm packages instead.
 set -euo pipefail
-REF="${1:-094a74e}"   # i2mint/zodal-groups, the commit the vendored files were built from
+REF="${1:-1403aef}"   # i2mint/zodal-groups, the commit the vendored files were built from
 REPO="https://github.com/i2mint/zodal-groups.git"
 HERE="$(cd "$(dirname "$0")/../.." && pwd)"
 OUT="$HERE/songleaf/data/web/vendor"

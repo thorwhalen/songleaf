@@ -1,5 +1,5 @@
 Seams: (1) `sources=` = the Kaggle chords-and-lyrics corpus via `sung` · (2) `store=` = JSON files under `~/.local/share/songleaf/songs/` · (3) `renderer=` = the dense one-page A4 PDF.
-Surfaces built: CLI (`python -m songleaf`, `cw` over `songleaf.tools`); HTTP + page (`songleaf.web.mk_app`, the `web` extra), deployed as the private apps.thorwhalen.com/songleaf through the thin in-tree app in the tw_platform repo. Asked, not built: MCP, shipped skill.
+Surfaces built: CLI (`python -m songleaf`, `cw` over `songleaf.tools`); HTTP + page (`songleaf.web.mk_app`, the `web` extra), deployed as the private apps.thorwhalen.com/songleaf through the thin in-tree app in the tw_platform repo. Asked, not built: MCP, shipped skill. A source may add `search_tiers(query, *, limit)` (the one-field search); `sources.search_tiers` falls back to three `search` calls for one that does not.
 Rationale and which defaults are provisional: the "v1 architecture: seams and surfaces" Discussion.
 
 # songleaf — dev map
@@ -41,6 +41,9 @@ python -m songleaf sheet "10000 hours justin bieber"   # -> a one-page A4 PDF un
 - The reader's look settings are declared once, as `LOOK_SCHEMA` in `app.js`; the Aa sheet is generated from it by `renderLookSheet`. A new setting is a row in that table, not a hand-built control. It is the swap point for zodal-dials once its vanilla renderer can draw a phone sheet (see the issue linked in the PR that introduced it).
 - Print layout labels live server-side (`songleaf.web.LAYOUT_CONTROLS`, served by `/layouts`); a new layout option needs a label there (a test fails otherwise). The page holds no copy.
 - Library group navigation is zodal-groups' `renderGroupChips` (vendored). The chosen group is `?group=` / `?ungrouped=1`: a chip tap pushes one history entry, a correction by the widget (the group went away) replaces it, and Back calls `setSelection`.
+- Search is one query (`tools.search(query)`): list names, then title, artist, lyrics, each song once, tagged `match`. Title and artist match through `songleaf.match.WordIndex` (built once per process from the index's columns, a few MB); fuzzy WRatio only ranks the candidates. Never reintroduce a WRatio pass over all 135K titles in a request: it is 150-450 ms each and matches pieces of words.
+- The page says "lists"; the model, the stored `groups.json`, the URL (`?group=`) and code identifiers say "groups". User-facing copy says lists, always.
+- Viewed is per viewer: `request.state.user_id` (set by the host, enlace_auth) hashed into `library/viewed/<hash>.json` (`songleaf.viewed`). Never read identity from a header, never write the id itself anywhere.
 - Groups: the page uses zodal-groups (profile "labels") through a vendored bundle (`songleaf/data/web/vendor/`, recipe in `misc/vendor/`); the server keeps the snapshot as one revisioned JSON document (`songleaf.library`) and checks only its structure. Never edit the vendored files by hand: rebuild them.
 - The deployed app reads the corpus zip from the server's data root (`datasets/chords-and-lyrics/`), never from the repo. Who may open the app is set in the tw_platform repo (private), never here.
 - The linked-artifact model is a plain standoff model (`songleaf.model`), not a `lacing` store; see the Discussion for why and for the adapter plan.

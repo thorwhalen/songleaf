@@ -3,12 +3,22 @@
 ``mk_app()`` is a FastAPI app; mount it anywhere (``/api/songleaf`` on
 apps.thorwhalen.com). Its routes:
 
-- ``GET /search?q=&artist=&lyrics=&limit=``: hits, best first (``tools.search``)
+- ``GET /search?q=&limit=``: one query over your lists' names, titles, artists and lyrics
+  (``tools.search``): each song once, tagged with where it matched (``match``: ``list``,
+  ``title``, ``artist``, ``lyrics``, in that order), with the matched words as spans and,
+  for lyrics, the line that matched. ``title=``, ``artist=``, ``lyrics=`` narrow instead
+  (songs matching every field given), as before
 - ``GET /songs``: the stored songs, with title and artist
-- ``DELETE /songs?key=``: remove one from them, and from its groups (``tools.forget``)
-- ``GET /groups``, ``PUT /groups``: the library's groups, a zodal-groups snapshot with a
-  revision (:mod:`songleaf.library`); a save from a stale revision is a 409 carrying the
-  current groups
+- ``DELETE /songs?key=``: remove one from them, its lists and every Viewed list (``tools.forget``)
+- ``GET /viewed``: the songs the viewer opened, the most recent first (``tools.viewed``);
+  ``POST /viewed?key=[&at=]`` records an opening (``at``: put it back where an undo found
+  it), ``DELETE /viewed?key=`` takes a song out (it stays stored and in its lists). The
+  viewer is ``request.state.user_id`` as the host sets it (enlace_auth does, behind a
+  login); without one, everyone shares one list. The id is only hashed into a file name
+  (:mod:`songleaf.viewed`), never stored
+- ``GET /groups``, ``PUT /groups``: the library's lists (zodal-groups calls them groups), a
+  snapshot with a revision (:mod:`songleaf.library`); a save from a stale revision is a 409
+  carrying the current lists
 - ``GET /layouts``: the layout options a sheet can combine, the controls that choose them
   in plain words (:data:`LAYOUT_CONTROLS`), and the default colours
 - ``GET /song?key=``: the song as JSON (``tools.song``): text, chords, sections, its
@@ -47,6 +57,7 @@ import os
 import tempfile
 import re
 import threading
+import time
 from dataclasses import asdict, dataclass, replace
 from functools import lru_cache
 from importlib.resources import files
@@ -99,6 +110,10 @@ READER_LAYOUT: dict[str, dict[str, str]] = {
     "shade": {"true": "shaded"},
 }
 _MAX_LIMIT = 50
+_MAX_QUERY_CHARS = 200  # a remembered line, not a pasted song
+_CLOCK_SLACK_SECONDS = (
+    300  # an undo's ``at`` may be this far ahead of the server's clock
+)
 _PRIVATE_CACHE = {"Cache-Control": "private, max-age=300"}
 _COLOR_RE = re.compile(r"#[0-9a-fA-F]{6}")
 #: Allowed ranges of the numeric sheet parameters: (low, high).
@@ -197,18 +212,54 @@ def mk_app(
 
     @app.get("/search")
     def search(
-        q: str = "",
+        q: str = Query("", max_length=_MAX_QUERY_CHARS),
         title: str = "",
         artist: str = "",
         lyrics: str = "",
         limit: int = Query(20, ge=1, le=_MAX_LIMIT),
+        list_songs: int = Query(3, ge=0, le=_MAX_LIMIT),
     ) -> list[dict]:
         q, title, artist, lyrics = (text.strip() for text in (q, title, artist, lyrics))
         if not (q or title or artist or lyrics):
             return []
+        if title or artist or lyrics:  # the narrower search: no lists, no store
+            return tools.search(
+                q,
+                title=title,
+                artist=artist,
+                lyrics=lyrics,
+                limit=limit,
+                sources=sources,
+            )
         return tools.search(
-            q, title=title, artist=artist, lyrics=lyrics, limit=limit, sources=sources
+            q,
+            limit=limit,
+            list_songs=list_songs,
+            sources=sources,
+            store=store,
+            library_root=library_root,
         )
+
+    @app.get("/viewed")
+    def viewed(request: Request) -> list[dict]:
+        return tools.viewed(
+            user=viewer_of(request), store=store, library_root=library_root
+        )
+
+    @app.post("/viewed")
+    def view(request: Request, key: str, at: float = Query(0.0, ge=0)) -> dict:
+        if at > time.time() + _CLOCK_SLACK_SECONDS:
+            raise HTTPException(400, "at is in the future")
+        return tools.view(
+            key, user=viewer_of(request), at=at, store=store, library_root=library_root
+        )
+
+    @app.delete("/viewed")
+    def unview(request: Request, key: str) -> dict:
+        result = tools.unview(key, user=viewer_of(request), library_root=library_root)
+        if not result["removed"]:
+            raise SongNotFound(f"{key!r} is not in your Viewed list")
+        return result
 
     @app.get("/songs")
     def songs() -> list[dict]:
@@ -369,6 +420,16 @@ def mk_app(
         return Response(body, media_type=_UI_FILES[name])
 
     return app
+
+
+def viewer_of(request) -> str:
+    """Who is asking, as the host says (``request.state.user_id``), or ``""``: no one in particular.
+
+    Only the host can say: enlace_auth sets it behind a login and strips identity headers
+    a client sends, so this never reads a header.
+    """
+    user = getattr(request.state, "user_id", None)
+    return str(user) if user else ""
 
 
 def stored_keys(*, store=None) -> list[str]:
