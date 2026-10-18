@@ -40,11 +40,12 @@ The comparison of the largest font size each layout fits, over the same 2,000 so
 ## Command line
 
 ```bash
-python -m songleaf search "wonderwall oasis"              # fuzzy: typos and word order don't matter
-python -m songleaf search --artist oasis --lyrics "roads winding"
+python -m songleaf search "wonderwall oasis"              # one query: list names, then titles, artists, lyrics
+python -m songleaf search --artist oasis --lyrics "roads winding"   # narrower: every field given must match
 python -m songleaf sheet "wonderwall oasis" --output wonderwall.pdf
 python -m songleaf sheet "wonderwall oasis" --pick 2      # the second-best match
 python -m songleaf songs                                  # songs already stored
+python -m songleaf viewed                                 # the songs opened, the latest first
 python -m songleaf sheet kaggle_chords:1234               # a song by its key: no search
 python -m songleaf sheet kaggle_chords:1234 --refresh     # fetch it again from its source
 python -m songleaf sheet "wonderwall oasis" --transpose 2 # chords up a whole tone, spelled for the new key
@@ -66,6 +67,7 @@ songleaf.render_dense_a4(song, "wonderwall.pdf")  # {'font_size': ..., 'pages': 
 songleaf.render_sheet(song, "wonderwall-inline.pdf", layout="inline+two-column")
 
 songleaf.sheet("wonderwall oasis")  # search, store and render in one call
+songleaf.tools.search("wonderwall oasis")  # [{..., "match": "title", "highlight": {...}}, ...]
 songleaf.sheet("wonderwall oasis", layout="overlap+shaded")
 ```
 
@@ -137,7 +139,11 @@ site.get("/songleaf/", response_class=HTMLResponse)(
 )
 ```
 
-**Your songs** (the songs opened before) can be deleted, and grouped. Groups work like Gmail labels: a song can be in several groups, and a group can hold other groups. Chips above the list narrow it to a group (All, each group, Ungrouped); choosing a group that holds groups shows them in a second row. The chosen group is in the URL, so Back, reload and a shared link keep it. To file songs, tap the “in …” line under a song’s title (or pick several songs with **Edit** and use **Group…**): both open the same menu, where you tick groups or create one, then Apply. On a wide screen, **Arrange groups** shows the groups as a tree, where you can drag a song or a group onto a group (that is how groups go inside groups). Groups are shared by everyone using the app (one library). They are kept on the server as a [zodal-groups](https://github.com/i2mint/zodal-groups) snapshot with a revision (`songleaf.library`). A save made from an out-of-date revision is refused, and the page replays its changes on top of the newer groups, so two people editing at once don’t overwrite each other.
+**One search field** looks in four places at once and shows what it found in sections, in this order: **In your lists** (lists whose name matches, each opening the library on that list, with its first songs), **Titles**, **Artists** and **Lyrics**. A song appears once, in the first section it fits: a song whose title and lyrics both match is a title match. The matched words are marked, a lyrics match shows the line that matched, and when no title matches a quiet line says so. Titles and artists match word by word: a query can be part of a title (`wonder`), or hold a whole title and artist (`wonderwall oasis`), and a word of four letters or more forgives a typo. In each section the songs whose title and artist hold the most words of the query come first, then the closest, then the most popular. The research and design behind it are on [songleaf#34](https://github.com/thorwhalen/songleaf/pull/34).
+
+**Home** is the library on **Viewed**: the songs you opened, the latest first. It is kept on the server, per person when the host says who is asking (enlace passes the signed-in user; songleaf stores only a hash of the id), so it is the same on every device. The × beside a song takes it out of Viewed, with an Undo; it stays stored and in its lists, and the **Not in a list** chip and search still find it. A house icon at the top of every other view (search results, a list, a song) goes back home; when home is a known number of steps back it walks back to it, so it returns as you left it.
+
+**Lists** work like Gmail labels: a song can be in several lists, and a list can hold other lists. Chips above the songs narrow them to a list (Viewed, each list, Not in a list); choosing a list that holds lists shows them in a second row. The chosen list is in the URL, so Back, reload and a shared link keep it. To file songs, tap the “in …” line under a song’s title (or pick several songs with **Edit** and use **Lists…**): both open the same menu, where you tick lists or create one, then Apply. **Edit** also deletes songs (from storage, every list and Viewed). On a wide screen, **Arrange lists** shows the lists as a tree, where you can drag a song or a list onto a list (that is how lists go inside lists). Lists are shared by everyone using the app (one library). They are kept on the server as a [zodal-groups](https://github.com/i2mint/zodal-groups) snapshot with a revision (`songleaf.library`; the model and its file say “groups”). A save made from an out-of-date revision is refused, and the page replays its changes on top of the newer lists, so two people editing at once don’t overwrite each other.
 
 In Read view, the floating ▶ starts **auto-scroll**; while it runs, − and + set the speed. It is remembered per song, pauses when you touch the song, and keeps the screen awake while running.
 

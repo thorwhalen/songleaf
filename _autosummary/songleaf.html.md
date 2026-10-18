@@ -119,6 +119,31 @@ Songs matching every given constraint, best first.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](songleaf.sources.html.md#songleaf.sources.Hit)]
 
+#### search_tiers(query, , limit=10)
+
+The songs whose title, artist or lyrics match `query`, by where they match.
+
+`{"title": [...], "artist": [...], "lyrics": [...]}`, at most `limit` in each,
+best first. A song is in the first kind it matches, even when it ranks below the
+limit there, so a song is never shown as an artist match because more titles
+matched.
+
+Title and artist match word by word ([`WordIndex`](songleaf.match.html.md#songleaf.match.WordIndex)): the query
+is inside the field (`"wonder"` finds *Wonderwall*) or the field is inside the
+query (`"wonderwall oasis"` finds the title *Wonderwall* and the artist *Oasis*),
+a word of four letters or more forgiving a typo; or every word of the query is in
+the title or in the artist (`"paper boats invented band"`). A song whose title
+holds a word of the query that its artist does not is a title match
+(`"wonderwall oasis"`: *Wonderwall (ver. 2)* by Oasis), otherwise an artist match. Within each kind, the songs whose
+title and artist together hold the most words of the query come first (so
+*Wonderwall* by Oasis leads), then the closest by fuzzy score (of the title, or of
+title and artist, whichever is closer; of the artist), then the most popular.
+Lyrics hold every word of the query, rank by popularity, and carry
+`meta["snippet"]`: the line that matched, with its spans.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](songleaf.sources.html.md#songleaf.sources.Hit)]]
+
 ### *class* songleaf.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, style=DenseStyle())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
@@ -353,7 +378,8 @@ The keys of the stored songs.
 | [`harmony`](songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                               |
 |--------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
 | [`kaggle_index`](songleaf.kaggle_index.html.md#module-songleaf.kaggle_index) | A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.                     |
-| [`library`](songleaf.library.html.md#module-songleaf.library)           | The library's groups: which stored songs are in which groups, shared by everyone using it.                      |
+| [`library`](songleaf.library.html.md#module-songleaf.library)           | The library's lists: which stored songs are in which lists, shared by everyone using it.                        |
+| [`match`](songleaf.match.html.md#module-songleaf.match)               | Where a query matched: the words it shares with a field, as spans to highlight, and the lyric line.             |
 | [`model`](songleaf.model.html.md#module-songleaf.model)               | The linked-artifact model: a song is lyrics text plus standoff annotations.                                     |
 | [`packing`](songleaf.packing.html.md#module-songleaf.packing)           | Line packing: which consecutive lines of a paragraph share a row.                                               |
 | [`parse`](songleaf.parse.html.md#module-songleaf.parse)               | Parse chords-over-lyrics text into a [`Song`](songleaf.model.html.md#songleaf.model.Song). |
@@ -361,3 +387,4 @@ The keys of the stored songs.
 | [`sources`](songleaf.sources.html.md#module-songleaf.sources)           | Where songs are found: sources, and a search that composes them.                                                |
 | [`store`](songleaf.store.html.md#module-songleaf.store)               | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                        |
 | [`tools`](songleaf.tools.html.md#module-songleaf.tools)               | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.              |
+| [`viewed`](songleaf.viewed.html.md#module-songleaf.viewed)             | Each viewer's *Viewed* list: the songs they opened, the most recent first.                                      |

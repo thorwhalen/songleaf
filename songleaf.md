@@ -1,4 +1,4 @@
-> built 2026-10-17 23:41 UTC from 4fdcf7b (main) · songleaf 0.0.11. Details: build_info.json
+> built 2026-10-18 02:22 UTC from 05eee3c (main) · songleaf 0.0.12. Details: build_info.json
 
 # index.html.md
 
@@ -44,11 +44,12 @@ The comparison of the largest font size each layout fits, over the same 2,000 so
 ## Command line
 
 ```bash
-python -m songleaf search "wonderwall oasis"              # fuzzy: typos and word order don't matter
-python -m songleaf search --artist oasis --lyrics "roads winding"
+python -m songleaf search "wonderwall oasis"              # one query: list names, then titles, artists, lyrics
+python -m songleaf search --artist oasis --lyrics "roads winding"   # narrower: every field given must match
 python -m songleaf sheet "wonderwall oasis" --output wonderwall.pdf
 python -m songleaf sheet "wonderwall oasis" --pick 2      # the second-best match
 python -m songleaf songs                                  # songs already stored
+python -m songleaf viewed                                 # the songs opened, the latest first
 python -m songleaf sheet kaggle_chords:1234               # a song by its key: no search
 python -m songleaf sheet kaggle_chords:1234 --refresh     # fetch it again from its source
 python -m songleaf sheet "wonderwall oasis" --transpose 2 # chords up a whole tone, spelled for the new key
@@ -70,6 +71,7 @@ songleaf.render_dense_a4(song, "wonderwall.pdf")  # {'font_size': ..., 'pages': 
 songleaf.render_sheet(song, "wonderwall-inline.pdf", layout="inline+two-column")
 
 songleaf.sheet("wonderwall oasis")  # search, store and render in one call
+songleaf.tools.search("wonderwall oasis")  # [{..., "match": "title", "highlight": {...}}, ...]
 songleaf.sheet("wonderwall oasis", layout="overlap+shaded")
 ```
 
@@ -141,7 +143,11 @@ site.get("/songleaf/", response_class=HTMLResponse)(
 )
 ```
 
-**Your songs** (the songs opened before) can be deleted, and grouped. Groups work like Gmail labels: a song can be in several groups, and a group can hold other groups. Chips above the list narrow it to a group (All, each group, Ungrouped); choosing a group that holds groups shows them in a second row. The chosen group is in the URL, so Back, reload and a shared link keep it. To file songs, tap the “in …” line under a song’s title (or pick several songs with **Edit** and use **Group…**): both open the same menu, where you tick groups or create one, then Apply. On a wide screen, **Arrange groups** shows the groups as a tree, where you can drag a song or a group onto a group (that is how groups go inside groups). Groups are shared by everyone using the app (one library). They are kept on the server as a [zodal-groups](https://github.com/i2mint/zodal-groups) snapshot with a revision (`songleaf.library`). A save made from an out-of-date revision is refused, and the page replays its changes on top of the newer groups, so two people editing at once don’t overwrite each other.
+**One search field** looks in four places at once and shows what it found in sections, in this order: **In your lists** (lists whose name matches, each opening the library on that list, with its first songs), **Titles**, **Artists** and **Lyrics**. A song appears once, in the first section it fits: a song whose title and lyrics both match is a title match. The matched words are marked, a lyrics match shows the line that matched, and when no title matches a quiet line says so. Titles and artists match word by word: a query can be part of a title (`wonder`), or hold a whole title and artist (`wonderwall oasis`), and a word of four letters or more forgives a typo. In each section the songs whose title and artist hold the most words of the query come first, then the closest, then the most popular. The research and design behind it are on [songleaf#34](https://github.com/thorwhalen/songleaf/pull/34).
+
+**Home** is the library on **Viewed**: the songs you opened, the latest first. It is kept on the server, per person when the host says who is asking (enlace passes the signed-in user; songleaf stores only a hash of the id), so it is the same on every device. The × beside a song takes it out of Viewed, with an Undo; it stays stored and in its lists, and the **Not in a list** chip and search still find it. A house icon at the top of every other view (search results, a list, a song) goes back home; when home is a known number of steps back it walks back to it, so it returns as you left it.
+
+**Lists** work like Gmail labels: a song can be in several lists, and a list can hold other lists. Chips above the songs narrow them to a list (Viewed, each list, Not in a list); choosing a list that holds lists shows them in a second row. The chosen list is in the URL, so Back, reload and a shared link keep it. To file songs, tap the “in …” line under a song’s title (or pick several songs with **Edit** and use **Lists…**): both open the same menu, where you tick lists or create one, then Apply. **Edit** also deletes songs (from storage, every list and Viewed). On a wide screen, **Arrange lists** shows the lists as a tree, where you can drag a song or a list onto a list (that is how lists go inside lists). Lists are shared by everyone using the app (one library). They are kept on the server as a [zodal-groups](https://github.com/i2mint/zodal-groups) snapshot with a revision (`songleaf.library`; the model and its file say “groups”). A save made from an out-of-date revision is refused, and the page replays its changes on top of the newer lists, so two people editing at once don’t overwrite each other.
 
 In Read view, the floating ▶ starts **auto-scroll**; while it runs, − and + set the speed. It is remembered per song, pauses when you touch the song, and keeps the screen awake while running.
 
@@ -430,6 +436,31 @@ Songs matching every given constraint, best first.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)]
 
+#### search_tiers(query, , limit=10)
+
+The songs whose title, artist or lyrics match `query`, by where they match.
+
+`{"title": [...], "artist": [...], "lyrics": [...]}`, at most `limit` in each,
+best first. A song is in the first kind it matches, even when it ranks below the
+limit there, so a song is never shown as an artist match because more titles
+matched.
+
+Title and artist match word by word ([`WordIndex`](_autosummary/songleaf.match.html.md#songleaf.match.WordIndex)): the query
+is inside the field (`"wonder"` finds *Wonderwall*) or the field is inside the
+query (`"wonderwall oasis"` finds the title *Wonderwall* and the artist *Oasis*),
+a word of four letters or more forgiving a typo; or every word of the query is in
+the title or in the artist (`"paper boats invented band"`). A song whose title
+holds a word of the query that its artist does not is a title match
+(`"wonderwall oasis"`: *Wonderwall (ver. 2)* by Oasis), otherwise an artist match. Within each kind, the songs whose
+title and artist together hold the most words of the query come first (so
+*Wonderwall* by Oasis leads), then the closest by fuzzy score (of the title, or of
+title and artist, whichever is closer; of the artist), then the most popular.
+Lyrics hold every word of the query, rank by popularity, and carry
+`meta["snippet"]`: the line that matched, with its spans.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)]]
+
 ### *class* songleaf.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, style=DenseStyle())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
@@ -664,7 +695,8 @@ The keys of the stored songs.
 | [`harmony`](_autosummary/songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                               |
 |--------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
 | [`kaggle_index`](_autosummary/songleaf.kaggle_index.html.md#module-songleaf.kaggle_index) | A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.                     |
-| [`library`](_autosummary/songleaf.library.html.md#module-songleaf.library)           | The library's groups: which stored songs are in which groups, shared by everyone using it.                      |
+| [`library`](_autosummary/songleaf.library.html.md#module-songleaf.library)           | The library's lists: which stored songs are in which lists, shared by everyone using it.                        |
+| [`match`](_autosummary/songleaf.match.html.md#module-songleaf.match)               | Where a query matched: the words it shares with a field, as spans to highlight, and the lyric line.             |
 | [`model`](_autosummary/songleaf.model.html.md#module-songleaf.model)               | The linked-artifact model: a song is lyrics text plus standoff annotations.                                     |
 | [`packing`](_autosummary/songleaf.packing.html.md#module-songleaf.packing)           | Line packing: which consecutive lines of a paragraph share a row.                                               |
 | [`parse`](_autosummary/songleaf.parse.html.md#module-songleaf.parse)               | Parse chords-over-lyrics text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song). |
@@ -672,6 +704,7 @@ The keys of the stored songs.
 | [`sources`](_autosummary/songleaf.sources.html.md#module-songleaf.sources)           | Where songs are found: sources, and a search that composes them.                                                |
 | [`store`](_autosummary/songleaf.store.html.md#module-songleaf.store)               | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                        |
 | [`tools`](_autosummary/songleaf.tools.html.md#module-songleaf.tools)               | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.              |
+| [`viewed`](_autosummary/songleaf.viewed.html.md#module-songleaf.viewed)             | Each viewer's *Viewed* list: the songs they opened, the most recent first.                                      |
 
 
 # _autosummary/songleaf.kaggle_index.html.md
@@ -748,6 +781,28 @@ The song with this id, parsed into a `Song`.
 
 Songs matching every given constraint, best first.
 
+#### search_tiers(query, , limit=10)
+
+The songs whose title, artist or lyrics match `query`, by where they match.
+
+`{"title": [...], "artist": [...], "lyrics": [...]}`, at most `limit` in each,
+best first. A song is in the first kind it matches, even when it ranks below the
+limit there, so a song is never shown as an artist match because more titles
+matched.
+
+Title and artist match word by word ([`WordIndex`](_autosummary/songleaf.match.html.md#songleaf.match.WordIndex)): the query
+is inside the field (`"wonder"` finds *Wonderwall*) or the field is inside the
+query (`"wonderwall oasis"` finds the title *Wonderwall* and the artist *Oasis*),
+a word of four letters or more forgiving a typo; or every word of the query is in
+the title or in the artist (`"paper boats invented band"`). A song whose title
+holds a word of the query that its artist does not is a title match
+(`"wonderwall oasis"`: *Wonderwall (ver. 2)* by Oasis), otherwise an artist match. Within each kind, the songs whose
+title and artist together hold the most words of the query come first (so
+*Wonderwall* by Oasis leads), then the closest by fuzzy score (of the title, or of
+title and artist, whichever is closer; of the artist), then the most popular.
+Lyrics hold every word of the query, rank by popularity, and carry
+`meta["snippet"]`: the line that matched, with its spans.
+
 ### songleaf.kaggle_index.build_kaggle_index(, path=None, loader=None, batch_size=5000)
 
 Write the index of the Kaggle corpus (`loader`: as for `KaggleChordsSource`).
@@ -772,7 +827,10 @@ Where the index lives: beside the corpus zip, under the data root.
 
 # songleaf.library
 
-The library’s groups: which stored songs are in which groups, shared by everyone using it.
+The library’s lists: which stored songs are in which lists, shared by everyone using it.
+
+The page calls them *lists*; the model and the stored file keep the name zodal-groups gives
+them (groups), so this module and `groups.json` say “groups”.
 
 The groups are a zodal-groups snapshot (`{"nodes": [...], "edges": [...]}`: songs and
 groups are nodes, a membership is an edge from a group to a song or to another group). The
@@ -804,11 +862,16 @@ document, so no one’s change is silently overwritten.
 
 ### Functions
 
-| [`checked_snapshot`](_autosummary/songleaf.library.html.md#songleaf.library.checked_snapshot)(snapshot)                       | `snapshot` if it has the shape of a zodal-groups snapshot, else `ValueError`.           |
-|---------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
-| [`drop_item`](_autosummary/songleaf.library.html.md#songleaf.library.drop_item)(item, \*[, root])                      | Take `item` (a song key) out of every group; returns the document, saved if it changed. |
-| [`read_groups`](_autosummary/songleaf.library.html.md#songleaf.library.read_groups)(\*[, root])                          | `{"revision", "snapshot"}`: the current groups, revision 0 when there are none.         |
-| [`save_groups`](_autosummary/songleaf.library.html.md#songleaf.library.save_groups)(snapshot, \*, revision[, root, ...]) | Replace the groups with `snapshot`, made from `revision`; returns the new document.     |
+| [`checked_snapshot`](_autosummary/songleaf.library.html.md#songleaf.library.checked_snapshot)(snapshot)                       | `snapshot` if it has the shape of a zodal-groups snapshot, else `ValueError`.                    |
+|---------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| [`drop_item`](_autosummary/songleaf.library.html.md#songleaf.library.drop_item)(item, \*[, root])                      | Take `item` (a song key) out of every group; returns the document, saved if it changed.          |
+| [`file_lock`](_autosummary/songleaf.library.html.md#songleaf.library.file_lock)(path)                                  | One writer of `path` at a time: threads of this process, and other processes where fcntl exists. |
+| [`list_members`](_autosummary/songleaf.library.html.md#songleaf.library.list_members)(snapshot, list_id)                  | The songs in a list or in any list inside it, each once, in the order they were added.           |
+| [`list_names`](_autosummary/songleaf.library.html.md#songleaf.library.list_names)(snapshot)                             | `{id: name}` of every list (group) in a snapshot: its nodes, and every edge's parent.            |
+| [`lists_matching`](_autosummary/songleaf.library.html.md#songleaf.library.lists_matching)(query, snapshot)                  | The lists whose name the query names, best first: `[{"id", "name", "spans"}]`.                   |
+| [`read_groups`](_autosummary/songleaf.library.html.md#songleaf.library.read_groups)(\*[, root])                          | `{"revision", "snapshot"}`: the current groups, revision 0 when there are none.                  |
+| [`save_groups`](_autosummary/songleaf.library.html.md#songleaf.library.save_groups)(snapshot, \*, revision[, root, ...]) | Replace the groups with `snapshot`, made from `revision`; returns the new document.              |
+| [`write_json_atomically`](_autosummary/songleaf.library.html.md#songleaf.library.write_json_atomically)(path, document)            | Write `document` to `path` so that readers see the old file or the new one, never half.          |
 
 ### Exceptions
 
@@ -855,6 +918,64 @@ Take `item` (a song key) out of every group; returns the document, saved if it c
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
+### songleaf.library.file_lock(path)
+
+One writer of `path` at a time: threads of this process, and other processes where fcntl exists.
+
+### songleaf.library.list_members(snapshot, list_id)
+
+The songs in a list or in any list inside it, each once, in the order they were added.
+
+```pycon
+>>> snap = {"nodes": [], "edges": [
+...     {"id": "1", "parent": "Campfire", "child": "x:1", "kind": "contains"},
+...     {"id": "2", "parent": "Campfire", "child": "Slow", "kind": "contains"},
+...     {"id": "3", "parent": "Slow", "child": "x:2", "kind": "contains"},
+...     {"id": "4", "parent": "Slow", "child": "x:1", "kind": "contains"}]}
+>>> list_members(snap, "Campfire")
+['x:1', 'x:2']
+```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### songleaf.library.list_names(snapshot)
+
+`{id: name}` of every list (group) in a snapshot: its nodes, and every edge’s parent.
+
+```pycon
+>>> list_names({"nodes": [{"id": "a", "label": "Campfire"}],
+...             "edges": [{"id": "e", "parent": "b", "child": "x:1", "kind": "contains"}]})
+{'a': 'Campfire', 'b': 'b'}
+```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### songleaf.library.lists_matching(query, snapshot)
+
+The lists whose name the query names, best first: `[{"id", "name", "spans"}]`.
+
+A list matches when every word of the query starts a word of its name (`"camp"`
+finds Campfire, `"to le"` finds To learn; a one-letter word must be a whole word), or
+when the whole name, four letters or more, is the query give or take one typo (a
+letter added, dropped, changed or two swapped). So a short name (`Fun`) is not found
+by every query that holds it (`funeral`, `funk`). `spans` are the matched parts
+of the name.
+
+```pycon
+>>> snap = {"nodes": [{"id": "Campfire"}, {"id": "To learn"}, {"id": "Fun"}], "edges": []}
+>>> [m["id"] for m in lists_matching("camp", snap)]
+['Campfire']
+>>> [m["id"] for m in lists_matching("campfier", snap)], lists_matching("funk", snap)
+(['Campfire'], [])
+>>> lists_matching("t", snap)
+[]
+```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
 ### songleaf.library.read_groups(, root=None)
 
 `{"revision", "snapshot"}`: the current groups, revision 0 when there are none.
@@ -874,6 +995,193 @@ snapshot or `revision` not a whole number.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.library.write_json_atomically(path, document)
+
+Write `document` to `path` so that readers see the old file or the new one, never half.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+
+# _autosummary/songleaf.match.html.md
+
+# songleaf.match
+
+Where a query matched: the words it shares with a field, as spans to highlight, and the lyric line.
+
+Pure text functions, no corpus and no I/O. The search tags each hit with the field it
+matched ([`MATCH_KINDS`](_autosummary/songleaf.match.html.md#songleaf.match.MATCH_KINDS)); these say *where* in that field, so the page can mark the
+matched part without tokenizing anything itself.
+
+Words are runs of letters and digits, compared case-insensitively; a query word marks a
+word of the text that it starts (`"wond"` marks `"Wonderwall"`), so a partly typed
+word is shown too. A fuzzy match with a typo marks nothing, which is honest: the words
+are not there.
+
+```pycon
+>>> word_spans("Paper Boats", "paper")
+[[0, 5]]
+>>> lyric_snippet("G       D\nPaper boats drift down\nC\nthe silver stream", "silver stream")
+{'text': 'the silver stream', 'spans': [[4, 10], [11, 17]]}
+```
+
+### Module Attributes
+
+| [`MATCH_KINDS`](_autosummary/songleaf.match.html.md#songleaf.match.MATCH_KINDS)       | a song in a list whose name matches, then title, artist and lyrics.                                                                                                     |
+|--------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`TYPO_MIN_LENGTH`](_autosummary/songleaf.match.html.md#songleaf.match.TYPO_MIN_LENGTH)   | A query word this long or longer also finds the words one edit away (a letter added, dropped, changed, or two swapped); from `TWO_TYPOS_MIN_LENGTH` letters, two edits. |
+| [`PREFIX_MIN_LENGTH`](_autosummary/songleaf.match.html.md#songleaf.match.PREFIX_MIN_LENGTH) | A query word shorter than this finds only itself, not every word it starts ("a").                                                                                       |
+| [`MAX_QUERY_WORDS`](_autosummary/songleaf.match.html.md#songleaf.match.MAX_QUERY_WORDS)   | a pasted verse stops here.                                                                                                                                              |
+
+### Functions
+
+| [`lyric_snippet`](_autosummary/songleaf.match.html.md#songleaf.match.lyric_snippet)(text, query, \*[, width])   | The line of `text` holding the most words of `query` (whole words), with their spans.   |
+|--------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| [`query_words`](_autosummary/songleaf.match.html.md#songleaf.match.query_words)(query)                        | The distinct words of a query, lowercased, in order; `10,000` is the word `10000`.      |
+| [`shared_words`](_autosummary/songleaf.match.html.md#songleaf.match.shared_words)(query, text)                 | How many distinct words of `query` are words of `text`.                                 |
+| [`word_spans`](_autosummary/songleaf.match.html.md#songleaf.match.word_spans)(text, query)                   | `[start, end]` of each word of `text` that a word of `query` starts, in order.          |
+
+### Classes
+
+| [`WordIndex`](_autosummary/songleaf.match.html.md#songleaf.match.WordIndex)(texts)   | Which of a list of texts (titles, say) hold which words, for matching a query word by word.   |
+|---------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+
+### songleaf.match.MATCH_KINDS *= ('list', 'title', 'artist', 'lyrics')*
+
+a song in a list
+whose name matches, then title, artist and lyrics. A song is reported once, in its first kind.
+
+* **Type:**
+  The kinds of match a search reports, in the order the page shows them
+
+### songleaf.match.MAX_QUERY_WORDS *= 12*
+
+a pasted verse stops here.
+
+* **Type:**
+  The words of a query that are matched against titles and artists
+
+### songleaf.match.PREFIX_MIN_LENGTH *= 2*
+
+A query word shorter than this finds only itself, not every word it starts (“a”).
+
+### songleaf.match.TYPO_MIN_LENGTH *= 4*
+
+A query word this long or longer also finds the words one edit away (a letter added,
+dropped, changed, or two swapped); from `TWO_TYPOS_MIN_LENGTH` letters, two edits.
+
+### *class* songleaf.match.WordIndex(texts)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+Which of a list of texts (titles, say) hold which words, for matching a query word by word.
+
+A text matches a query when the query is *inside* it (every query word is a word of the
+text, or starts one: `"paper bo"` finds *Paper Boats*) or the text is inside the query
+(every word of the text is a word of the query, two at least: `"paper boats band"`
+finds *Paper Boats*). In the first direction, a query word of [`TYPO_MIN_LENGTH`](_autosummary/songleaf.match.html.md#songleaf.match.TYPO_MIN_LENGTH) letters or more
+also matches the words it is a typo of; in the second, the text’s words must be there as
+typed, or every short title would be a typo of some word of a long query. Unlike a fuzzy score over the whole string, a word is never matched by
+a piece of another word, so *As* is not a match for `"oasis"`.
+
+Memory: one sorted vocabulary, one array of row numbers per text word, and one word
+count per text, a few MB for 135K titles.
+
+```pycon
+>>> titles = WordIndex(["Paper Boats", "Quiet Road", "Paper Moon", "As"])
+>>> sorted(titles.matching("paper"))
+[0, 2]
+>>> sorted(titles.matching("paper boats by the band")), sorted(titles.matching("papr boats"))
+([0], [0])
+>>> sorted(WordIndex(["Scream"]).matching("silver stream"))  # one letter from "stream"
+[]
+>>> sorted(WordIndex(["Day", "The Day"]).matching("is gonna be the day"))  # one word is not enough
+[1]
+>>> sorted(titles.matching("oasis")), sorted(titles.matching("qui"))
+([], [1])
+```
+
+#### matching(query)
+
+The rows whose text holds the query, or is held by it, word by word.
+
+* **Return type:**
+  [`set`](https://docs.python.org/3/builtins/stdtypes.html#set)[[`int`](https://docs.python.org/3/builtins/functions.html#int)]
+
+#### rows_with(word)
+
+The rows holding `word` (a query word, lowercased), a word it starts, or one it is a typo of.
+
+```pycon
+>>> sorted(WordIndex(["Paper Boats", "Paperback", "Quiet"]).rows_with("paper"))
+[0, 1]
+```
+
+* **Return type:**
+  [`set`](https://docs.python.org/3/builtins/stdtypes.html#set)[[`int`](https://docs.python.org/3/builtins/functions.html#int)]
+
+### songleaf.match.lyric_snippet(text, query, , width=90)
+
+The line of `text` holding the most words of `query` (whole words), with their spans.
+
+Lyrics match on whole words (as the search does), so a span here is a whole word.
+A line longer than `width` is cut around its first match, with `…` marking each
+cut. `None` when no line holds any of the words.
+
+```pycon
+>>> lyric_snippet("la la\nno match here", "boats") is None
+True
+>>> long = "word " * 30 + "boats " + "word " * 30
+>>> cut = lyric_snippet(long, "boats", width=30)
+>>> cut["text"].startswith("…") and cut["text"].endswith("…"), len(cut["text"]) <= 32
+(True, True)
+>>> cut["text"][slice(*cut["spans"][0])]
+'boats'
+```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### songleaf.match.query_words(query)
+
+The distinct words of a query, lowercased, in order; `10,000` is the word `10000`.
+
+```pycon
+>>> query_words("Paper  boats, PAPER!"), query_words("10,000 Hours")
+(['paper', 'boats'], ['10000', 'hours'])
+```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### songleaf.match.shared_words(query, text)
+
+How many distinct words of `query` are words of `text`.
+
+```pycon
+>>> shared_words("10000 hours justin bieber", "10,000 Hours Justin Bieber")
+4
+```
+
+* **Return type:**
+  [`int`](https://docs.python.org/3/builtins/functions.html#int)
+
+### songleaf.match.word_spans(text, query)
+
+`[start, end]` of each word of `text` that a word of `query` starts, in order.
+
+```pycon
+>>> word_spans("Wonderwall (Remastered)", "wonder rem")
+[[0, 10], [12, 22]]
+>>> word_spans("Quiet Road", "road quiet")
+[[0, 5], [6, 10]]
+>>> word_spans("Quiet Road", "")
+[]
+```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`int`](https://docs.python.org/3/builtins/functions.html#int)]]
 
 
 # _autosummary/songleaf.model.html.md
@@ -1505,10 +1813,16 @@ corpus, read through `sung`.
 A hit’s [`Hit.key`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit.key) (`"<source>:<id>"`) names the song everywhere: it is
 what [`get_song()`](_autosummary/songleaf.sources.html.md#songleaf.sources.get_song) resolves and what the store is keyed by.
 
+[`search_tiers()`](_autosummary/songleaf.sources.html.md#songleaf.sources.search_tiers) is the one-field search: the songs whose title, artist or lyrics
+match a query, each reported once, in the first of those that matches. A source may answer
+it itself with a `search_tiers(query, *, limit)` method (the Kaggle sources do, in one
+pass); any other source is asked three times through `search`.
+
 ### Module Attributes
 
 | [`KAGGLE_CHORDS_ZIP`](_autosummary/songleaf.sources.html.md#songleaf.sources.KAGGLE_CHORDS_ZIP)   | Where a copy of the corpus zip is found under the data root, before sung looks.   |
 |----------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| [`SONG_TIERS`](_autosummary/songleaf.sources.html.md#songleaf.sources.SONG_TIERS)          | a song is in the first that fits.                                                 |
 
 ### Functions
 
@@ -1517,6 +1831,7 @@ what [`get_song()`](_autosummary/songleaf.sources.html.md#songleaf.sources.get_s
 | [`get_song`](_autosummary/songleaf.sources.html.md#songleaf.sources.get_song)(key, \*[, sources])                | The song named by `key` (`"<source>:<id>"`), from the source of that name.                                                              |
 | [`kaggle_chords_zip`](_autosummary/songleaf.sources.html.md#songleaf.sources.kaggle_chords_zip)()                         | The corpus zip under the data root (`datasets/` + [`KAGGLE_CHORDS_ZIP`](_autosummary/songleaf.sources.html.md#songleaf.sources.KAGGLE_CHORDS_ZIP)), if there is one. |
 | [`search`](_autosummary/songleaf.sources.html.md#songleaf.sources.search)([query, title, artist, lyrics, ...]) | Search every source and merge the hits, best first.                                                                                     |
+| [`search_tiers`](_autosummary/songleaf.sources.html.md#songleaf.sources.search_tiers)(query, \*[, limit, sources])   | Every source's songs whose title, artist or lyrics match `query`, by where they match.                                                  |
 
 ### Classes
 
@@ -1585,6 +1900,31 @@ Songs matching every given constraint, best first.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)]
 
+#### search_tiers(query, , limit=10)
+
+The songs whose title, artist or lyrics match `query`, by where they match.
+
+`{"title": [...], "artist": [...], "lyrics": [...]}`, at most `limit` in each,
+best first. A song is in the first kind it matches, even when it ranks below the
+limit there, so a song is never shown as an artist match because more titles
+matched.
+
+Title and artist match word by word ([`WordIndex`](_autosummary/songleaf.match.html.md#songleaf.match.WordIndex)): the query
+is inside the field (`"wonder"` finds *Wonderwall*) or the field is inside the
+query (`"wonderwall oasis"` finds the title *Wonderwall* and the artist *Oasis*),
+a word of four letters or more forgiving a typo; or every word of the query is in
+the title or in the artist (`"paper boats invented band"`). A song whose title
+holds a word of the query that its artist does not is a title match
+(`"wonderwall oasis"`: *Wonderwall (ver. 2)* by Oasis), otherwise an artist match. Within each kind, the songs whose
+title and artist together hold the most words of the query come first (so
+*Wonderwall* by Oasis leads), then the closest by fuzzy score (of the title, or of
+title and artist, whichever is closer; of the artist), then the most popular.
+Lyrics hold every word of the query, rank by popularity, and carry
+`meta["snippet"]`: the line that matched, with its spans.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)]]
+
 ### *class* songleaf.sources.LocalFolderSource(root=None, , name='local_folder')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
@@ -1641,6 +1981,13 @@ Substring-match the query/title/artist against each file’s name.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)]
 
+### songleaf.sources.SONG_TIERS *= ('title', 'artist', 'lyrics')*
+
+a song is in the first that fits.
+
+* **Type:**
+  The kinds of match [`search_tiers()`](_autosummary/songleaf.sources.html.md#songleaf.sources.search_tiers) reports, in order
+
 ### *exception* songleaf.sources.SongNotFound
 
 Bases: [`KeyError`](https://docs.python.org/3/builtins/exceptions.html#KeyError)
@@ -1692,6 +2039,22 @@ Search every source and merge the hits, best first.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)]
+
+### songleaf.sources.search_tiers(query, , limit=10, sources=None)
+
+Every source’s songs whose title, artist or lyrics match `query`, by where they match.
+
+`{"title": [...], "artist": [...], "lyrics": [...]}` ([`SONG_TIERS`](_autosummary/songleaf.sources.html.md#songleaf.sources.SONG_TIERS)), at most
+`limit` in each; each song in the first kind it matches. Within a kind, each
+source’s hits come in its own ranking, the sources in the order given.
+
+```pycon
+>>> search_tiers("paper boats", sources=[])
+{'title': [], 'artist': [], 'lyrics': []}
+```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)]]
 
 
 # _autosummary/songleaf.store.html.md
@@ -1781,15 +2144,18 @@ than dicts uses [`songleaf.sources`](_autosummary/songleaf.sources.html.md#modul
 
 ### Functions
 
-| [`build_index`](_autosummary/songleaf.tools.html.md#songleaf.tools.build_index)(\*[, path])                        | Build the search index of the Kaggle corpus, once, where the corpus zip is.                      |
-|-------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| [`forget`](_autosummary/songleaf.tools.html.md#songleaf.tools.forget)(key, \*[, store, library_root])         | Remove a song from the stored songs and from every group it was in.                              |
-| [`search`](_autosummary/songleaf.tools.html.md#songleaf.tools.search)([query, title, artist, lyrics, ...])    | Find songs: fuzzy title and artist (`query`), or by title, artist, or whole words of the lyrics. |
-| [`sheet`](_autosummary/songleaf.tools.html.md#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...]) | Make a one-page song sheet (PDF) for the best match of `query`.                                  |
-| [`song`](_autosummary/songleaf.tools.html.md#songleaf.tools.song)(query, \*[, pick, refresh, ...])          | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.         |
-| [`songs`](_autosummary/songleaf.tools.html.md#songleaf.tools.songs)(\*[, store])                             | The keys of the stored songs.                                                                    |
+| [`build_index`](_autosummary/songleaf.tools.html.md#songleaf.tools.build_index)(\*[, path])                        | Build the search index of the Kaggle corpus, once, where the corpus zip is.                 |
+|-------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| [`forget`](_autosummary/songleaf.tools.html.md#songleaf.tools.forget)(key, \*[, store, library_root])         | Remove a song from the stored songs, from every list it was in, and from every Viewed list. |
+| [`search`](_autosummary/songleaf.tools.html.md#songleaf.tools.search)([query, title, artist, lyrics, ...])    | Find songs with one query: in your lists' names, then titles, artists and lyrics.           |
+| [`sheet`](_autosummary/songleaf.tools.html.md#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...]) | Make a one-page song sheet (PDF) for the best match of `query`.                             |
+| [`song`](_autosummary/songleaf.tools.html.md#songleaf.tools.song)(query, \*[, pick, refresh, ...])          | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.    |
+| [`songs`](_autosummary/songleaf.tools.html.md#songleaf.tools.songs)(\*[, store])                             | The keys of the stored songs.                                                               |
+| [`unview`](_autosummary/songleaf.tools.html.md#songleaf.tools.unview)(key, \*[, user, library_root])          | Take a song out of `user`'s Viewed list.                                                    |
+| [`view`](_autosummary/songleaf.tools.html.md#songleaf.tools.view)(key, \*[, user, at, store, library_root]) | Put a stored song at the top of `user`'s Viewed list: they just opened it.                  |
+| [`viewed`](_autosummary/songleaf.tools.html.md#songleaf.tools.viewed)(\*[, user, store, library_root])        | The songs `user` opened, the most recent first: `key`, `title`, `artist`, `viewed_at`.      |
 
-### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function song>, <function songs>, <function forget>, <function build_index>)*
+### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function song>, <function songs>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>)*
 
 Every operation, in the order the CLI lists them.
 
@@ -1806,7 +2172,7 @@ replacing the zip. `path` defaults to beside the zip under the data root.
 
 ### songleaf.tools.forget(key, , store=None, library_root=None)
 
-Remove a song from the stored songs and from every group it was in.
+Remove a song from the stored songs, from every list it was in, and from every Viewed list.
 
 It can be found and stored again by searching. Returns `{"key", "deleted"}`;
 `deleted` is False when it was not stored.
@@ -1814,9 +2180,21 @@ It can be found and stored again by searching. Returns `{"key", "deleted"}`;
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### songleaf.tools.search(query='', , title='', artist='', lyrics='', limit=10, sources=None)
+### songleaf.tools.search(query='', , title='', artist='', lyrics='', limit=10, list_songs=3, sources=None, store=None, library_root=None)
 
-Find songs: fuzzy title and artist (`query`), or by title, artist, or whole words of the lyrics.
+Find songs with one query: in your lists’ names, then titles, artists and lyrics.
+
+With only `query`, every song comes once, tagged with where it matched (`match`):
+`"list"` (the first `list_songs` stored songs of each list whose name the query
+names; `list` and `list_name` say which, and the list’s other songs are found in
+the later kinds as usual), then `"title"`, `"artist"` and `"lyrics"`, in that order,
+at most `limit` of each, best first within each. A song that matches its title and
+its lyrics is a title match only. `highlight` holds the matched words of the title and
+artist (and of `list_name`) as `[start, end]` spans; a lyrics match carries
+`snippet`, the line that matched, with its spans.
+
+With `title`, `artist` or `lyrics`, it is a narrower search instead: songs that
+match every field given (and `query`, fuzzily over title and artist), `match: ""`.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
@@ -1871,6 +2249,144 @@ The keys of the stored songs.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
+### songleaf.tools.unview(key, , user='', library_root=None)
+
+Take a song out of `user`’s Viewed list. It stays stored, and in its lists.
+
+Returns `{"key", "removed", "viewed_at"}`: when it had been viewed, so the same
+time can be given back to [`view()`](_autosummary/songleaf.tools.html.md#songleaf.tools.view) to undo.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.view(key, , user='', at=0.0, store=None, library_root=None)
+
+Put a stored song at the top of `user`’s Viewed list: they just opened it.
+
+`at` (seconds since the epoch) records that time instead, which is how an undo puts
+a song it took out back where it was. Returns `{"key", "viewed_at"}`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.viewed(, user='', store=None, library_root=None)
+
+The songs `user` opened, the most recent first: `key`, `title`, `artist`, `viewed_at`.
+
+`user` is who the host says is asking (no one: the list everyone shares). Songs no
+longer stored are left out. `viewed_at` is in seconds since the epoch.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+
+# _autosummary/songleaf.viewed.html.md
+
+# songleaf.viewed
+
+Each viewer’s *Viewed* list: the songs they opened, the most recent first.
+
+Kept on the server, one JSON document per viewer under the data root
+(`library/viewed/<viewer>.json`: `{"views": {song key: seconds since the epoch}}`).
+A viewer is whoever the host says is asking (the platform’s user id, under enlace); the
+file is named after a hash of that id ([`viewer_file_stem()`](_autosummary/songleaf.viewed.html.md#songleaf.viewed.viewer_file_stem)), so no identity is
+written to disk in the clear. With no identity (a local run, or a host with no login),
+everyone shares one list, `anyone`.
+
+Viewed is not a list of the library: it is never in `groups.json`, a song leaves it
+without leaving any list, and leaving it does not delete the song.
+
+```pycon
+>>> import tempfile
+>>> root = tempfile.mkdtemp()
+>>> _ = record_view("x:1", root=root, at=100.0)
+>>> _ = record_view("x:2", root=root, at=200.0)
+>>> [v["key"] for v in read_viewed(root=root)]
+['x:2', 'x:1']
+>>> remove_view("x:2", root=root)
+200.0
+>>> [v["key"] for v in read_viewed(root=root)], read_viewed(user="someone", root=root)
+(['x:1'], [])
+```
+
+### Module Attributes
+
+| [`ANYONE`](_autosummary/songleaf.viewed.html.md#songleaf.viewed.ANYONE)    | The file stem of the list everyone shares when the host names no viewer.         |
+|------------------------------------------------------------|----------------------------------------------------------------------------------|
+| [`MAX_VIEWS`](_autosummary/songleaf.viewed.html.md#songleaf.viewed.MAX_VIEWS) | The most songs one Viewed list keeps; opening one more forgets the least recent. |
+
+### Functions
+
+| [`drop_everywhere`](_autosummary/songleaf.viewed.html.md#songleaf.viewed.drop_everywhere)(key, \*[, root])       | Take `key` out of every viewer's list (the song was deleted); returns how many held it.         |
+|-----------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| [`read_viewed`](_autosummary/songleaf.viewed.html.md#songleaf.viewed.read_viewed)(\*[, user, root])          | `user`'s Viewed list, the most recent first: `[{"key", "viewed_at"}]`.                          |
+| [`record_view`](_autosummary/songleaf.viewed.html.md#songleaf.viewed.record_view)(key, \*[, user, at, root]) | Put `key` at the top of `user`'s Viewed list (or at time `at`); returns the time used.          |
+| [`remove_view`](_autosummary/songleaf.viewed.html.md#songleaf.viewed.remove_view)(key, \*[, user, root])     | Take `key` out of `user`'s Viewed list; returns when it was viewed, `None` if it was not there. |
+| [`viewer_file_stem`](_autosummary/songleaf.viewed.html.md#songleaf.viewed.viewer_file_stem)(user)                 | The file name (without `.json`) of `user`'s list: a hash of the id, never the id.               |
+
+### songleaf.viewed.ANYONE *= 'anyone'*
+
+The file stem of the list everyone shares when the host names no viewer.
+
+### songleaf.viewed.MAX_VIEWS *= 2000*
+
+The most songs one Viewed list keeps; opening one more forgets the least recent.
+
+### songleaf.viewed.drop_everywhere(key, , root=None)
+
+Take `key` out of every viewer’s list (the song was deleted); returns how many held it.
+
+```pycon
+>>> import tempfile
+>>> root = tempfile.mkdtemp()
+>>> _ = record_view("x:1", root=root); _ = record_view("x:1", user="b", root=root)
+>>> drop_everywhere("x:1", root=root), read_viewed(user="b", root=root)
+(2, [])
+```
+
+* **Return type:**
+  [`int`](https://docs.python.org/3/builtins/functions.html#int)
+
+### songleaf.viewed.read_viewed(, user=None, root=None)
+
+`user`’s Viewed list, the most recent first: `[{"key", "viewed_at"}]`.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+### songleaf.viewed.record_view(key, , user=None, at=None, root=None)
+
+Put `key` at the top of `user`’s Viewed list (or at time `at`); returns the time used.
+
+`at` puts a song back where it was (an undo of [`remove_view()`](_autosummary/songleaf.viewed.html.md#songleaf.viewed.remove_view)).
+
+* **Return type:**
+  [`float`](https://docs.python.org/3/builtins/functions.html#float)
+
+### songleaf.viewed.remove_view(key, , user=None, root=None)
+
+Take `key` out of `user`’s Viewed list; returns when it was viewed, `None` if it was not there.
+
+* **Return type:**
+  [`float`](https://docs.python.org/3/builtins/functions.html#float) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### songleaf.viewed.viewer_file_stem(user)
+
+The file name (without `.json`) of `user`’s list: a hash of the id, never the id.
+
+```pycon
+>>> viewer_file_stem(None), viewer_file_stem("")
+('anyone', 'anyone')
+>>> stem = viewer_file_stem("user-1234")
+>>> stem.startswith("u-") and len(stem) == 34 and "1234" not in stem
+True
+>>> stem == viewer_file_stem("user-1234") != viewer_file_stem("other")
+True
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 
 # about-this-build.html.md
 
@@ -1878,18 +2394,16 @@ The keys of the stored songs.
 
 # About this build
 
-This documentation was built on **2026-10-17 23:41 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/4fdcf7b2291ff1e692e4e2d9197ae09309424898"><code>4fdcf7b</code></a> on branch <code>main</code>, for **songleaf 0.0.11** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-18 02:22 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/05eee3ce220bff4c4f2ff7bd90aeed52b3b9e28d"><code>05eee3c</code></a> on branch <code>main</code>, for **songleaf 0.0.12** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.11) is behind the latest release on PyPI (0.0.12): `pip install songleaf` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/4fdcf7b2291ff1e692e4e2d9197ae09309424898"><code>4fdcf7b2291ff1e692e4e2d9197ae09309424898</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/05eee3ce220bff4c4f2ff7bd90aeed52b3b9e28d"><code>05eee3ce220bff4c4f2ff7bd90aeed52b3b9e28d</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -1900,9 +2414,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39079877714">39079877714</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39089735131">39089735131</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>4fdcf7b2291ff1e692e4e2d9197ae09309424898</code> (in the history of the built commit) |
+| Event commit | <code>05eee3ce220bff4c4f2ff7bd90aeed52b3b9e28d</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -1927,13 +2441,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.12/">0.0.12</a>, newer than the documented version (0.0.11).
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.12/">0.0.12</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 4fdcf7b2291ff1e692e4e2d9197ae09309424898
+git checkout 05eee3ce220bff4c4f2ff7bd90aeed52b3b9e28d
 pip install "epythet==0.2.17"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

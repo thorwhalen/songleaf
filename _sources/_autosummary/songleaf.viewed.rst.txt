@@ -1,0 +1,23 @@
+songleaf.viewed
+===============
+
+.. automodule:: songleaf.viewed
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      ANYONE
+      MAX_VIEWS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      drop_everywhere
+      read_viewed
+      record_view
+      remove_view
+      viewer_file_stem
+   

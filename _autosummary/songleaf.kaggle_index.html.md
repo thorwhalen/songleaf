@@ -70,6 +70,28 @@ The song with this id, parsed into a `Song`.
 
 Songs matching every given constraint, best first.
 
+#### search_tiers(query, , limit=10)
+
+The songs whose title, artist or lyrics match `query`, by where they match.
+
+`{"title": [...], "artist": [...], "lyrics": [...]}`, at most `limit` in each,
+best first. A song is in the first kind it matches, even when it ranks below the
+limit there, so a song is never shown as an artist match because more titles
+matched.
+
+Title and artist match word by word ([`WordIndex`](songleaf.match.html.md#songleaf.match.WordIndex)): the query
+is inside the field (`"wonder"` finds *Wonderwall*) or the field is inside the
+query (`"wonderwall oasis"` finds the title *Wonderwall* and the artist *Oasis*),
+a word of four letters or more forgiving a typo; or every word of the query is in
+the title or in the artist (`"paper boats invented band"`). A song whose title
+holds a word of the query that its artist does not is a title match
+(`"wonderwall oasis"`: *Wonderwall (ver. 2)* by Oasis), otherwise an artist match. Within each kind, the songs whose
+title and artist together hold the most words of the query come first (so
+*Wonderwall* by Oasis leads), then the closest by fuzzy score (of the title, or of
+title and artist, whichever is closer; of the artist), then the most popular.
+Lyrics hold every word of the query, rank by popularity, and carry
+`meta["snippet"]`: the line that matched, with its spans.
+
 ### songleaf.kaggle_index.build_kaggle_index(, path=None, loader=None, batch_size=5000)
 
 Write the index of the Kaggle corpus (`loader`: as for `KaggleChordsSource`).

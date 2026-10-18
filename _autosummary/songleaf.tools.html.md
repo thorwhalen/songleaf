@@ -15,15 +15,18 @@ than dicts uses [`songleaf.sources`](songleaf.sources.html.md#module-songleaf.so
 
 ### Functions
 
-| [`build_index`](#songleaf.tools.build_index)(\*[, path])                        | Build the search index of the Kaggle corpus, once, where the corpus zip is.                      |
-|-------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| [`forget`](#songleaf.tools.forget)(key, \*[, store, library_root])         | Remove a song from the stored songs and from every group it was in.                              |
-| [`search`](#songleaf.tools.search)([query, title, artist, lyrics, ...])    | Find songs: fuzzy title and artist (`query`), or by title, artist, or whole words of the lyrics. |
-| [`sheet`](#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...]) | Make a one-page song sheet (PDF) for the best match of `query`.                                  |
-| [`song`](#songleaf.tools.song)(query, \*[, pick, refresh, ...])          | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.         |
-| [`songs`](#songleaf.tools.songs)(\*[, store])                             | The keys of the stored songs.                                                                    |
+| [`build_index`](#songleaf.tools.build_index)(\*[, path])                        | Build the search index of the Kaggle corpus, once, where the corpus zip is.                 |
+|-------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| [`forget`](#songleaf.tools.forget)(key, \*[, store, library_root])         | Remove a song from the stored songs, from every list it was in, and from every Viewed list. |
+| [`search`](#songleaf.tools.search)([query, title, artist, lyrics, ...])    | Find songs with one query: in your lists' names, then titles, artists and lyrics.           |
+| [`sheet`](#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...]) | Make a one-page song sheet (PDF) for the best match of `query`.                             |
+| [`song`](#songleaf.tools.song)(query, \*[, pick, refresh, ...])          | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.    |
+| [`songs`](#songleaf.tools.songs)(\*[, store])                             | The keys of the stored songs.                                                               |
+| [`unview`](#songleaf.tools.unview)(key, \*[, user, library_root])          | Take a song out of `user`'s Viewed list.                                                    |
+| [`view`](#songleaf.tools.view)(key, \*[, user, at, store, library_root]) | Put a stored song at the top of `user`'s Viewed list: they just opened it.                  |
+| [`viewed`](#songleaf.tools.viewed)(\*[, user, store, library_root])        | The songs `user` opened, the most recent first: `key`, `title`, `artist`, `viewed_at`.      |
 
-### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function song>, <function songs>, <function forget>, <function build_index>)*
+### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function song>, <function songs>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>)*
 
 Every operation, in the order the CLI lists them.
 
@@ -40,7 +43,7 @@ replacing the zip. `path` defaults to beside the zip under the data root.
 
 ### songleaf.tools.forget(key, , store=None, library_root=None)
 
-Remove a song from the stored songs and from every group it was in.
+Remove a song from the stored songs, from every list it was in, and from every Viewed list.
 
 It can be found and stored again by searching. Returns `{"key", "deleted"}`;
 `deleted` is False when it was not stored.
@@ -48,9 +51,21 @@ It can be found and stored again by searching. Returns `{"key", "deleted"}`;
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### songleaf.tools.search(query='', , title='', artist='', lyrics='', limit=10, sources=None)
+### songleaf.tools.search(query='', , title='', artist='', lyrics='', limit=10, list_songs=3, sources=None, store=None, library_root=None)
 
-Find songs: fuzzy title and artist (`query`), or by title, artist, or whole words of the lyrics.
+Find songs with one query: in your lists’ names, then titles, artists and lyrics.
+
+With only `query`, every song comes once, tagged with where it matched (`match`):
+`"list"` (the first `list_songs` stored songs of each list whose name the query
+names; `list` and `list_name` say which, and the list’s other songs are found in
+the later kinds as usual), then `"title"`, `"artist"` and `"lyrics"`, in that order,
+at most `limit` of each, best first within each. A song that matches its title and
+its lyrics is a title match only. `highlight` holds the matched words of the title and
+artist (and of `list_name`) as `[start, end]` spans; a lyrics match carries
+`snippet`, the line that matched, with its spans.
+
+With `title`, `artist` or `lyrics`, it is a narrower search instead: songs that
+match every field given (and `query`, fuzzily over title and artist), `match: ""`.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
@@ -104,3 +119,33 @@ The keys of the stored songs.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### songleaf.tools.unview(key, , user='', library_root=None)
+
+Take a song out of `user`’s Viewed list. It stays stored, and in its lists.
+
+Returns `{"key", "removed", "viewed_at"}`: when it had been viewed, so the same
+time can be given back to [`view()`](#songleaf.tools.view) to undo.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.view(key, , user='', at=0.0, store=None, library_root=None)
+
+Put a stored song at the top of `user`’s Viewed list: they just opened it.
+
+`at` (seconds since the epoch) records that time instead, which is how an undo puts
+a song it took out back where it was. Returns `{"key", "viewed_at"}`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.viewed(, user='', store=None, library_root=None)
+
+The songs `user` opened, the most recent first: `key`, `title`, `artist`, `viewed_at`.
+
+`user` is who the host says is asking (no one: the list everyone shares). Songs no
+longer stored are left out. `viewed_at` is in seconds since the epoch.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]

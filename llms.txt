@@ -10,7 +10,8 @@
 - [songleaf](_autosummary/songleaf.html.md): songleaf: dense, readable one-page song sheets from searchable sources.
 - [songleaf.harmony](_autosummary/songleaf.harmony.html.md): What a chord does in its song’s key, so that sheets can shade chords by function.
 - [songleaf.kaggle_index](_autosummary/songleaf.kaggle_index.html.md): A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.
-- [songleaf.library](_autosummary/songleaf.library.html.md): The library’s groups: which stored songs are in which groups, shared by everyone using it.
+- [songleaf.library](_autosummary/songleaf.library.html.md): The library’s lists: which stored songs are in which lists, shared by everyone using it.
+- [songleaf.match](_autosummary/songleaf.match.html.md): Where a query matched: the words it shares with a field, as spans to highlight, and the lyric line.
 - [songleaf.model](_autosummary/songleaf.model.html.md): The linked-artifact model: a song is lyrics text plus standoff annotations.
 - [songleaf.packing](_autosummary/songleaf.packing.html.md): Line packing: which consecutive lines of a paragraph share a row.
 - [songleaf.parse](_autosummary/songleaf.parse.html.md): Parse chords-over-lyrics text into a &#96;Song&#96;.
@@ -18,8 +19,9 @@
 - [songleaf.sources](_autosummary/songleaf.sources.html.md): Where songs are found: sources, and a search that composes them.
 - [songleaf.store](_autosummary/songleaf.store.html.md): Where songs persist: a &#96;MutableMapping&#96; of songs, JSON files by default.
 - [songleaf.tools](_autosummary/songleaf.tools.html.md): The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.
+- [songleaf.viewed](_autosummary/songleaf.viewed.html.md): Each viewer’s &#42;Viewed&#42; list: the songs they opened, the most recent first.
 - [For AI agents](ai-agents.html.md): &#96;songleaf&#96; ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-17 23:41 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-18 02:22 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
 
 ## Optional
 

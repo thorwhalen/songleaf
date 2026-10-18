@@ -205,6 +205,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.library.html">songleaf.library</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.match.html">songleaf.match</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.parse.html">songleaf.parse</a></li>
@@ -212,6 +213,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.tools.html">songleaf.tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.viewed.html">songleaf.viewed</a></li>
 </ul>
 </li>
 </ul>
@@ -456,6 +458,8 @@
         <span class="s2">"_popularity"</span><span class="p">,</span>
         <span class="s2">"_labels"</span><span class="p">,</span>
         <span class="s2">"_row_of_id"</span><span class="p">,</span>
+        <span class="s2">"_title_words"</span><span class="p">,</span>
+        <span class="s2">"_artist_words"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -478,6 +482,13 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span> <span class="o">**</span><span class="n">constraints</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_reload_if_rebuilt</span><span class="p">()</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="o">**</span><span class="n">constraints</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KaggleChordsIndex.search_tiers">
+<a class="viewcode-back" href="../../_autosummary/songleaf.kaggle_index.html#songleaf.kaggle_index.KaggleChordsIndex.search_tiers">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">search_tiers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reload_if_rebuilt</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">search_tiers</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="KaggleChordsIndex.get">
@@ -571,7 +582,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=e2f847f2"></script>
+</div><script src="../../_static/documentation_options.js?v=c249dd19"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

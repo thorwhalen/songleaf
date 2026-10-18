@@ -16,8 +16,13 @@ songleaf.library
    
       checked_snapshot
       drop_item
+      file_lock
+      list_members
+      list_names
+      lists_matching
       read_groups
       save_groups
+      write_json_atomically
    
    .. rubric:: Exceptions
 

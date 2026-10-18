@@ -205,6 +205,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.library.html">songleaf.library</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.match.html">songleaf.match</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.parse.html">songleaf.parse</a></li>
@@ -212,6 +213,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.tools.html">songleaf.tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.viewed.html">songleaf.viewed</a></li>
 </ul>
 </li>
 </ul>
@@ -250,7 +252,10 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for songleaf.library</h1><div class="highlight"><pre>
-<span></span><span class="sd">"""The library's groups: which stored songs are in which groups, shared by everyone using it.</span>
+<span></span><span class="sd">"""The library's lists: which stored songs are in which lists, shared by everyone using it.</span>
+
+<span class="sd">The page calls them *lists*; the model and the stored file keep the name zodal-groups gives</span>
+<span class="sd">them (groups), so this module and ``groups.json`` say "groups".</span>
 
 <span class="sd">The groups are a zodal-groups snapshot (``{"nodes": [...], "edges": [...]}``: songs and</span>
 <span class="sd">groups are nodes, a membership is an edge from a group to a song or to another group). The</span>
@@ -371,6 +376,113 @@
 
 
 
+<div class="viewcode-block" id="list_names">
+<a class="viewcode-back" href="../../_autosummary/songleaf.library.html#songleaf.library.list_names">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">list_names</span><span class="p">(</span><span class="n">snapshot</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""``{id: name}`` of every list (group) in a snapshot: its nodes, and every edge's parent.</span>
+
+<span class="sd">    &gt;&gt;&gt; list_names({"nodes": [{"id": "a", "label": "Campfire"}],</span>
+<span class="sd">    ...             "edges": [{"id": "e", "parent": "b", "child": "x:1", "kind": "contains"}]})</span>
+<span class="sd">    {'a': 'Campfire', 'b': 'b'}</span>
+<span class="sd">    """</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]:</span> <span class="n">n</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"label"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">n</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"nodes"</span><span class="p">,</span> <span class="p">[])}</span>
+    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"edges"</span><span class="p">,</span> <span class="p">[]):</span>
+        <span class="n">names</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="s2">"parent"</span><span class="p">],</span> <span class="n">edge</span><span class="p">[</span><span class="s2">"parent"</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">names</span></div>
+
+
+
+<div class="viewcode-block" id="list_members">
+<a class="viewcode-back" href="../../_autosummary/songleaf.library.html#songleaf.library.list_members">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">list_members</span><span class="p">(</span><span class="n">snapshot</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">list_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The songs in a list or in any list inside it, each once, in the order they were added.</span>
+
+<span class="sd">    &gt;&gt;&gt; snap = {"nodes": [], "edges": [</span>
+<span class="sd">    ...     {"id": "1", "parent": "Campfire", "child": "x:1", "kind": "contains"},</span>
+<span class="sd">    ...     {"id": "2", "parent": "Campfire", "child": "Slow", "kind": "contains"},</span>
+<span class="sd">    ...     {"id": "3", "parent": "Slow", "child": "x:2", "kind": "contains"},</span>
+<span class="sd">    ...     {"id": "4", "parent": "Slow", "child": "x:1", "kind": "contains"}]}</span>
+<span class="sd">    &gt;&gt;&gt; list_members(snap, "Campfire")</span>
+<span class="sd">    ['x:1', 'x:2']</span>
+<span class="sd">    """</span>
+    <span class="n">lists</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">list_names</span><span class="p">(</span><span class="n">snapshot</span><span class="p">))</span>
+    <span class="n">children</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"edges"</span><span class="p">,</span> <span class="p">[]):</span>
+        <span class="n">children</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="s2">"parent"</span><span class="p">],</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="s2">"child"</span><span class="p">])</span>
+    <span class="n">songs</span><span class="p">,</span> <span class="n">seen</span><span class="p">,</span> <span class="n">stack</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">{</span><span class="n">list_id</span><span class="p">},</span> <span class="p">[</span><span class="n">list_id</span><span class="p">]</span>
+    <span class="n">order</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">while</span> <span class="n">stack</span><span class="p">:</span>  <span class="c1"># depth-first, in edge order, without recursion</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="n">order</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">children</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="p">[])):</span>
+            <span class="k">if</span> <span class="n">child</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+                <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">order</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">children</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="k">if</span> <span class="n">child</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">lists</span> <span class="ow">and</span> <span class="n">child</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">songs</span><span class="p">:</span>
+                <span class="n">songs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">songs</span></div>
+
+
+
+<div class="viewcode-block" id="lists_matching">
+<a class="viewcode-back" href="../../_autosummary/songleaf.library.html#songleaf.library.lists_matching">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">lists_matching</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">snapshot</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The lists whose name the query names, best first: ``[{"id", "name", "spans"}]``.</span>
+
+<span class="sd">    A list matches when every word of the query starts a word of its name (``"camp"``</span>
+<span class="sd">    finds Campfire, ``"to le"`` finds To learn; a one-letter word must be a whole word), or</span>
+<span class="sd">    when the whole name, four letters or more, is the query give or take one typo (a</span>
+<span class="sd">    letter added, dropped, changed or two swapped). So a short name (``Fun``) is not found</span>
+<span class="sd">    by every query that holds it (``funeral``, ``funk``). ``spans`` are the matched parts</span>
+<span class="sd">    of the name.</span>
+
+<span class="sd">    &gt;&gt;&gt; snap = {"nodes": [{"id": "Campfire"}, {"id": "To learn"}, {"id": "Fun"}], "edges": []}</span>
+<span class="sd">    &gt;&gt;&gt; [m["id"] for m in lists_matching("camp", snap)]</span>
+<span class="sd">    ['Campfire']</span>
+<span class="sd">    &gt;&gt;&gt; [m["id"] for m in lists_matching("campfier", snap)], lists_matching("funk", snap)</span>
+<span class="sd">    (['Campfire'], [])</span>
+<span class="sd">    &gt;&gt;&gt; lists_matching("t", snap)</span>
+<span class="sd">    []</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">rapidfuzz</span><span class="w"> </span><span class="kn">import</span> <span class="n">utils</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">rapidfuzz.distance</span><span class="w"> </span><span class="kn">import</span> <span class="n">DamerauLevenshtein</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.match</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">PREFIX_MIN_LENGTH</span><span class="p">,</span>
+        <span class="n">TYPO_MIN_LENGTH</span><span class="p">,</span>
+        <span class="n">query_words</span><span class="p">,</span>
+        <span class="n">word_spans</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">words</span> <span class="o">=</span> <span class="n">query_words</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">words</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="n">wanted</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">default_process</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+    <span class="n">found</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">list_id</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">list_names</span><span class="p">(</span><span class="n">snapshot</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">name_words</span> <span class="o">=</span> <span class="n">query_words</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">prefixes</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="nb">any</span><span class="p">(</span>
+                <span class="n">n</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">PREFIX_MIN_LENGTH</span> <span class="k">else</span> <span class="n">n</span> <span class="o">==</span> <span class="n">w</span>
+                <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">name_words</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">words</span>
+        <span class="p">)</span>
+        <span class="n">whole</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">default_process</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">edits</span> <span class="o">=</span> <span class="n">DamerauLevenshtein</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">wanted</span><span class="p">,</span> <span class="n">whole</span><span class="p">)</span>
+        <span class="n">typo</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">whole</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">TYPO_MIN_LENGTH</span> <span class="ow">and</span> <span class="n">edits</span> <span class="o">&lt;=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">prefixes</span> <span class="ow">or</span> <span class="n">typo</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="n">rank</span> <span class="o">=</span> <span class="p">(</span><span class="n">edits</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="ow">not</span> <span class="n">prefixes</span><span class="p">,</span> <span class="n">edits</span><span class="p">,</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+        <span class="n">found</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">rank</span><span class="p">,</span> <span class="p">{</span><span class="s2">"id"</span><span class="p">:</span> <span class="n">list_id</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">"spans"</span><span class="p">:</span> <span class="n">word_spans</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">query</span><span class="p">)})</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">entry</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">found</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">pair</span><span class="p">:</span> <span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span></div>
+
+
+
 <div class="viewcode-block" id="checked_snapshot">
 <a class="viewcode-back" href="../../_autosummary/songleaf.library.html#songleaf.library.checked_snapshot">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">checked_snapshot</span><span class="p">(</span><span class="n">snapshot</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
@@ -463,33 +575,47 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_write</span><span class="p">(</span><span class="n">document</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-    <span class="n">path</span> <span class="o">=</span> <span class="n">_path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">write_json_atomically</span><span class="p">(</span><span class="n">_path</span><span class="p">(</span><span class="n">root</span><span class="p">),</span> <span class="n">document</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="write_json_atomically">
+<a class="viewcode-back" href="../../_autosummary/songleaf.library.html#songleaf.library.write_json_atomically">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">write_json_atomically</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">document</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Write ``document`` to ``path`` so that readers see the old file or the new one, never half."""</span>
     <span class="n">temporary</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">threading</span><span class="o">.</span><span class="n">get_ident</span><span class="p">()</span><span class="si">}</span><span class="s2">.tmp"</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">temporary</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
         <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">document</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
         <span class="n">file</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
         <span class="n">os</span><span class="o">.</span><span class="n">fsync</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">fileno</span><span class="p">())</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-        <span class="n">temporary</span><span class="p">,</span> <span class="n">path</span>
-    <span class="p">)</span>  <span class="c1"># readers see the old document or the new one, never half</span>
-    <span class="k">return</span> <span class="n">document</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">temporary</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">document</span></div>
+
 
 
 <span class="nd">@contextmanager</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_locked</span><span class="p">(</span><span class="n">root</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""One writer at a time: threads of this process, and other processes where fcntl exists."""</span>
+    <span class="k">with</span> <span class="n">file_lock</span><span class="p">(</span><span class="n">_path</span><span class="p">(</span><span class="n">root</span><span class="p">)):</span>
+        <span class="k">yield</span>
+
+
+<div class="viewcode-block" id="file_lock">
+<a class="viewcode-back" href="../../_autosummary/songleaf.library.html#songleaf.library.file_lock">[docs]</a>
+<span class="nd">@contextmanager</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">file_lock</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""One writer of ``path`` at a time: threads of this process, and other processes where fcntl exists."""</span>
     <span class="k">with</span> <span class="n">_thread_lock</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">fcntl</span>
         <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>  <span class="c1"># Windows: one process is all a local run has</span>
             <span class="k">yield</span>
             <span class="k">return</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">_path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">+</span> <span class="s2">".lock"</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span> <span class="o">+</span> <span class="s2">".lock"</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
             <span class="n">fcntl</span><span class="o">.</span><span class="n">flock</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">fcntl</span><span class="o">.</span><span class="n">LOCK_EX</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">yield</span>
             <span class="k">finally</span><span class="p">:</span>
-                <span class="n">fcntl</span><span class="o">.</span><span class="n">flock</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">fcntl</span><span class="o">.</span><span class="n">LOCK_UN</span><span class="p">)</span>
+                <span class="n">fcntl</span><span class="o">.</span><span class="n">flock</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">fcntl</span><span class="o">.</span><span class="n">LOCK_UN</span><span class="p">)</span></div>
+
 </pre></div>
         </article>
       </div>
@@ -518,7 +644,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=e2f847f2"></script>
+</div><script src="../../_static/documentation_options.js?v=c249dd19"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

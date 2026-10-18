@@ -13,10 +13,16 @@ corpus, read through `sung`.
 A hit’s [`Hit.key`](#songleaf.sources.Hit.key) (`"<source>:<id>"`) names the song everywhere: it is
 what [`get_song()`](#songleaf.sources.get_song) resolves and what the store is keyed by.
 
+[`search_tiers()`](#songleaf.sources.search_tiers) is the one-field search: the songs whose title, artist or lyrics
+match a query, each reported once, in the first of those that matches. A source may answer
+it itself with a `search_tiers(query, *, limit)` method (the Kaggle sources do, in one
+pass); any other source is asked three times through `search`.
+
 ### Module Attributes
 
 | [`KAGGLE_CHORDS_ZIP`](#songleaf.sources.KAGGLE_CHORDS_ZIP)   | Where a copy of the corpus zip is found under the data root, before sung looks.   |
 |----------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| [`SONG_TIERS`](#songleaf.sources.SONG_TIERS)          | a song is in the first that fits.                                                 |
 
 ### Functions
 
@@ -25,6 +31,7 @@ what [`get_song()`](#songleaf.sources.get_song) resolves and what the store is k
 | [`get_song`](#songleaf.sources.get_song)(key, \*[, sources])                | The song named by `key` (`"<source>:<id>"`), from the source of that name.                                                              |
 | [`kaggle_chords_zip`](#songleaf.sources.kaggle_chords_zip)()                         | The corpus zip under the data root (`datasets/` + [`KAGGLE_CHORDS_ZIP`](#songleaf.sources.KAGGLE_CHORDS_ZIP)), if there is one. |
 | [`search`](#songleaf.sources.search)([query, title, artist, lyrics, ...]) | Search every source and merge the hits, best first.                                                                                     |
+| [`search_tiers`](#songleaf.sources.search_tiers)(query, \*[, limit, sources])   | Every source's songs whose title, artist or lyrics match `query`, by where they match.                                                  |
 
 ### Classes
 
@@ -93,6 +100,31 @@ Songs matching every given constraint, best first.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](#songleaf.sources.Hit)]
 
+#### search_tiers(query, , limit=10)
+
+The songs whose title, artist or lyrics match `query`, by where they match.
+
+`{"title": [...], "artist": [...], "lyrics": [...]}`, at most `limit` in each,
+best first. A song is in the first kind it matches, even when it ranks below the
+limit there, so a song is never shown as an artist match because more titles
+matched.
+
+Title and artist match word by word ([`WordIndex`](songleaf.match.html.md#songleaf.match.WordIndex)): the query
+is inside the field (`"wonder"` finds *Wonderwall*) or the field is inside the
+query (`"wonderwall oasis"` finds the title *Wonderwall* and the artist *Oasis*),
+a word of four letters or more forgiving a typo; or every word of the query is in
+the title or in the artist (`"paper boats invented band"`). A song whose title
+holds a word of the query that its artist does not is a title match
+(`"wonderwall oasis"`: *Wonderwall (ver. 2)* by Oasis), otherwise an artist match. Within each kind, the songs whose
+title and artist together hold the most words of the query come first (so
+*Wonderwall* by Oasis leads), then the closest by fuzzy score (of the title, or of
+title and artist, whichever is closer; of the artist), then the most popular.
+Lyrics hold every word of the query, rank by popularity, and carry
+`meta["snippet"]`: the line that matched, with its spans.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](#songleaf.sources.Hit)]]
+
 ### *class* songleaf.sources.LocalFolderSource(root=None, , name='local_folder')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
@@ -149,6 +181,13 @@ Substring-match the query/title/artist against each file’s name.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](#songleaf.sources.Hit)]
 
+### songleaf.sources.SONG_TIERS *= ('title', 'artist', 'lyrics')*
+
+a song is in the first that fits.
+
+* **Type:**
+  The kinds of match [`search_tiers()`](#songleaf.sources.search_tiers) reports, in order
+
 ### *exception* songleaf.sources.SongNotFound
 
 Bases: [`KeyError`](https://docs.python.org/3/builtins/exceptions.html#KeyError)
@@ -200,3 +239,19 @@ Search every source and merge the hits, best first.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](#songleaf.sources.Hit)]
+
+### songleaf.sources.search_tiers(query, , limit=10, sources=None)
+
+Every source’s songs whose title, artist or lyrics match `query`, by where they match.
+
+`{"title": [...], "artist": [...], "lyrics": [...]}` ([`SONG_TIERS`](#songleaf.sources.SONG_TIERS)), at most
+`limit` in each; each song in the first kind it matches. Within a kind, each
+source’s hits come in its own ranking, the sources in the order given.
+
+```pycon
+>>> search_tiers("paper boats", sources=[])
+{'title': [], 'artist': [], 'lyrics': []}
+```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](#songleaf.sources.Hit)]]

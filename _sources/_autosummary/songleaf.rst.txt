@@ -44,6 +44,7 @@
    harmony
    kaggle_index
    library
+   match
    model
    packing
    parse
@@ -51,4 +52,5 @@
    sources
    store
    tools
+   viewed
    web

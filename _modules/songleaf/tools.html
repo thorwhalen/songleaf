@@ -205,6 +205,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.library.html">songleaf.library</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.match.html">songleaf.match</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.parse.html">songleaf.parse</a></li>
@@ -212,6 +213,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.tools.html">songleaf.tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.viewed.html">songleaf.viewed</a></li>
 </ul>
 </li>
 </ul>
@@ -279,14 +281,103 @@
     <span class="n">artist</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">lyrics</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">list_songs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
     <span class="n">sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">library_root</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Find songs: fuzzy title and artist (``query``), or by title, artist, or whole words of the lyrics."""</span>
-    <span class="n">hits</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
-        <span class="n">query</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">artist</span><span class="o">=</span><span class="n">artist</span><span class="p">,</span> <span class="n">lyrics</span><span class="o">=</span><span class="n">lyrics</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span>
-    <span class="p">)</span>
-    <span class="k">return</span> <span class="p">[</span><span class="n">hit</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">hits</span><span class="p">]</span></div>
+<span class="w">    </span><span class="sd">"""Find songs with one query: in your lists' names, then titles, artists and lyrics.</span>
 
+<span class="sd">    With only ``query``, every song comes once, tagged with where it matched (``match``):</span>
+<span class="sd">    ``"list"`` (the first ``list_songs`` stored songs of each list whose name the query</span>
+<span class="sd">    names; ``list`` and ``list_name`` say which, and the list's other songs are found in</span>
+<span class="sd">    the later kinds as usual), then ``"title"``, ``"artist"`` and ``"lyrics"``, in that order,</span>
+<span class="sd">    at most ``limit`` of each, best first within each. A song that matches its title and</span>
+<span class="sd">    its lyrics is a title match only. ``highlight`` holds the matched words of the title and</span>
+<span class="sd">    artist (and of ``list_name``) as ``[start, end]`` spans; a lyrics match carries</span>
+<span class="sd">    ``snippet``, the line that matched, with its spans.</span>
+
+<span class="sd">    With ``title``, ``artist`` or ``lyrics``, it is a narrower search instead: songs that</span>
+<span class="sd">    match every field given (and ``query``, fuzzily over title and artist), ``match: ""``.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">title</span> <span class="ow">or</span> <span class="n">artist</span> <span class="ow">or</span> <span class="n">lyrics</span><span class="p">:</span>
+        <span class="n">hits</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+            <span class="n">query</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">artist</span><span class="o">=</span><span class="n">artist</span><span class="p">,</span>
+            <span class="n">lyrics</span><span class="o">=</span><span class="n">lyrics</span><span class="p">,</span>
+            <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">,</span>
+            <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">_tagged</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="s2">""</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span> <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">hits</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">query</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">_list_hits</span><span class="p">(</span>
+        <span class="n">query</span><span class="p">,</span> <span class="n">per_list</span><span class="o">=</span><span class="n">list_songs</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">library_root</span><span class="o">=</span><span class="n">library_root</span>
+    <span class="p">)</span>
+    <span class="n">seen</span> <span class="o">=</span> <span class="p">{</span><span class="n">row</span><span class="p">[</span><span class="s2">"key"</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">}</span>
+    <span class="k">for</span> <span class="n">kind</span><span class="p">,</span> <span class="n">hits</span> <span class="ow">in</span> <span class="n">_sources</span><span class="o">.</span><span class="n">search_tiers</span><span class="p">(</span>
+        <span class="n">query</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">hits</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">key</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="n">_tagged</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="n">kind</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+            <span class="n">snippet</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">"meta"</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"snippet"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">snippet</span><span class="p">:</span>
+                <span class="n">row</span><span class="p">[</span><span class="s2">"snippet"</span><span class="p">]</span> <span class="o">=</span> <span class="n">snippet</span>
+            <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rows</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_tagged</span><span class="p">(</span><span class="n">row</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.match</span><span class="w"> </span><span class="kn">import</span> <span class="n">word_spans</span>
+
+    <span class="n">row</span><span class="p">[</span><span class="s2">"match"</span><span class="p">]</span> <span class="o">=</span> <span class="n">kind</span>
+    <span class="n">row</span><span class="p">[</span><span class="s2">"highlight"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"title"</span><span class="p">:</span> <span class="n">word_spans</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span> <span class="n">query</span><span class="p">),</span>
+        <span class="s2">"artist"</span><span class="p">:</span> <span class="n">word_spans</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"artist"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span> <span class="n">query</span><span class="p">),</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">row</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_list_hits</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">per_list</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">library_root</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The first stored songs of the lists whose name ``query`` names, ``per_list`` of each."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.library</span><span class="w"> </span><span class="kn">import</span> <span class="n">list_members</span><span class="p">,</span> <span class="n">lists_matching</span><span class="p">,</span> <span class="n">read_groups</span>
+
+    <span class="n">snapshot</span> <span class="o">=</span> <span class="n">read_groups</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">library_root</span><span class="p">)[</span><span class="s2">"snapshot"</span><span class="p">]</span>
+    <span class="n">matched</span> <span class="o">=</span> <span class="n">lists_matching</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">snapshot</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">matched</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
+    <span class="n">rows</span><span class="p">,</span> <span class="n">seen</span> <span class="o">=</span> <span class="p">[],</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">found</span> <span class="ow">in</span> <span class="n">matched</span><span class="p">:</span>
+        <span class="n">taken</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">list_members</span><span class="p">(</span><span class="n">snapshot</span><span class="p">,</span> <span class="n">found</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="n">taken</span> <span class="o">&gt;=</span> <span class="n">per_list</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">seen</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">_is_stored</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">song</span> <span class="o">=</span> <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="n">source</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">song_id</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">"key"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span>
+                <span class="s2">"source"</span><span class="p">:</span> <span class="n">source</span><span class="p">,</span>
+                <span class="s2">"id"</span><span class="p">:</span> <span class="n">song_id</span><span class="p">,</span>
+                <span class="s2">"title"</span><span class="p">:</span> <span class="n">song</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                <span class="s2">"artist"</span><span class="p">:</span> <span class="n">song</span><span class="o">.</span><span class="n">artist</span><span class="p">,</span>
+                <span class="s2">"score"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+                <span class="s2">"meta"</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="p">}</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="n">_tagged</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="s2">"list"</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+            <span class="n">row</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">list</span><span class="o">=</span><span class="n">found</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="n">list_name</span><span class="o">=</span><span class="n">found</span><span class="p">[</span><span class="s2">"name"</span><span class="p">])</span>
+            <span class="n">row</span><span class="p">[</span><span class="s2">"highlight"</span><span class="p">][</span><span class="s2">"list_name"</span><span class="p">]</span> <span class="o">=</span> <span class="n">found</span><span class="p">[</span><span class="s2">"spans"</span><span class="p">]</span>
+            <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+            <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">taken</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">rows</span>
 
 
 <div class="viewcode-block" id="sheet">
@@ -431,12 +522,13 @@
 <div class="viewcode-block" id="forget">
 <a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.forget">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">forget</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">library_root</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Remove a song from the stored songs and from every group it was in.</span>
+<span class="w">    </span><span class="sd">"""Remove a song from the stored songs, from every list it was in, and from every Viewed list.</span>
 
 <span class="sd">    It can be found and stored again by searching. Returns ``{"key", "deleted"}``;</span>
 <span class="sd">    ``deleted`` is False when it was not stored.</span>
 <span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.library</span><span class="w"> </span><span class="kn">import</span> <span class="n">drop_item</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.viewed</span><span class="w"> </span><span class="kn">import</span> <span class="n">drop_everywhere</span>
 
     <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
     <span class="k">try</span><span class="p">:</span>
@@ -445,7 +537,64 @@
     <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
         <span class="n">deleted</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">drop_item</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="n">library_root</span><span class="p">)</span>
+    <span class="n">drop_everywhere</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="n">library_root</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">{</span><span class="s2">"key"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span> <span class="s2">"deleted"</span><span class="p">:</span> <span class="n">deleted</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="viewed">
+<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.viewed">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">viewed</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">user</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">library_root</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The songs ``user`` opened, the most recent first: ``key``, ``title``, ``artist``, ``viewed_at``.</span>
+
+<span class="sd">    ``user`` is who the host says is asking (no one: the list everyone shares). Songs no</span>
+<span class="sd">    longer stored are left out. ``viewed_at`` is in seconds since the epoch.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.viewed</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_viewed</span>
+
+    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">read_viewed</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="n">library_root</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_stored</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">entry</span><span class="p">[</span><span class="s2">"key"</span><span class="p">]):</span>
+            <span class="k">continue</span>
+        <span class="n">song</span> <span class="o">=</span> <span class="n">store</span><span class="p">[</span><span class="n">entry</span><span class="p">[</span><span class="s2">"key"</span><span class="p">]]</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="o">**</span><span class="n">entry</span><span class="p">,</span> <span class="s2">"title"</span><span class="p">:</span> <span class="n">song</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="s2">"artist"</span><span class="p">:</span> <span class="n">song</span><span class="o">.</span><span class="n">artist</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">rows</span></div>
+
+
+
+<div class="viewcode-block" id="view">
+<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.view">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">view</span><span class="p">(</span>
+    <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">user</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span> <span class="n">at</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">library_root</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Put a stored song at the top of ``user``'s Viewed list: they just opened it.</span>
+
+<span class="sd">    ``at`` (seconds since the epoch) records that time instead, which is how an undo puts</span>
+<span class="sd">    a song it took out back where it was. Returns ``{"key", "viewed_at"}``.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.viewed</span><span class="w"> </span><span class="kn">import</span> <span class="n">record_view</span>
+
+    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_stored</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">_sources</span><span class="o">.</span><span class="n">SongNotFound</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2"> is not among the stored songs"</span><span class="p">)</span>
+    <span class="n">when</span> <span class="o">=</span> <span class="n">record_view</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">,</span> <span class="n">at</span><span class="o">=</span><span class="n">at</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="n">library_root</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"key"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span> <span class="s2">"viewed_at"</span><span class="p">:</span> <span class="n">when</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="unview">
+<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.unview">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">unview</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">user</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span> <span class="n">library_root</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Take a song out of ``user``'s Viewed list. It stays stored, and in its lists.</span>
+
+<span class="sd">    Returns ``{"key", "removed", "viewed_at"}``: when it had been viewed, so the same</span>
+<span class="sd">    time can be given back to :func:`view` to undo.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.viewed</span><span class="w"> </span><span class="kn">import</span> <span class="n">remove_view</span>
+
+    <span class="n">at</span> <span class="o">=</span> <span class="n">remove_view</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="n">library_root</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"key"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span> <span class="s2">"removed"</span><span class="p">:</span> <span class="n">at</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"viewed_at"</span><span class="p">:</span> <span class="n">at</span><span class="p">}</span></div>
 
 
 
@@ -502,7 +651,7 @@
 
 
 <span class="c1">#: Every operation, in the order the CLI lists them.</span>
-<span class="n">TOOLS</span> <span class="o">=</span> <span class="p">(</span><span class="n">search</span><span class="p">,</span> <span class="n">sheet</span><span class="p">,</span> <span class="n">song</span><span class="p">,</span> <span class="n">songs</span><span class="p">,</span> <span class="n">forget</span><span class="p">,</span> <span class="n">build_index</span><span class="p">)</span>
+<span class="n">TOOLS</span> <span class="o">=</span> <span class="p">(</span><span class="n">search</span><span class="p">,</span> <span class="n">sheet</span><span class="p">,</span> <span class="n">song</span><span class="p">,</span> <span class="n">songs</span><span class="p">,</span> <span class="n">viewed</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">unview</span><span class="p">,</span> <span class="n">forget</span><span class="p">,</span> <span class="n">build_index</span><span class="p">)</span>
 </pre></div>
         </article>
       </div>
@@ -531,7 +680,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=e2f847f2"></script>
+</div><script src="../../_static/documentation_options.js?v=c249dd19"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

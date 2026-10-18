@@ -205,6 +205,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.library.html">songleaf.library</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.match.html">songleaf.match</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.parse.html">songleaf.parse</a></li>
@@ -212,6 +213,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.tools.html">songleaf.tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.viewed.html">songleaf.viewed</a></li>
 </ul>
 </li>
 </ul>
@@ -262,6 +264,11 @@
 
 <span class="sd">A hit's :attr:`Hit.key` (``"&lt;source&gt;:&lt;id&gt;"``) names the song everywhere: it is</span>
 <span class="sd">what :func:`get_song` resolves and what the store is keyed by.</span>
+
+<span class="sd">:func:`search_tiers` is the one-field search: the songs whose title, artist or lyrics</span>
+<span class="sd">match a query, each reported once, in the first of those that matches. A source may answer</span>
+<span class="sd">it itself with a ``search_tiers(query, *, limit)`` method (the Kaggle sources do, in one</span>
+<span class="sd">pass); any other source is asked three times through ``search``.</span>
 <span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
@@ -508,6 +515,122 @@
         <span class="n">ranked</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="n">relevance</span><span class="p">(</span><span class="n">r</span><span class="p">),</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_popularity</span><span class="p">[</span><span class="n">r</span><span class="p">]))</span>
         <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hit</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">relevance</span><span class="p">(</span><span class="n">row</span><span class="p">))</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">ranked</span><span class="p">[:</span><span class="n">limit</span><span class="p">]]</span></div>
 
+
+<div class="viewcode-block" id="KaggleChordsSource.search_tiers">
+<a class="viewcode-back" href="../../_autosummary/songleaf.sources.html#songleaf.KaggleChordsSource.search_tiers">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">search_tiers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">Hit</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""The songs whose title, artist or lyrics match ``query``, by where they match.</span>
+
+<span class="sd">        ``{"title": [...], "artist": [...], "lyrics": [...]}``, at most ``limit`` in each,</span>
+<span class="sd">        best first. A song is in the first kind it matches, even when it ranks below the</span>
+<span class="sd">        limit there, so a song is never shown as an artist match because more titles</span>
+<span class="sd">        matched.</span>
+
+<span class="sd">        Title and artist match word by word (:class:`~songleaf.match.WordIndex`): the query</span>
+<span class="sd">        is inside the field (``"wonder"`` finds *Wonderwall*) or the field is inside the</span>
+<span class="sd">        query (``"wonderwall oasis"`` finds the title *Wonderwall* and the artist *Oasis*),</span>
+<span class="sd">        a word of four letters or more forgiving a typo; or every word of the query is in</span>
+<span class="sd">        the title or in the artist (``"paper boats invented band"``). A song whose title</span>
+<span class="sd">        holds a word of the query that its artist does not is a title match</span>
+<span class="sd">        (``"wonderwall oasis"``: *Wonderwall (ver. 2)* by Oasis), otherwise an artist match. Within each kind, the songs whose</span>
+<span class="sd">        title and artist together hold the most words of the query come first (so</span>
+<span class="sd">        *Wonderwall* by Oasis leads), then the closest by fuzzy score (of the title, or of</span>
+<span class="sd">        title and artist, whichever is closer; of the artist), then the most popular.</span>
+<span class="sd">        Lyrics hold every word of the query, rank by popularity, and carry</span>
+<span class="sd">        ``meta["snippet"]``: the line that matched, with its spans.</span>
+<span class="sd">        """</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.match</span><span class="w"> </span><span class="kn">import</span> <span class="n">lyric_snippet</span><span class="p">,</span> <span class="n">shared_words</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">query</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">"title"</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">"artist"</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">"lyrics"</span><span class="p">:</span> <span class="p">[]}</span>
+        <span class="n">popularity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_popularity</span>
+        <span class="n">title_rows</span><span class="p">,</span> <span class="n">artist_rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_title_and_artist_rows</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+        <span class="n">title_score</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">row</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">score</span><span class="p">),</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_scores</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_titles</span><span class="p">,</span> <span class="n">title_rows</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_scores</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span><span class="p">,</span> <span class="n">title_rows</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
+            <span class="p">)</span>
+        <span class="p">}</span>
+        <span class="n">artist_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scores</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_artists</span><span class="p">,</span> <span class="n">artist_rows</span><span class="p">)</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">best</span><span class="p">(</span><span class="n">scores</span><span class="p">):</span>
+            <span class="c1"># the song whose title and artist hold the most query words, then the closest</span>
+            <span class="n">shared</span> <span class="o">=</span> <span class="p">{</span><span class="n">r</span><span class="p">:</span> <span class="n">shared_words</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">labels</span><span class="p">[</span><span class="n">r</span><span class="p">])</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">scores</span><span class="p">}</span>
+            <span class="n">ranked</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+                <span class="n">scores</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="n">shared</span><span class="p">[</span><span class="n">r</span><span class="p">],</span> <span class="o">-</span><span class="n">scores</span><span class="p">[</span><span class="n">r</span><span class="p">],</span> <span class="o">-</span><span class="n">popularity</span><span class="p">[</span><span class="n">r</span><span class="p">],</span> <span class="n">r</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_hit</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">scores</span><span class="p">[</span><span class="n">r</span><span class="p">])</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">ranked</span><span class="p">[:</span><span class="n">limit</span><span class="p">]]</span>
+
+        <span class="n">lyric_rows</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="n">r</span>
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_containing</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">r</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">title_rows</span> <span class="ow">and</span> <span class="n">r</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">artist_rows</span>
+            <span class="p">),</span>
+            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="n">popularity</span><span class="p">[</span><span class="n">r</span><span class="p">],</span> <span class="n">r</span><span class="p">),</span>
+        <span class="p">)[:</span><span class="n">limit</span><span class="p">]</span>
+        <span class="n">lyric_hits</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">lyric_rows</span><span class="p">:</span>
+            <span class="n">hit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hit</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">)</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">_KAGGLE_SITE_NOISE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">(</span><span class="n">row</span><span class="p">))</span>
+            <span class="n">snippet</span> <span class="o">=</span> <span class="n">lyric_snippet</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">snippet</span><span class="p">:</span>
+                <span class="n">hit</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"snippet"</span><span class="p">]</span> <span class="o">=</span> <span class="n">snippet</span>
+            <span class="n">lyric_hits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hit</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">"title"</span><span class="p">:</span> <span class="n">best</span><span class="p">(</span><span class="n">title_score</span><span class="p">),</span>
+            <span class="s2">"artist"</span><span class="p">:</span> <span class="n">best</span><span class="p">(</span><span class="n">artist_score</span><span class="p">),</span>
+            <span class="s2">"lyrics"</span><span class="p">:</span> <span class="n">lyric_hits</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_title_and_artist_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""The rows that are title matches, and those that are artist matches (none in both)."""</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.match</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAX_QUERY_WORDS</span><span class="p">,</span> <span class="n">query_words</span>
+
+        <span class="n">titles</span><span class="p">,</span> <span class="n">artists</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_title_words</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_artist_words</span>
+        <span class="n">in_either</span><span class="p">,</span> <span class="n">title_only</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">query_words</span><span class="p">(</span><span class="n">query</span><span class="p">)[:</span><span class="n">MAX_QUERY_WORDS</span><span class="p">]:</span>
+            <span class="n">in_title</span><span class="p">,</span> <span class="n">in_artist</span> <span class="o">=</span> <span class="n">titles</span><span class="o">.</span><span class="n">rows_with</span><span class="p">(</span><span class="n">word</span><span class="p">),</span> <span class="n">artists</span><span class="o">.</span><span class="n">rows_with</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+            <span class="n">either</span> <span class="o">=</span> <span class="n">in_title</span> <span class="o">|</span> <span class="n">in_artist</span>
+            <span class="n">in_either</span> <span class="o">=</span> <span class="n">either</span> <span class="k">if</span> <span class="n">in_either</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">in_either</span> <span class="o">&amp;</span> <span class="n">either</span>
+            <span class="n">title_only</span> <span class="o">|=</span> <span class="n">in_title</span> <span class="o">-</span> <span class="n">in_artist</span>
+        <span class="c1"># "wonderwall oasis", "paper boats invented band": every word is in the title or the</span>
+        <span class="c1"># artist, and the title holds one the artist does not: a title match. "ed sheeran"</span>
+        <span class="c1"># finds a song called Edge by its artist only.</span>
+        <span class="n">candidates</span> <span class="o">=</span> <span class="n">artists</span><span class="o">.</span><span class="n">matching</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">in_either</span> <span class="ow">or</span> <span class="nb">set</span><span class="p">())</span>
+        <span class="n">title_rows</span> <span class="o">=</span> <span class="n">titles</span><span class="o">.</span><span class="n">matching</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">candidates</span> <span class="o">&amp;</span> <span class="n">title_only</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">title_rows</span><span class="p">,</span> <span class="n">candidates</span> <span class="o">-</span> <span class="n">title_rows</span>
+
+    <span class="nd">@cached_property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_title_words</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.match</span><span class="w"> </span><span class="kn">import</span> <span class="n">WordIndex</span>
+
+        <span class="k">return</span> <span class="n">WordIndex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_titles</span><span class="p">)</span>
+
+    <span class="nd">@cached_property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_artist_words</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.match</span><span class="w"> </span><span class="kn">import</span> <span class="n">WordIndex</span>
+
+        <span class="k">return</span> <span class="n">WordIndex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_artists</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_scores</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">texts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">rows</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""``{row: fuzzy score of query against texts[row]}`` for the given rows, in row order."""</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">rapidfuzz</span><span class="w"> </span><span class="kn">import</span> <span class="n">fuzz</span><span class="p">,</span> <span class="n">process</span><span class="p">,</span> <span class="n">utils</span>
+
+        <span class="n">choices</span> <span class="o">=</span> <span class="p">{</span><span class="n">row</span><span class="p">:</span> <span class="n">texts</span><span class="p">[</span><span class="n">row</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">rows</span><span class="p">)}</span>
+        <span class="n">scored</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span>
+            <span class="n">query</span><span class="p">,</span>
+            <span class="n">choices</span><span class="p">,</span>
+            <span class="n">scorer</span><span class="o">=</span><span class="n">fuzz</span><span class="o">.</span><span class="n">WRatio</span><span class="p">,</span>
+            <span class="n">processor</span><span class="o">=</span><span class="n">utils</span><span class="o">.</span><span class="n">default_process</span><span class="p">,</span>
+            <span class="n">limit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="p">{</span><span class="n">row</span><span class="p">:</span> <span class="n">score</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">score</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">scored</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">row</span><span class="p">:</span> <span class="n">found</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">choices</span><span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_hit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">score</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Hit</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Hit</span><span class="p">(</span>
@@ -760,6 +883,73 @@
 
 
 
+<span class="c1">#: The kinds of match :func:`search_tiers` reports, in order: a song is in the first that fits.</span>
+<span class="n">SONG_TIERS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"title"</span><span class="p">,</span> <span class="s2">"artist"</span><span class="p">,</span> <span class="s2">"lyrics"</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="search_tiers">
+<a class="viewcode-back" href="../../_autosummary/songleaf.sources.html#songleaf.search_tiers">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">search_tiers</span><span class="p">(</span>
+    <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">sources</span><span class="p">:</span> <span class="n">Sequence</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">Hit</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""Every source's songs whose title, artist or lyrics match ``query``, by where they match.</span>
+
+<span class="sd">    ``{"title": [...], "artist": [...], "lyrics": [...]}`` (:data:`SONG_TIERS`), at most</span>
+<span class="sd">    ``limit`` in each; each song in the first kind it matches. Within a kind, each</span>
+<span class="sd">    source's hits come in its own ranking, the sources in the order given.</span>
+
+<span class="sd">    &gt;&gt;&gt; search_tiers("paper boats", sources=[])</span>
+<span class="sd">    {'title': [], 'artist': [], 'lyrics': []}</span>
+<span class="sd">    """</span>
+    <span class="n">sources</span> <span class="o">=</span> <span class="n">default_sources</span><span class="p">()</span> <span class="k">if</span> <span class="n">sources</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">sources</span>
+    <span class="n">found</span> <span class="o">=</span> <span class="p">{</span><span class="n">kind</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">SONG_TIERS</span><span class="p">}</span>
+    <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">"search_tiers"</span><span class="p">):</span>
+            <span class="n">tiers</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">search_tiers</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tiers</span> <span class="o">=</span> <span class="n">_tiers_through_search</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">SONG_TIERS</span><span class="p">:</span>
+            <span class="n">found</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">tiers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="p">()))</span>
+    <span class="n">seen</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">SONG_TIERS</span><span class="p">:</span>
+        <span class="c1"># each source ranks its own (a score alone is not its order); sources in the order given</span>
+        <span class="n">ranked</span> <span class="o">=</span> <span class="n">found</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span>
+        <span class="n">found</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">hit</span> <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">ranked</span> <span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">][:</span><span class="n">limit</span><span class="p">]</span>
+        <span class="n">seen</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">key</span> <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">ranked</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">found</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_tiers_through_search</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">Hit</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""The tiers of a source with only ``search``: one call per field, plus the free query.</span>
+
+<span class="sd">    The free query catches a source that reads no fields; each of its hits goes to the</span>
+<span class="sd">    field it is closer to. A song past the limit of one kind may show up in a later one.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">rapidfuzz</span><span class="w"> </span><span class="kn">import</span> <span class="n">fuzz</span><span class="p">,</span> <span class="n">utils</span>
+
+    <span class="n">tiers</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"title"</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">query</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">),</span>
+        <span class="s2">"artist"</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">artist</span><span class="o">=</span><span class="n">query</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">),</span>
+        <span class="s2">"lyrics"</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">lyrics</span><span class="o">=</span><span class="n">query</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">),</span>
+    <span class="p">}</span>
+    <span class="n">known</span> <span class="o">=</span> <span class="p">{</span><span class="n">hit</span><span class="o">.</span><span class="n">key</span> <span class="k">for</span> <span class="n">hits</span> <span class="ow">in</span> <span class="n">tiers</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">hits</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">closeness</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">fuzz</span><span class="o">.</span><span class="n">WRatio</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">processor</span><span class="o">=</span><span class="n">utils</span><span class="o">.</span><span class="n">default_process</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">key</span> <span class="ow">in</span> <span class="n">known</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">kind</span> <span class="o">=</span> <span class="s2">"title"</span> <span class="k">if</span> <span class="n">closeness</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">title</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">closeness</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">artist</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"artist"</span>
+        <span class="n">tiers</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hit</span><span class="p">)</span>
+    <span class="n">seen</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">SONG_TIERS</span><span class="p">:</span>
+        <span class="n">tiers</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">hit</span> <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">tiers</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span> <span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">]</span>
+        <span class="n">seen</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">key</span> <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">tiers</span><span class="p">[</span><span class="n">kind</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">tiers</span>
+
+
 <div class="viewcode-block" id="get_song">
 <a class="viewcode-back" href="../../_autosummary/songleaf.sources.html#songleaf.get_song">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_song</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">sources</span><span class="p">:</span> <span class="n">Sequence</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Song</span><span class="p">:</span>
@@ -808,7 +998,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=e2f847f2"></script>
+</div><script src="../../_static/documentation_options.js?v=c249dd19"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

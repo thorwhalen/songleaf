@@ -1,0 +1,30 @@
+songleaf.match
+==============
+
+.. automodule:: songleaf.match
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      MATCH_KINDS
+      TYPO_MIN_LENGTH
+      PREFIX_MIN_LENGTH
+      MAX_QUERY_WORDS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      lyric_snippet
+      query_words
+      shared_words
+      word_spans
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      WordIndex
+   

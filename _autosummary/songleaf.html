@@ -208,6 +208,7 @@
 <li class="toctree-l3"><a class="reference internal" href="songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.library.html">songleaf.library</a></li>
+<li class="toctree-l3"><a class="reference internal" href="songleaf.match.html">songleaf.match</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.parse.html">songleaf.parse</a></li>
@@ -215,6 +216,7 @@
 <li class="toctree-l3"><a class="reference internal" href="songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.tools.html">songleaf.tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="songleaf.viewed.html">songleaf.viewed</a></li>
 </ul>
 </li>
 </ul>
@@ -445,6 +447,33 @@ sung’s loader of the local corpus zip.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference internal" href="songleaf.sources.html#songleaf.sources.Hit" title="songleaf.sources.Hit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Hit</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="songleaf.KaggleChordsSource.search_tiers">
+<span class="sig-name descname"><span class="pre">search_tiers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/sources.html#KaggleChordsSource.search_tiers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.KaggleChordsSource.search_tiers" title="Link to this definition">¶</a></dt>
+<dd><p>The songs whose title, artist or lyrics match <code class="docutils literal notranslate"><span class="pre">query</span></code>, by where they match.</p>
+<p><code class="docutils literal notranslate"><span class="pre">{&quot;title&quot;:</span> <span class="pre">[...],</span> <span class="pre">&quot;artist&quot;:</span> <span class="pre">[...],</span> <span class="pre">&quot;lyrics&quot;:</span> <span class="pre">[...]}</span></code>, at most <code class="docutils literal notranslate"><span class="pre">limit</span></code> in each,
+best first. A song is in the first kind it matches, even when it ranks below the
+limit there, so a song is never shown as an artist match because more titles
+matched.</p>
+<p>Title and artist match word by word (<a class="reference internal" href="songleaf.match.html#songleaf.match.WordIndex" title="songleaf.match.WordIndex"><code class="xref py py-class docutils literal notranslate"><span class="pre">WordIndex</span></code></a>): the query
+is inside the field (<code class="docutils literal notranslate"><span class="pre">&quot;wonder&quot;</span></code> finds <em>Wonderwall</em>) or the field is inside the
+query (<code class="docutils literal notranslate"><span class="pre">&quot;wonderwall</span> <span class="pre">oasis&quot;</span></code> finds the title <em>Wonderwall</em> and the artist <em>Oasis</em>),
+a word of four letters or more forgiving a typo; or every word of the query is in
+the title or in the artist (<code class="docutils literal notranslate"><span class="pre">&quot;paper</span> <span class="pre">boats</span> <span class="pre">invented</span> <span class="pre">band&quot;</span></code>). A song whose title
+holds a word of the query that its artist does not is a title match
+(<code class="docutils literal notranslate"><span class="pre">&quot;wonderwall</span> <span class="pre">oasis&quot;</span></code>: <em>Wonderwall (ver. 2)</em> by Oasis), otherwise an artist match. Within each kind, the songs whose
+title and artist together hold the most words of the query come first (so
+<em>Wonderwall</em> by Oasis leads), then the closest by fuzzy score (of the title, or of
+title and artist, whichever is closer; of the artist), then the most popular.
+Lyrics hold every word of the query, rank by popularity, and carry
+<code class="docutils literal notranslate"><span class="pre">meta[&quot;snippet&quot;]</span></code>: the line that matched, with its spans.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference internal" href="songleaf.sources.html#songleaf.sources.Hit" title="songleaf.sources.Hit"><code class="xref py py-class docutils literal notranslate"><span class="pre">Hit</span></code></a>]]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -772,28 +801,34 @@ more pages.</p>
 <td><p>A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="songleaf.library.html#module-songleaf.library" title="songleaf.library"><code class="xref py py-obj docutils literal notranslate"><span class="pre">library</span></code></a></p></td>
-<td><p>The library's groups: which stored songs are in which groups, shared by everyone using it.</p></td>
+<td><p>The library's lists: which stored songs are in which lists, shared by everyone using it.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="songleaf.model.html#module-songleaf.model" title="songleaf.model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="songleaf.match.html#module-songleaf.match" title="songleaf.match"><code class="xref py py-obj docutils literal notranslate"><span class="pre">match</span></code></a></p></td>
+<td><p>Where a query matched: the words it shares with a field, as spans to highlight, and the lyric line.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.model.html#module-songleaf.model" title="songleaf.model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></a></p></td>
 <td><p>The linked-artifact model: a song is lyrics text plus standoff annotations.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.packing.html#module-songleaf.packing" title="songleaf.packing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">packing</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="songleaf.packing.html#module-songleaf.packing" title="songleaf.packing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">packing</span></code></a></p></td>
 <td><p>Line packing: which consecutive lines of a paragraph share a row.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="songleaf.parse.html#module-songleaf.parse" title="songleaf.parse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.parse.html#module-songleaf.parse" title="songleaf.parse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse</span></code></a></p></td>
 <td><p>Parse chords-over-lyrics text into a <a class="reference internal" href="songleaf.model.html#songleaf.model.Song" title="songleaf.model.Song"><code class="xref py py-class docutils literal notranslate"><span class="pre">Song</span></code></a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.render.html#module-songleaf.render" title="songleaf.render"><code class="xref py py-obj docutils literal notranslate"><span class="pre">render</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="songleaf.render.html#module-songleaf.render" title="songleaf.render"><code class="xref py py-obj docutils literal notranslate"><span class="pre">render</span></code></a></p></td>
 <td><p>Render a song onto one dense page, with the lyrics as large as will fit.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="songleaf.sources.html#module-songleaf.sources" title="songleaf.sources"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sources</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.sources.html#module-songleaf.sources" title="songleaf.sources"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sources</span></code></a></p></td>
 <td><p>Where songs are found: sources, and a search that composes them.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.store.html#module-songleaf.store" title="songleaf.store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="songleaf.store.html#module-songleaf.store" title="songleaf.store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store</span></code></a></p></td>
 <td><p>Where songs persist: a <code class="docutils literal notranslate"><span class="pre">MutableMapping</span></code> of songs, JSON files by default.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="songleaf.tools.html#module-songleaf.tools" title="songleaf.tools"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.tools.html#module-songleaf.tools" title="songleaf.tools"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools</span></code></a></p></td>
 <td><p>The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="songleaf.viewed.html#module-songleaf.viewed" title="songleaf.viewed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">viewed</span></code></a></p></td>
+<td><p>Each viewer's <em>Viewed</em> list: the songs they opened, the most recent first.</p></td>
 </tr>
 </tbody>
 </table>
@@ -865,6 +900,7 @@ more pages.</p>
 <li><a class="reference internal" href="#songleaf.KaggleChordsSource"><code class="docutils literal notranslate"><span class="pre">KaggleChordsSource</span></code></a><ul>
 <li><a class="reference internal" href="#songleaf.KaggleChordsSource.get"><code class="docutils literal notranslate"><span class="pre">KaggleChordsSource.get()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.KaggleChordsSource.search"><code class="docutils literal notranslate"><span class="pre">KaggleChordsSource.search()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.KaggleChordsSource.search_tiers"><code class="docutils literal notranslate"><span class="pre">KaggleChordsSource.search_tiers()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#songleaf.SheetLayout"><code class="docutils literal notranslate"><span class="pre">SheetLayout</span></code></a><ul>
@@ -905,7 +941,7 @@ more pages.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=e2f847f2"></script>
+</div><script src="../_static/documentation_options.js?v=c249dd19"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

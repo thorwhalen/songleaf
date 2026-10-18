@@ -7,7 +7,7 @@
 <link rel="alternate" type="text/markdown" href="songleaf.tools.html.md">
 <link rel="describedby" href="../llms.txt" type="text/markdown">
 <link rel="alternate" type="text/markdown" href="songleaf.tools.html.md">
-<link rel="describedby" href="llms.txt"><link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="For AI agents" href="../ai-agents.html"><link rel="prev" title="songleaf.store" href="songleaf.store.html">
+<link rel="describedby" href="llms.txt"><link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="songleaf.viewed" href="songleaf.viewed.html"><link rel="prev" title="songleaf.store" href="songleaf.store.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
         <title>songleaf.tools - songleaf</title>
@@ -208,6 +208,7 @@
 <li class="toctree-l3"><a class="reference internal" href="songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.library.html">songleaf.library</a></li>
+<li class="toctree-l3"><a class="reference internal" href="songleaf.match.html">songleaf.match</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.parse.html">songleaf.parse</a></li>
@@ -215,6 +216,7 @@
 <li class="toctree-l3"><a class="reference internal" href="songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3 current current-page"><a class="current reference internal" href="#">songleaf.tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="songleaf.viewed.html">songleaf.viewed</a></li>
 </ul>
 </li>
 </ul>
@@ -284,10 +286,10 @@ than dicts uses <a class="reference internal" href="songleaf.sources.html#module
 <td><p>Build the search index of the Kaggle corpus, once, where the corpus zip is.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#songleaf.tools.forget" title="songleaf.tools.forget"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forget</span></code></a>(key, *[, store, library_root])</p></td>
-<td><p>Remove a song from the stored songs and from every group it was in.</p></td>
+<td><p>Remove a song from the stored songs, from every list it was in, and from every Viewed list.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.tools.search" title="songleaf.tools.search"><code class="xref py py-obj docutils literal notranslate"><span class="pre">search</span></code></a>([query, title, artist, lyrics, ...])</p></td>
-<td><p>Find songs: fuzzy title and artist (<code class="docutils literal notranslate"><span class="pre">query</span></code>), or by title, artist, or whole words of the lyrics.</p></td>
+<td><p>Find songs with one query: in your lists' names, then titles, artists and lyrics.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#songleaf.tools.sheet" title="songleaf.tools.sheet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sheet</span></code></a>(query, *[, output, pick, refresh, ...])</p></td>
 <td><p>Make a one-page song sheet (PDF) for the best match of <code class="docutils literal notranslate"><span class="pre">query</span></code>.</p></td>
@@ -298,12 +300,21 @@ than dicts uses <a class="reference internal" href="songleaf.sources.html#module
 <tr class="row-even"><td><p><a class="reference internal" href="#songleaf.tools.songs" title="songleaf.tools.songs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">songs</span></code></a>(*[, store])</p></td>
 <td><p>The keys of the stored songs.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.tools.unview" title="songleaf.tools.unview"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unview</span></code></a>(key, *[, user, library_root])</p></td>
+<td><p>Take a song out of <code class="docutils literal notranslate"><span class="pre">user</span></code>'s Viewed list.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.tools.view" title="songleaf.tools.view"><code class="xref py py-obj docutils literal notranslate"><span class="pre">view</span></code></a>(key, *[, user, at, store, library_root])</p></td>
+<td><p>Put a stored song at the top of <code class="docutils literal notranslate"><span class="pre">user</span></code>'s Viewed list: they just opened it.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.tools.viewed" title="songleaf.tools.viewed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">viewed</span></code></a>(*[, user, store, library_root])</p></td>
+<td><p>The songs <code class="docutils literal notranslate"><span class="pre">user</span></code> opened, the most recent first: <code class="docutils literal notranslate"><span class="pre">key</span></code>, <code class="docutils literal notranslate"><span class="pre">title</span></code>, <code class="docutils literal notranslate"><span class="pre">artist</span></code>, <code class="docutils literal notranslate"><span class="pre">viewed_at</span></code>.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
 <dl class="py data">
 <dt class="sig sig-object py" id="songleaf.tools.TOOLS">
-<span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">TOOLS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;function</span> <span class="pre">search&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">sheet&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">song&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">songs&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">forget&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">build_index&gt;)</span></span><a class="headerlink" href="#songleaf.tools.TOOLS" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">TOOLS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;function</span> <span class="pre">search&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">sheet&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">song&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">songs&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">viewed&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">view&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">unview&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">forget&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">build_index&gt;)</span></span><a class="headerlink" href="#songleaf.tools.TOOLS" title="Link to this definition">¶</a></dt>
 <dd><p>Every operation, in the order the CLI lists them.</p>
 </dd></dl>
 
@@ -324,7 +335,7 @@ replacing the zip. <code class="docutils literal notranslate"><span class="pre">
 <dl class="py function">
 <dt class="sig sig-object py" id="songleaf.tools.forget">
 <span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">forget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">library_root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/tools.html#forget"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.tools.forget" title="Link to this definition">¶</a></dt>
-<dd><p>Remove a song from the stored songs and from every group it was in.</p>
+<dd><p>Remove a song from the stored songs, from every list it was in, and from every Viewed list.</p>
 <p>It can be found and stored again by searching. Returns <code class="docutils literal notranslate"><span class="pre">{&quot;key&quot;,</span> <span class="pre">&quot;deleted&quot;}</span></code>;
 <code class="docutils literal notranslate"><span class="pre">deleted</span></code> is False when it was not stored.</p>
 <dl class="field-list simple">
@@ -336,8 +347,18 @@ replacing the zip. <code class="docutils literal notranslate"><span class="pre">
 
 <dl class="py function">
 <dt class="sig sig-object py" id="songleaf.tools.search">
-<span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">search</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lyrics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/tools.html#search"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.tools.search" title="Link to this definition">¶</a></dt>
-<dd><p>Find songs: fuzzy title and artist (<code class="docutils literal notranslate"><span class="pre">query</span></code>), or by title, artist, or whole words of the lyrics.</p>
+<span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">search</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lyrics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_songs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">library_root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/tools.html#search"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.tools.search" title="Link to this definition">¶</a></dt>
+<dd><p>Find songs with one query: in your lists’ names, then titles, artists and lyrics.</p>
+<p>With only <code class="docutils literal notranslate"><span class="pre">query</span></code>, every song comes once, tagged with where it matched (<code class="docutils literal notranslate"><span class="pre">match</span></code>):
+<code class="docutils literal notranslate"><span class="pre">&quot;list&quot;</span></code> (the first <code class="docutils literal notranslate"><span class="pre">list_songs</span></code> stored songs of each list whose name the query
+names; <code class="docutils literal notranslate"><span class="pre">list</span></code> and <code class="docutils literal notranslate"><span class="pre">list_name</span></code> say which, and the list’s other songs are found in
+the later kinds as usual), then <code class="docutils literal notranslate"><span class="pre">&quot;title&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;artist&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;lyrics&quot;</span></code>, in that order,
+at most <code class="docutils literal notranslate"><span class="pre">limit</span></code> of each, best first within each. A song that matches its title and
+its lyrics is a title match only. <code class="docutils literal notranslate"><span class="pre">highlight</span></code> holds the matched words of the title and
+artist (and of <code class="docutils literal notranslate"><span class="pre">list_name</span></code>) as <code class="docutils literal notranslate"><span class="pre">[start,</span> <span class="pre">end]</span></code> spans; a lyrics match carries
+<code class="docutils literal notranslate"><span class="pre">snippet</span></code>, the line that matched, with its spans.</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">title</span></code>, <code class="docutils literal notranslate"><span class="pre">artist</span></code> or <code class="docutils literal notranslate"><span class="pre">lyrics</span></code>, it is a narrower search instead: songs that
+match every field given (and <code class="docutils literal notranslate"><span class="pre">query</span></code>, fuzzily over title and artist), <code class="docutils literal notranslate"><span class="pre">match:</span> <span class="pre">&quot;&quot;</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]</span></p>
@@ -403,6 +424,45 @@ no chords) and <code class="docutils literal notranslate"><span class="pre">tran
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="songleaf.tools.unview">
+<span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">unview</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">user</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">library_root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/tools.html#unview"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.tools.unview" title="Link to this definition">¶</a></dt>
+<dd><p>Take a song out of <code class="docutils literal notranslate"><span class="pre">user</span></code>’s Viewed list. It stays stored, and in its lists.</p>
+<p>Returns <code class="docutils literal notranslate"><span class="pre">{&quot;key&quot;,</span> <span class="pre">&quot;removed&quot;,</span> <span class="pre">&quot;viewed_at&quot;}</span></code>: when it had been viewed, so the same
+time can be given back to <a class="reference internal" href="#songleaf.tools.view" title="songleaf.tools.view"><code class="xref py py-func docutils literal notranslate"><span class="pre">view()</span></code></a> to undo.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="songleaf.tools.view">
+<span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">user</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">library_root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/tools.html#view"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.tools.view" title="Link to this definition">¶</a></dt>
+<dd><p>Put a stored song at the top of <code class="docutils literal notranslate"><span class="pre">user</span></code>’s Viewed list: they just opened it.</p>
+<p><code class="docutils literal notranslate"><span class="pre">at</span></code> (seconds since the epoch) records that time instead, which is how an undo puts
+a song it took out back where it was. Returns <code class="docutils literal notranslate"><span class="pre">{&quot;key&quot;,</span> <span class="pre">&quot;viewed_at&quot;}</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="songleaf.tools.viewed">
+<span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">viewed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">user</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">library_root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/tools.html#viewed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.tools.viewed" title="Link to this definition">¶</a></dt>
+<dd><p>The songs <code class="docutils literal notranslate"><span class="pre">user</span></code> opened, the most recent first: <code class="docutils literal notranslate"><span class="pre">key</span></code>, <code class="docutils literal notranslate"><span class="pre">title</span></code>, <code class="docutils literal notranslate"><span class="pre">artist</span></code>, <code class="docutils literal notranslate"><span class="pre">viewed_at</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">user</span></code> is who the host says is asking (no one: the list everyone shares). Songs no
+longer stored are left out. <code class="docutils literal notranslate"><span class="pre">viewed_at</span></code> is in seconds since the epoch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
         </article>
@@ -410,12 +470,12 @@ no chords) and <code class="docutils literal notranslate"><span class="pre">tran
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="../ai-agents.html">
+          <a class="next-page" href="songleaf.viewed.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">For AI agents</div>
+                <div class="title">songleaf.viewed</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -464,6 +524,9 @@ no chords) and <code class="docutils literal notranslate"><span class="pre">tran
 <li><a class="reference internal" href="#songleaf.tools.sheet"><code class="docutils literal notranslate"><span class="pre">sheet()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.tools.song"><code class="docutils literal notranslate"><span class="pre">song()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.tools.songs"><code class="docutils literal notranslate"><span class="pre">songs()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.tools.unview"><code class="docutils literal notranslate"><span class="pre">unview()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.tools.view"><code class="docutils literal notranslate"><span class="pre">view()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.tools.viewed"><code class="docutils literal notranslate"><span class="pre">viewed()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -475,7 +538,7 @@ no chords) and <code class="docutils literal notranslate"><span class="pre">tran
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=e2f847f2"></script>
+</div><script src="../_static/documentation_options.js?v=c249dd19"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

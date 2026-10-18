@@ -208,6 +208,7 @@
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.library.html">songleaf.library</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.match.html">songleaf.match</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.model.html">songleaf.model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.parse.html">songleaf.parse</a></li>
@@ -215,6 +216,7 @@
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.tools.html">songleaf.tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.viewed.html">songleaf.viewed</a></li>
 </ul>
 </li>
 </ul>
@@ -314,11 +316,12 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 </section>
 <section id="command-line">
 <h2>Command line<a class="headerlink" href="#command-line" title="Link to this heading">¶</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>search<span class="w"> </span><span class="s2">"wonderwall oasis"</span><span class="w">              </span><span class="c1"># fuzzy: typos and word order don't matter</span>
-python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>search<span class="w"> </span>--artist<span class="w"> </span>oasis<span class="w"> </span>--lyrics<span class="w"> </span><span class="s2">"roads winding"</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>search<span class="w"> </span><span class="s2">"wonderwall oasis"</span><span class="w">              </span><span class="c1"># one query: list names, then titles, artists, lyrics</span>
+python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>search<span class="w"> </span>--artist<span class="w"> </span>oasis<span class="w"> </span>--lyrics<span class="w"> </span><span class="s2">"roads winding"</span><span class="w">   </span><span class="c1"># narrower: every field given must match</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span><span class="s2">"wonderwall oasis"</span><span class="w"> </span>--output<span class="w"> </span>wonderwall.pdf
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span><span class="s2">"wonderwall oasis"</span><span class="w"> </span>--pick<span class="w"> </span><span class="m">2</span><span class="w">      </span><span class="c1"># the second-best match</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>songs<span class="w">                                  </span><span class="c1"># songs already stored</span>
+python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>viewed<span class="w">                                 </span><span class="c1"># the songs opened, the latest first</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span>kaggle_chords:1234<span class="w">               </span><span class="c1"># a song by its key: no search</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span>kaggle_chords:1234<span class="w"> </span>--refresh<span class="w">     </span><span class="c1"># fetch it again from its source</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span><span class="s2">"wonderwall oasis"</span><span class="w"> </span>--transpose<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="c1"># chords up a whole tone, spelled for the new key</span>
@@ -339,6 +342,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 <span class="n">songleaf</span><span class="o">.</span><span class="n">render_sheet</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="s2">"wonderwall-inline.pdf"</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="s2">"inline+two-column"</span><span class="p">)</span>
 
 <span class="n">songleaf</span><span class="o">.</span><span class="n">sheet</span><span class="p">(</span><span class="s2">"wonderwall oasis"</span><span class="p">)</span>  <span class="c1"># search, store and render in one call</span>
+<span class="n">songleaf</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">"wonderwall oasis"</span><span class="p">)</span>  <span class="c1"># [{..., "match": "title", "highlight": {...}}, ...]</span>
 <span class="n">songleaf</span><span class="o">.</span><span class="n">sheet</span><span class="p">(</span><span class="s2">"wonderwall oasis"</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="s2">"overlap+shaded"</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -402,7 +406,9 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 <span class="p">)</span>
 </pre></div>
 </div>
-<p><strong>Your songs</strong> (the songs opened before) can be deleted, and grouped. Groups work like Gmail labels: a song can be in several groups, and a group can hold other groups. Chips above the list narrow it to a group (All, each group, Ungrouped); choosing a group that holds groups shows them in a second row. The chosen group is in the URL, so Back, reload and a shared link keep it. To file songs, tap the “in …” line under a song’s title (or pick several songs with <strong>Edit</strong> and use <strong>Group…</strong>): both open the same menu, where you tick groups or create one, then Apply. On a wide screen, <strong>Arrange groups</strong> shows the groups as a tree, where you can drag a song or a group onto a group (that is how groups go inside groups). Groups are shared by everyone using the app (one library). They are kept on the server as a <a class="reference external" href="https://github.com/i2mint/zodal-groups">zodal-groups</a> snapshot with a revision (<code class="docutils literal notranslate"><span class="pre">songleaf.library</span></code>). A save made from an out-of-date revision is refused, and the page replays its changes on top of the newer groups, so two people editing at once don’t overwrite each other.</p>
+<p><strong>One search field</strong> looks in four places at once and shows what it found in sections, in this order: <strong>In your lists</strong> (lists whose name matches, each opening the library on that list, with its first songs), <strong>Titles</strong>, <strong>Artists</strong> and <strong>Lyrics</strong>. A song appears once, in the first section it fits: a song whose title and lyrics both match is a title match. The matched words are marked, a lyrics match shows the line that matched, and when no title matches a quiet line says so. Titles and artists match word by word: a query can be part of a title (<code class="docutils literal notranslate"><span class="pre">wonder</span></code>), or hold a whole title and artist (<code class="docutils literal notranslate"><span class="pre">wonderwall</span> <span class="pre">oasis</span></code>), and a word of four letters or more forgives a typo. In each section the songs whose title and artist hold the most words of the query come first, then the closest, then the most popular. The research and design behind it are on <a class="reference external" href="https://github.com/thorwhalen/songleaf/pull/34">songleaf#34</a>.</p>
+<p><strong>Home</strong> is the library on <strong>Viewed</strong>: the songs you opened, the latest first. It is kept on the server, per person when the host says who is asking (enlace passes the signed-in user; songleaf stores only a hash of the id), so it is the same on every device. The × beside a song takes it out of Viewed, with an Undo; it stays stored and in its lists, and the <strong>Not in a list</strong> chip and search still find it. A house icon at the top of every other view (search results, a list, a song) goes back home; when home is a known number of steps back it walks back to it, so it returns as you left it.</p>
+<p><strong>Lists</strong> work like Gmail labels: a song can be in several lists, and a list can hold other lists. Chips above the songs narrow them to a list (Viewed, each list, Not in a list); choosing a list that holds lists shows them in a second row. The chosen list is in the URL, so Back, reload and a shared link keep it. To file songs, tap the “in …” line under a song’s title (or pick several songs with <strong>Edit</strong> and use <strong>Lists…</strong>): both open the same menu, where you tick lists or create one, then Apply. <strong>Edit</strong> also deletes songs (from storage, every list and Viewed). On a wide screen, <strong>Arrange lists</strong> shows the lists as a tree, where you can drag a song or a list onto a list (that is how lists go inside lists). Lists are shared by everyone using the app (one library). They are kept on the server as a <a class="reference external" href="https://github.com/i2mint/zodal-groups">zodal-groups</a> snapshot with a revision (<code class="docutils literal notranslate"><span class="pre">songleaf.library</span></code>; the model and its file say “groups”). A save made from an out-of-date revision is refused, and the page replays its changes on top of the newer lists, so two people editing at once don’t overwrite each other.</p>
 <p>In Read view, the floating ▶ starts <strong>auto-scroll</strong>; while it runs, − and + set the speed. It is remembered per song, pauses when you touch the song, and keeps the screen awake while running.</p>
 <p>The app has no login of its own: put it behind whatever gates the host. It takes the same <code class="docutils literal notranslate"><span class="pre">sources=</span></code> and <code class="docutils literal notranslate"><span class="pre">store=</span></code> as <code class="docutils literal notranslate"><span class="pre">sheet</span></code>. A rendered sheet is kept in memory (<code class="docutils literal notranslate"><span class="pre">sheet_cache_size=</span></code>, default 32), so the page’s requests for one sheet render it once.</p>
 </section>
@@ -423,7 +429,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-17 23:41 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/4fdcf7b2291ff1e692e4e2d9197ae09309424898">4fdcf7b</a> (main) · songleaf 0.0.11 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-18 02:22 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/05eee3ce220bff4c4f2ff7bd90aeed52b3b9e28d">05eee3c</a> (main) · songleaf 0.0.12 · <a href="about-this-build.html">about this build</a></p>
         </article>
       </div>
       <footer>
@@ -486,7 +492,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=e2f847f2"></script>
+</div><script src="_static/documentation_options.js?v=c249dd19"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>
