@@ -205,6 +205,7 @@
   <ul>
 <li class="toctree-l1 has-children"><a class="reference internal" href="api.html">API reference</a><input aria-label="Toggle navigation of API reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.datasets.html">songleaf.datasets</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.library.html">songleaf.library</a></li>
@@ -342,7 +343,9 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 <span class="n">songleaf</span><span class="o">.</span><span class="n">render_sheet</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="s2">"wonderwall-inline.pdf"</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="s2">"inline+two-column"</span><span class="p">)</span>
 
 <span class="n">songleaf</span><span class="o">.</span><span class="n">sheet</span><span class="p">(</span><span class="s2">"wonderwall oasis"</span><span class="p">)</span>  <span class="c1"># search, store and render in one call</span>
-<span class="n">songleaf</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">"wonderwall oasis"</span><span class="p">)</span>  <span class="c1"># [{..., "match": "title", "highlight": {...}}, ...]</span>
+<span class="n">songleaf</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+    <span class="s2">"wonderwall oasis"</span>
+<span class="p">)</span>  <span class="c1"># [{..., "match": "title", "highlight": {...}}, ...]</span>
 <span class="n">songleaf</span><span class="o">.</span><span class="n">sheet</span><span class="p">(</span><span class="s2">"wonderwall oasis"</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="s2">"overlap+shaded"</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -429,7 +432,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-18 02:22 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/05eee3ce220bff4c4f2ff7bd90aeed52b3b9e28d">05eee3c</a> (main) · songleaf 0.0.12 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-19 07:42 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/d48be8b132788f129a0b28bc4ec7af0ce2bdd9d6">d48be8b</a> (main) · songleaf 0.0.13 · <a href="about-this-build.html">about this build</a></p>
         </article>
       </div>
       <footer>
@@ -492,7 +495,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=c249dd19"></script>
+</div><script src="_static/documentation_options.js?v=6b09a97f"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

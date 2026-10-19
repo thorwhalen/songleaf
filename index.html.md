@@ -67,7 +67,9 @@ songleaf.render_dense_a4(song, "wonderwall.pdf")  # {'font_size': ..., 'pages': 
 songleaf.render_sheet(song, "wonderwall-inline.pdf", layout="inline+two-column")
 
 songleaf.sheet("wonderwall oasis")  # search, store and render in one call
-songleaf.tools.search("wonderwall oasis")  # [{..., "match": "title", "highlight": {...}}, ...]
+songleaf.tools.search(
+    "wonderwall oasis"
+)  # [{..., "match": "title", "highlight": {...}}, ...]
 songleaf.sheet("wonderwall oasis", layout="overlap+shaded")
 ```
 

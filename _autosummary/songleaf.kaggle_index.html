@@ -205,6 +205,7 @@
   <ul class="current">
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../api.html">API reference</a><input aria-label="Toggle navigation of API reference" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l2 current has-children"><a class="reference internal" href="songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="songleaf.datasets.html">songleaf.datasets</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3 current current-page"><a class="current reference internal" href="#">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.library.html">songleaf.library</a></li>
@@ -308,7 +309,7 @@ notices the file changed reloads it.</p>
 <td><p>Write the index of the Kaggle corpus (<code class="docutils literal notranslate"><span class="pre">loader</span></code>: as for <code class="docutils literal notranslate"><span class="pre">KaggleChordsSource</span></code>).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#songleaf.kaggle_index.kaggle_index_path" title="songleaf.kaggle_index.kaggle_index_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kaggle_index_path</span></code></a>()</p></td>
-<td><p>Where the index lives: beside the corpus zip, under the data root.</p></td>
+<td><p>Where the index is read from: beside the corpus zip under the data root.</p></td>
 </tr>
 </tbody>
 </table>
@@ -399,7 +400,9 @@ sees half an index.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="songleaf.kaggle_index.kaggle_index_path">
 <span class="sig-prename descclassname"><span class="pre">songleaf.kaggle_index.</span></span><span class="sig-name descname"><span class="pre">kaggle_index_path</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/kaggle_index.html#kaggle_index_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.kaggle_index.kaggle_index_path" title="Link to this definition">¶</a></dt>
-<dd><p>Where the index lives: beside the corpus zip, under the data root.</p>
+<dd><p>Where the index is read from: beside the corpus zip under the data root.</p>
+<p>When the datasets live on S3 (<code class="docutils literal notranslate"><span class="pre">songleaf.datasets</span></code>), this is the cached
+download of the index (fetched on first use), a real file for SQLite.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
@@ -481,7 +484,7 @@ sees half an index.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=c249dd19"></script>
+</div><script src="../_static/documentation_options.js?v=6b09a97f"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

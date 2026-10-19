@@ -1,4 +1,4 @@
-> built 2026-10-18 02:22 UTC from 05eee3c (main) · songleaf 0.0.12. Details: build_info.json
+> built 2026-10-19 07:42 UTC from d48be8b (main) · songleaf 0.0.13. Details: build_info.json
 
 # index.html.md
 
@@ -71,7 +71,9 @@ songleaf.render_dense_a4(song, "wonderwall.pdf")  # {'font_size': ..., 'pages': 
 songleaf.render_sheet(song, "wonderwall-inline.pdf", layout="inline+two-column")
 
 songleaf.sheet("wonderwall oasis")  # search, store and render in one call
-songleaf.tools.search("wonderwall oasis")  # [{..., "match": "title", "highlight": {...}}, ...]
+songleaf.tools.search(
+    "wonderwall oasis"
+)  # [{..., "match": "title", "highlight": {...}}, ...]
 songleaf.sheet("wonderwall oasis", layout="overlap+shaded")
 ```
 
@@ -166,6 +168,76 @@ songleaf.sheet("paper boats", sources=[my_source], store={}, renderer=my_rendere
 ```
 
 <p class="epythet-aggregates">This documentation as a single file: <a href="songleaf.md">songleaf.md</a> (Markdown, for agents).</p>
+
+
+# _autosummary/songleaf.datasets.html.md
+
+# songleaf.datasets
+
+Where the `datasets` data kind lives: local files by default, S3 by configuration.
+
+The corpus files (`chords-and-lyrics/...`) are addressed by their path relative
+to the `datasets` kind. ADR-0024 makes the S3 key mirror the local layout, so a
+store over disk (`dol.Files`) and a store over S3 (`s3dol`) hold the same
+relative keys, and [`dataset_path()`](_autosummary/songleaf.datasets.html.md#songleaf.datasets.dataset_path) is the one place that turns a key into a
+real file (SQLite and zip readers need one).
+
+Configuration (environment; `SONGLEAF_DATA_DIR` always wins, so a pinned local
+root is never overridden by S3):
+
+- `SONGLEAF_DATASETS_URI`: `s3://bucket/prefix` of the `datasets` kind
+  (for example `s3://tw-apps/thorwhalen/songleaf/datasets`). Unset means local.
+- `SONGLEAF_S3_PROFILE`: the AWS profile to read with (optional).
+- `SONGLEAF_CACHE_DIR`: where S3 objects are cached (default
+  `~/.cache/songleaf/datasets`).
+
+### Functions
+
+| [`dataset_path`](_autosummary/songleaf.datasets.html.md#songleaf.datasets.dataset_path)(key, \*[, location])        | The path of a real file for the dataset `key` (relative path), cached if remote.   |
+|-------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| [`datasets_store`](_autosummary/songleaf.datasets.html.md#songleaf.datasets.datasets_store)(\*[, location, readonly]) | The `datasets` kind as a `MutableMapping[str, bytes]` keyed by relative path.      |
+| [`s3_location`](_autosummary/songleaf.datasets.html.md#songleaf.datasets.s3_location)([environ])                   | The configured S3 home of the datasets, or `None` when they are local.             |
+
+### Classes
+
+| [`S3Location`](_autosummary/songleaf.datasets.html.md#songleaf.datasets.S3Location)(bucket, prefix[, profile])   |    |
+|------------------------------------------------------------------------------------------|----|
+
+### *class* songleaf.datasets.S3Location(bucket, prefix, profile=None)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+### songleaf.datasets.dataset_path(key, , location=None)
+
+The path of a real file for the dataset `key` (relative path), cached if remote.
+
+Local: `<data root>/datasets/<key>` (it may not exist). On S3: the object is
+downloaded once to the cache (a missing object leaves no file, so the path
+does not exist) and the cached path is returned; an object whose size changed
+on S3 is fetched again.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### songleaf.datasets.datasets_store(, location=None, readonly=True)
+
+The `datasets` kind as a `MutableMapping[str, bytes]` keyed by relative path.
+
+`dol.Files` over the local folder unless S3 is configured (or `location`
+is given), then `s3dol` (the `s3` extra).
+
+### songleaf.datasets.s3_location(environ=None)
+
+The configured S3 home of the datasets, or `None` when they are local.
+
+```pycon
+>>> s3_location({"SONGLEAF_DATASETS_URI": "s3://b/x/datasets"})
+S3Location(bucket='b', prefix='x/datasets/', profile=None)
+>>> s3_location({})
+```
+
+* **Return type:**
+  [`S3Location`](_autosummary/songleaf.datasets.html.md#songleaf.datasets.S3Location) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
 
 # _autosummary/songleaf.harmony.html.md
@@ -692,8 +764,9 @@ The keys of the stored songs.
 
 ### Modules
 
-| [`harmony`](_autosummary/songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                               |
+| [`datasets`](_autosummary/songleaf.datasets.html.md#module-songleaf.datasets)         | Where the `datasets` data kind lives: local files by default, S3 by configuration.                              |
 |--------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| [`harmony`](_autosummary/songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                               |
 | [`kaggle_index`](_autosummary/songleaf.kaggle_index.html.md#module-songleaf.kaggle_index) | A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.                     |
 | [`library`](_autosummary/songleaf.library.html.md#module-songleaf.library)           | The library's lists: which stored songs are in which lists, shared by everyone using it.                        |
 | [`match`](_autosummary/songleaf.match.html.md#module-songleaf.match)               | Where a query matched: the words it shares with a field, as spans to highlight, and the lyric line.             |
@@ -752,7 +825,7 @@ notices the file changed reloads it.
 
 | [`build_kaggle_index`](_autosummary/songleaf.kaggle_index.html.md#songleaf.kaggle_index.build_kaggle_index)(\*[, path, loader, batch_size])   | Write the index of the Kaggle corpus (`loader`: as for `KaggleChordsSource`).   |
 |-------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| [`kaggle_index_path`](_autosummary/songleaf.kaggle_index.html.md#songleaf.kaggle_index.kaggle_index_path)()                                  | Where the index lives: beside the corpus zip, under the data root.              |
+| [`kaggle_index_path`](_autosummary/songleaf.kaggle_index.html.md#songleaf.kaggle_index.kaggle_index_path)()                                  | Where the index is read from: beside the corpus zip under the data root.        |
 
 ### Classes
 
@@ -817,7 +890,10 @@ sees half an index.
 
 ### songleaf.kaggle_index.kaggle_index_path()
 
-Where the index lives: beside the corpus zip, under the data root.
+Where the index is read from: beside the corpus zip under the data root.
+
+When the datasets live on S3 (`songleaf.datasets`), this is the cached
+download of the index (fetched on first use), a real file for SQLite.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
@@ -2394,7 +2470,7 @@ True
 
 # About this build
 
-This documentation was built on **2026-10-18 02:22 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/05eee3ce220bff4c4f2ff7bd90aeed52b3b9e28d"><code>05eee3c</code></a> on branch <code>main</code>, for **songleaf 0.0.12** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-19 07:42 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/d48be8b132788f129a0b28bc4ec7af0ce2bdd9d6"><code>d48be8b</code></a> on branch <code>main</code>, for **songleaf 0.0.13** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -2403,7 +2479,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/05eee3ce220bff4c4f2ff7bd90aeed52b3b9e28d"><code>05eee3ce220bff4c4f2ff7bd90aeed52b3b9e28d</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/d48be8b132788f129a0b28bc4ec7af0ce2bdd9d6"><code>d48be8b132788f129a0b28bc4ec7af0ce2bdd9d6</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -2414,9 +2490,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39089735131">39089735131</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39217525392">39217525392</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>05eee3ce220bff4c4f2ff7bd90aeed52b3b9e28d</code> (in the history of the built commit) |
+| Event commit | <code>d48be8b132788f129a0b28bc4ec7af0ce2bdd9d6</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -2441,13 +2517,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.12/">0.0.12</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.13/">0.0.13</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 05eee3ce220bff4c4f2ff7bd90aeed52b3b9e28d
+git checkout d48be8b132788f129a0b28bc4ec7af0ce2bdd9d6
 pip install "epythet==0.2.17"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

@@ -202,6 +202,7 @@
   <ul>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../api.html">API reference</a><input aria-label="Toggle navigation of API reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../_autosummary/songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.datasets.html">songleaf.datasets</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.library.html">songleaf.library</a></li>
@@ -300,6 +301,7 @@
     <span class="n">SourceUnavailable</span><span class="p">,</span>
     <span class="n">_load_kaggle_corpus</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataset_path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">data_dir</span>
 
 <span class="c1">#: The index's file name, beside the corpus zip under ``datasets/``.</span>
@@ -321,13 +323,26 @@
 <span class="s2">"""</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_index_key</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">KAGGLE_CHORDS_ZIP</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">,</span> <span class="s2">"/"</span><span class="p">)</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">"/"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">"/"</span> <span class="o">+</span> <span class="n">KAGGLE_INDEX_NAME</span>
+
+
 <div class="viewcode-block" id="kaggle_index_path">
 <a class="viewcode-back" href="../../_autosummary/songleaf.kaggle_index.html#songleaf.kaggle_index.kaggle_index_path">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">kaggle_index_path</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Where the index lives: beside the corpus zip, under the data root."""</span>
-    <span class="n">folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">(</span><span class="s2">"datasets"</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">KAGGLE_CHORDS_ZIP</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder</span><span class="p">,</span> <span class="n">KAGGLE_INDEX_NAME</span><span class="p">)</span></div>
+<span class="w">    </span><span class="sd">"""Where the index is read from: beside the corpus zip under the data root.</span>
 
+<span class="sd">    When the datasets live on S3 (``songleaf.datasets``), this is the cached</span>
+<span class="sd">    download of the index (fetched on first use), a real file for SQLite.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">dataset_path</span><span class="p">(</span><span class="n">_index_key</span><span class="p">())</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_local_index_path</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Where a build writes the index: always the local data root (upload it after)."""</span>
+    <span class="n">folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">(</span><span class="s2">"datasets"</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">KAGGLE_CHORDS_ZIP</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder</span><span class="p">,</span> <span class="n">KAGGLE_INDEX_NAME</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="build_kaggle_index">
@@ -342,7 +357,7 @@
 <span class="sd">    beside the target and moved into place when complete, so a reader never</span>
 <span class="sd">    sees half an index.</span>
 <span class="sd">    """</span>
-    <span class="n">path</span> <span class="o">=</span> <span class="n">path</span> <span class="ow">or</span> <span class="n">kaggle_index_path</span><span class="p">()</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">path</span> <span class="ow">or</span> <span class="n">_local_index_path</span><span class="p">()</span>
     <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">started</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
     <span class="n">df</span> <span class="o">=</span> <span class="p">(</span><span class="n">loader</span> <span class="ow">or</span> <span class="n">_load_kaggle_corpus</span><span class="p">)()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -582,7 +597,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=c249dd19"></script>
+</div><script src="../../_static/documentation_options.js?v=6b09a97f"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

@@ -1,0 +1,20 @@
+songleaf.datasets
+=================
+
+.. automodule:: songleaf.datasets
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      dataset_path
+      datasets_store
+      s3_location
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      S3Location
+   

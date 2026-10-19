@@ -41,7 +41,7 @@ notices the file changed reloads it.
 
 | [`build_kaggle_index`](#songleaf.kaggle_index.build_kaggle_index)(\*[, path, loader, batch_size])   | Write the index of the Kaggle corpus (`loader`: as for `KaggleChordsSource`).   |
 |-------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| [`kaggle_index_path`](#songleaf.kaggle_index.kaggle_index_path)()                                  | Where the index lives: beside the corpus zip, under the data root.              |
+| [`kaggle_index_path`](#songleaf.kaggle_index.kaggle_index_path)()                                  | Where the index is read from: beside the corpus zip under the data root.        |
 
 ### Classes
 
@@ -106,7 +106,10 @@ sees half an index.
 
 ### songleaf.kaggle_index.kaggle_index_path()
 
-Where the index lives: beside the corpus zip, under the data root.
+Where the index is read from: beside the corpus zip under the data root.
+
+When the datasets live on S3 (`songleaf.datasets`), this is the cached
+download of the index (fetched on first use), a real file for SQLite.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)

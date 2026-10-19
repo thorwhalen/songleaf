@@ -41,6 +41,7 @@
    :toctree:
    :recursive:
 
+   datasets
    harmony
    kaggle_index
    library
