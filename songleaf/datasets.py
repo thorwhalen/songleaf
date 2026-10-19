@@ -16,7 +16,9 @@ root is never overridden by S3):
   ``~/.cache/songleaf/datasets``).
 """
 
+import fcntl
 import os
+import warnings
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
@@ -40,12 +42,14 @@ def s3_location(environ=None) -> S3Location | None:
 
     >>> s3_location({"SONGLEAF_DATASETS_URI": "s3://b/x/datasets"})
     S3Location(bucket='b', prefix='x/datasets/', profile=None)
-    >>> s3_location({"SONGLEAF_DATASETS_URI": "s3://b/x", "SONGLEAF_DATA_DIR": "/d"})
     >>> s3_location({})
     """
     env = os.environ if environ is None else environ
     uri = env.get(DATASETS_URI_ENVVAR)
-    if not uri or env.get(DATA_DIR_ENVVAR):
+    if not uri:
+        return None
+    if env.get(DATA_DIR_ENVVAR):
+        warnings.warn(f"{DATA_DIR_ENVVAR} is set, so {DATASETS_URI_ENVVAR} is ignored")
         return None
     parsed = urlparse(uri)
     if parsed.scheme != _S3 or not parsed.netloc:
@@ -96,15 +100,28 @@ def dataset_path(key: str, *, location: S3Location | None = None) -> str:
     client, s3_key = store.client, location.prefix + key
     try:
         remote_size = client.head_object(Bucket=location.bucket, Key=s3_key)["ContentLength"]
-    except client.exceptions.ClientError:
-        return path  # absent on S3: callers test os.path.isfile, as for a local path
+    except client.exceptions.ClientError as error:
+        status = getattr(error, "response", {}).get("Error", {}).get("Code")
+        if status in ("404", "NoSuchKey", "NotFound"):
+            return path  # absent on S3: callers test os.path.isfile, as for a local path
+        if os.path.isfile(path):  # S3 refused (credentials, throttling): serve the cache
+            return path
+        raise
+    except OSError:  # unreachable network: the cached copy, if any, is still good
+        if os.path.isfile(path):
+            return path
+        raise
     if not (os.path.isfile(path) and os.path.getsize(path) == remote_size):
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        part = f"{path}.{os.getpid()}.part"  # moved into place when whole
-        try:
-            client.download_file(location.bucket, s3_key, part)
-            os.replace(part, path)
-        finally:
-            if os.path.exists(part):
-                os.remove(part)
+        with open(path + ".lock", "w") as lock:  # one worker downloads, the rest wait
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            if os.path.isfile(path) and os.path.getsize(path) == remote_size:
+                return path
+            part = f"{path}.{os.getpid()}.part"  # moved into place when whole
+            try:
+                client.download_file(location.bucket, s3_key, part)
+                os.replace(part, path)
+            finally:
+                if os.path.exists(part):
+                    os.remove(part)
     return path

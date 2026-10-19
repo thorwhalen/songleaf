@@ -20,7 +20,8 @@ def test_local_is_the_default(tmp_path, monkeypatch):
 def test_data_dir_wins_over_s3(tmp_path, monkeypatch):
     monkeypatch.setenv(datasets.DATASETS_URI_ENVVAR, "s3://b/p")
     monkeypatch.setenv("SONGLEAF_DATA_DIR", str(tmp_path))
-    assert s3_location() is None
+    with pytest.warns(UserWarning):
+        assert s3_location() is None
 
 
 def test_bad_uri():
@@ -32,12 +33,15 @@ class _Client:
     """A boto3 client stand-in holding one object."""
 
     class exceptions:
-        ClientError = KeyError
+        class ClientError(Exception):
+            response = {"Error": {"Code": "404"}}
 
     def __init__(self, objects):
         self.objects, self.downloads = objects, 0
 
     def head_object(self, *, Bucket, Key):
+        if Key not in self.objects:
+            raise self.exceptions.ClientError()
         return {"ContentLength": len(self.objects[Key])}
 
     def download_file(self, bucket, key, dest):
@@ -64,3 +68,21 @@ def test_s3_path_is_cached_and_refetched_on_size_change(tmp_path, monkeypatch):
     dataset_path("c/f.bin", location=loc)
     assert open(path, "rb").read() == b"abcdef"
     assert not os.path.exists(dataset_path("c/missing", location=loc))
+
+
+def test_unreachable_s3_serves_the_cache_or_raises(tmp_path, monkeypatch):
+    class _Down(_Client):
+        def head_object(self, **kw):
+            raise ConnectionError("down")
+
+    class _Store:
+        client = _Down({})
+
+    monkeypatch.setattr(datasets, "datasets_store", lambda **kw: _Store)
+    monkeypatch.setenv(datasets.CACHE_DIR_ENVVAR, str(tmp_path))
+    loc = S3Location("b", "pre/")
+    with pytest.raises(ConnectionError):
+        dataset_path("c/f.bin", location=loc)
+    (tmp_path / "c").mkdir()
+    (tmp_path / "c" / "f.bin").write_bytes(b"x")
+    assert dataset_path("c/f.bin", location=loc) == str(tmp_path / "c" / "f.bin")
