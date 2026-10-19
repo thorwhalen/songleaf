@@ -69,7 +69,11 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 
 
 def _index_key() -> str:
-    return KAGGLE_CHORDS_ZIP.replace(os.sep, "/").rsplit("/", 1)[0] + "/" + KAGGLE_INDEX_NAME
+    return (
+        KAGGLE_CHORDS_ZIP.replace(os.sep, "/").rsplit("/", 1)[0]
+        + "/"
+        + KAGGLE_INDEX_NAME
+    )
 
 
 def kaggle_index_path() -> str:

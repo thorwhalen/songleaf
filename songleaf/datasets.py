@@ -53,10 +53,14 @@ def s3_location(environ=None) -> S3Location | None:
         return None
     parsed = urlparse(uri)
     if parsed.scheme != _S3 or not parsed.netloc:
-        raise ValueError(f"{DATASETS_URI_ENVVAR} must look like s3://bucket/prefix, not {uri!r}")
+        raise ValueError(
+            f"{DATASETS_URI_ENVVAR} must look like s3://bucket/prefix, not {uri!r}"
+        )
     prefix = parsed.path.strip("/")
     return S3Location(
-        parsed.netloc, prefix + "/" if prefix else "", env.get(S3_PROFILE_ENVVAR) or None
+        parsed.netloc,
+        prefix + "/" if prefix else "",
+        env.get(S3_PROFILE_ENVVAR) or None,
     )
 
 
@@ -74,7 +78,10 @@ def datasets_store(*, location: S3Location | None = None, readonly: bool = True)
     from s3dol import s3_store
 
     return s3_store(
-        location.bucket, prefix=location.prefix, profile=location.profile, readonly=readonly
+        location.bucket,
+        prefix=location.prefix,
+        profile=location.profile,
+        readonly=readonly,
     )
 
 
@@ -99,12 +106,18 @@ def dataset_path(key: str, *, location: S3Location | None = None) -> str:
     store = datasets_store(location=location)
     client, s3_key = store.client, location.prefix + key
     try:
-        remote_size = client.head_object(Bucket=location.bucket, Key=s3_key)["ContentLength"]
+        remote_size = client.head_object(Bucket=location.bucket, Key=s3_key)[
+            "ContentLength"
+        ]
     except client.exceptions.ClientError as error:
         status = getattr(error, "response", {}).get("Error", {}).get("Code")
         if status in ("404", "NoSuchKey", "NotFound"):
-            return path  # absent on S3: callers test os.path.isfile, as for a local path
-        if os.path.isfile(path):  # S3 refused (credentials, throttling): serve the cache
+            return (
+                path  # absent on S3: callers test os.path.isfile, as for a local path
+            )
+        if os.path.isfile(
+            path
+        ):  # S3 refused (credentials, throttling): serve the cache
             return path
         raise
     except OSError:  # unreachable network: the cached copy, if any, is still good
