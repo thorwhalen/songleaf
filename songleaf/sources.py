@@ -27,6 +27,7 @@ from dataclasses import asdict, dataclass, field
 from functools import cached_property, lru_cache
 
 from songleaf.model import Song, score_link
+from songleaf.datasets import dataset_path
 from songleaf.store import data_dir
 
 KAGGLE_CHORDS_URL = (
@@ -85,7 +86,7 @@ def kaggle_chords_zip() -> str | None:
     """
     if os.environ.get(_SUNG_ZIP_ENVVAR):
         return None
-    path = os.path.join(data_dir("datasets"), KAGGLE_CHORDS_ZIP)
+    path = dataset_path(KAGGLE_CHORDS_ZIP)
     return path if os.path.isfile(path) else None
 
 

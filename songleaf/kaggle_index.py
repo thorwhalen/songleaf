@@ -46,6 +46,7 @@ from songleaf.sources import (
     SourceUnavailable,
     _load_kaggle_corpus,
 )
+from songleaf.datasets import dataset_path
 from songleaf.store import data_dir
 
 #: The index's file name, beside the corpus zip under ``datasets/``.
@@ -67,8 +68,21 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 """
 
 
+def _index_key() -> str:
+    return KAGGLE_CHORDS_ZIP.replace(os.sep, "/").rsplit("/", 1)[0] + "/" + KAGGLE_INDEX_NAME
+
+
 def kaggle_index_path() -> str:
-    """Where the index lives: beside the corpus zip, under the data root."""
+    """Where the index is read from: beside the corpus zip under the data root.
+
+    When the datasets live on S3 (``songleaf.datasets``), this is the cached
+    download of the index (fetched on first use), a real file for SQLite.
+    """
+    return dataset_path(_index_key())
+
+
+def _local_index_path() -> str:
+    """Where a build writes the index: always the local data root (upload it after)."""
     folder = os.path.join(data_dir("datasets"), os.path.dirname(KAGGLE_CHORDS_ZIP))
     return os.path.join(folder, KAGGLE_INDEX_NAME)
 
@@ -83,7 +97,7 @@ def build_kaggle_index(
     beside the target and moved into place when complete, so a reader never
     sees half an index.
     """
-    path = path or kaggle_index_path()
+    path = path or _local_index_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     started = time.time()
     df = (loader or _load_kaggle_corpus)().reset_index(drop=True)
