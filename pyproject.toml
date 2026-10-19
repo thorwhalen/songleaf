@@ -56,6 +56,10 @@ web = [
     "pillow",
     "pypdfium2>=4",
 ]
+# Read the datasets from S3 (SONGLEAF_DATASETS_URI), through s3dol.
+s3 = [
+    "s3dol",
+]
 dev = [
     "fastapi>=0.100",
     "httpx",
