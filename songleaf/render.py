@@ -1130,7 +1130,9 @@ def _snippet(song: Song, layout: SheetLayout, provider) -> tuple | None:
     if not layout.score:
         return None
     if provider is None:
-        from songleaf.snippets import abc_snippet as provider
+        from songleaf.snippets import default_provider
+
+        provider = default_provider()
     found = provider(song)
     if found is None or not (found.width > 0 and found.height > 0):
         return None
@@ -1155,7 +1157,7 @@ def fit_font_size(
     ``style``, if given, replaces the layout's style. Returns ``min_font_size``
     if even that does not fit (the song then needs more pages). ``snippets``
     is the score-snippet provider of a ``score`` layout (default
-    :func:`songleaf.snippets.abc_snippet`).
+    :func:`songleaf.snippets.default_provider`'s).
     """
     layout = _as_layout(layout, style)
     page_width, page_height = _page_dimensions(page_size)
@@ -1245,7 +1247,7 @@ def render_sheet(
     that runs onto a second page. It never goes past ``max_font_size``.
 
     ``snippets`` provides a ``score`` layout's snippet: ``song -> ScoreSnippet | None``
-    (default :func:`songleaf.snippets.abc_snippet`).
+    (default :func:`songleaf.snippets.default_provider`'s).
 
     ``output`` is a path or a binary file object. Returns
     ``{"path", "font_size", "pages", "rows"}``; ``path`` is ``None`` when

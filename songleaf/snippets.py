@@ -10,11 +10,11 @@ sense of the melody or the rhythm. Three parts, each replaceable:
   wins over the rule, so it is how a choice is overridden.
 - **What to draw**: a *snippet provider*, ``song -> ScoreSnippet | None``, is
   injected into :func:`songleaf.render.render_sheet` (``snippets=``) and never
-  imported by it. The default, :func:`abc_snippet`, draws the short ABC notation
-  recorded on the annotation with reportlab lines only: one voice, treble staff,
-  notes, rests, accidentals, bar lines and chord names, placed as on a treble staff
-  (no clef is drawn). Fuller engraving
-  (MusicXML, whole ABC tunes) belongs in a provider behind an optional extra.
+  imported by it. :func:`abc_snippet` draws the short ABC notation recorded on
+  the annotation with reportlab lines only: one voice, treble staff, notes,
+  rests, accidentals, bar lines and chord names (no clef is drawn). With the ``score`` extra,
+  :func:`songleaf.engrave.engraved_snippet` engraves ABC, MusicXML or MEI
+  properly; :func:`default_provider` picks it when installed.
 - **Where it goes**: the ``score`` layout option makes the renderer place the
   snippet as a row above its line; the font fit counts its height, so the
   lyrics shrink to make room.
@@ -46,6 +46,8 @@ UNIT_LENGTH = Fraction(1, 8)
 MIN_LENGTH, MAX_LENGTH = Fraction(1, 64), Fraction(4)
 #: Notations longer than this are refused: a snippet is a few bars.
 MAX_NOTATION_CHARS = 400
+#: The notation formats a score annotation may hold inline (all but ``abc`` need the ``score`` extra).
+NOTATION_FORMATS = ("abc", "musicxml", "mei")
 #: What a provider-less recorded snippet is noted as.
 INLINE_SOURCE = "inline"
 
@@ -206,8 +208,12 @@ def mark_segment(
     *segment* defaults to :func:`choose_segment`'s. Earlier ``score``
     annotations are replaced: the recorded one is what the sheet draws.
     """
+    if format not in NOTATION_FORMATS:
+        raise ValueError(f"format must be one of {NOTATION_FORMATS}, got {format!r}")
     if format == "abc":
         parse_abc(notation)  # refuse what the default provider could not draw
+    elif not notation.strip():
+        raise ValueError("The notation is empty.")
     segment = segment or choose_segment(song)
     if segment is None:
         raise ValueError("The song has no lyric line to put a snippet over.")
@@ -407,3 +413,17 @@ def first_snippet(providers: Sequence[SnippetProvider]) -> SnippetProvider:
         return None
 
     return provider
+
+
+def default_provider() -> SnippetProvider:
+    """The provider a ``score`` sheet uses when none is injected.
+
+    The engraved one (:func:`songleaf.engrave.engraved_snippet`) when the
+    ``score`` extra is installed, falling back to :func:`abc_snippet`; else
+    :func:`abc_snippet` alone.
+    """
+    from songleaf import engrave
+
+    if engrave.available():
+        return first_snippet([engrave.engraved_snippet, abc_snippet])
+    return abc_snippet
