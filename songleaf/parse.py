@@ -35,8 +35,8 @@ _CHORD_RE = re.compile(
     r"(?:maj|min|dim|aug|sus|add|m|M|\+|°|º|ø)?"  # quality
     r"\d{0,2}[M+\-]?"  # extension: 7, 9, 13; Brazilian 7M, 7+, 5-
     r"(?:sus\d{0,2}|(?:maj|add|dim|aug|no|m|b|#|\+|-)\d{1,2}[+\-]?)*"  # b5, sus, add9
-    r"(?:/[#b]?\d{1,2}[+\-#b]?)*"  # stacked extensions: 7/9, 4/7, 5-/7, /b13, 7/9b
-    r"(?:\([^()\s]{1,10}\))?"  # parenthesised alterations: (#9), (4/9), (b5)
+    r"(?:/(?:[#b]?\d{1,2}[+\-#b]?|sus\d{0,2}))*"  # stacked: 7/9, 4/7, 5-/7, /b13, 7/9b, 7/sus4
+    r"(?:\([^()\s]{1,10}\))*"  # parenthesised alterations: (#9), (4/9), (b5), 7(4)(9)
     r"(?:/[A-G][#b]?)?"  # bass
     r"\)?\*?"
 )
@@ -44,7 +44,9 @@ _CHORD_RE = re.compile(
 # marks, and short notes such as "(riff)" or "(walking bass)".
 _FILLER_RE = re.compile(
     r"\|+:?|:?\|+|-+|/+|%|\.+|\*+|[()?]|x|\d{1,2}"
-    r"|\(?(?:x\s*\d+|\d+\s*x)\)?|N\.?C\.?|\(\w{1,12}\)?|\w{1,12}\)",
+    r"|\(?(?:x\s*\d+|\d+\s*x)\)?|N\.?C\.?|\(\w{1,12}\)?|\w{1,12}\)"
+    r"|\w{1,12}:|tab|end|\{\w{1,12}\}"  # notes: "Intro:", "tab", "end", "{Fill}"
+    r"|/[A-G][#b]?",  # a bare bass note: "/B"
     re.IGNORECASE,
 )
 _SECTION_WORDS = (
@@ -80,8 +82,32 @@ _DECORATION_RE = re.compile(r"[=_\-~*.#^\s]{3,}")
 
 
 def is_chord_token(token: str) -> bool:
-    """True if ``token`` reads as a chord symbol (``G``, ``F#m7b5``, ``E7(#9)``, ``C/G``)."""
+    """True if ``token`` reads as a chord symbol (``G``, ``F#m7b5``, ``E7(#9)``, ``C/G``).
+
+    >>> is_chord_token("Bb7(4)(9)"), is_chord_token("A7/sus4"), is_chord_token("Bridge")
+    (True, True, False)
+    """
     return bool(_CHORD_RE.fullmatch(token))
+
+
+def _chords_in(token: str) -> list[tuple[int, str]]:
+    """The ``(offset in token, chord)`` pairs of a chord token, or of chords joined by ``-``; else ``[]``.
+
+    >>> _chords_in("F#m-E"), _chords_in("(B-E9)"), _chords_in("G"), _chords_in("Bridge")
+    ([(0, 'F#m'), (4, 'E')], [(1, 'B'), (3, 'E9')], [(0, 'G')], [])
+    """
+    if is_chord_token(token):
+        return [(0, token)]
+    inner = token.strip("()")
+    pieces = inner.split("-")
+    if len(pieces) < 2 or not all(is_chord_token(p) for p in pieces):
+        return []
+    start = token.index(inner)
+    out, at = [], start
+    for piece in pieces:
+        out.append((at, piece))
+        at += len(piece) + 1
+    return out
 
 
 def is_chord_line(line: str) -> bool:
@@ -93,8 +119,8 @@ def is_chord_line(line: str) -> bool:
     False
     """
     tokens = line.split()
-    return any(is_chord_token(t) for t in tokens) and all(
-        is_chord_token(t) or _FILLER_RE.fullmatch(t) for t in tokens
+    return any(_chords_in(t) for t in tokens) and all(
+        _chords_in(t) or _FILLER_RE.fullmatch(t) for t in tokens
     )
 
 
@@ -152,17 +178,16 @@ def _anchored_chords(chord_line: str, lyric_line: str) -> tuple[str, list]:
     text = lyric_line.strip()
     chords = []
     for match in re.finditer(r"\S+", chord_line):
-        if not is_chord_token(match.group()):
-            continue
-        offset = min(max(match.start() - indent, 0), len(text))
-        while offset < len(text) and text[offset] == " ":
-            offset += 1
-        chords.append((offset, match.group()))
+        for delta, symbol in _chords_in(match.group()):
+            offset = min(max(match.start() + delta - indent, 0), len(text))
+            while offset < len(text) and text[offset] == " ":
+                offset += 1
+            chords.append((offset, symbol))
     return text, chords
 
 
 def _bare_chords(line: str) -> list:
-    return [(0, token) for token in line.split() if is_chord_token(token)]
+    return [(0, symbol) for token in line.split() for _, symbol in _chords_in(token)]
 
 
 def parse_chords_over_lyrics(
