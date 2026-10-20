@@ -26,6 +26,13 @@ from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
 from functools import cached_property, lru_cache
 
+from scoreseek.sources.local import (
+    EXPORT_FORMATS,
+    SCORE_FORMATS,
+    scan_folder,
+    title_and_artist,
+)
+
 from songleaf.model import Song, score_link
 from songleaf.datasets import dataset_path
 from songleaf.store import data_dir
@@ -395,26 +402,14 @@ class KaggleChordsSource:
 _TEXT_EXTS = frozenset({".txt", ".cho", ".chopro", ".crd", ".pro"})
 #: The text extensions that hold ChordPro rather than chords-over-lyrics.
 _CHORDPRO_EXTS = frozenset({".cho", ".chopro", ".crd", ".pro"})
-#: Score/tab files with no lyrics to parse: attached as a bare score link.
-_SCORE_EXTS = {
-    ".gp": "guitarpro",
-    ".gpx": "guitarpro",
-    ".gp3": "guitarpro",
-    ".gp4": "guitarpro",
-    ".gp5": "guitarpro",
-    ".musicxml": "musicxml",
-    ".mxl": "musicxml",
-    ".mscz": "musescore",
-    ".mid": "midi",
-    ".midi": "midi",
-    ".pdf": "pdf",
+#: Score/tab files with no lyrics to parse: attached as a bare score link. Labels
+#: come from scoreseek's format tables (scoreseek#7).
+_SCORE_FORMATS = {
+    **EXPORT_FORMATS,
+    **{ext: SCORE_FORMATS[ext] for ext in (".musicxml", ".mxl", ".mid", ".midi")},
 }
-
-
-def _title_and_artist(stem: str) -> tuple[str, str]:
-    """``"Artist - Title"`` splits; anything else is a bare title."""
-    artist, sep, title = stem.partition(" - ")
-    return (title, artist) if sep else (stem, "")
+#: Every file LocalFolderSource indexes: those plus the text charts it parses.
+_FOLDER_FORMATS = {**_SCORE_FORMATS, **dict.fromkeys(_TEXT_EXTS, "text")}
 
 
 class LocalFolderSource:
@@ -460,27 +455,11 @@ class LocalFolderSource:
         self.root = os.path.expanduser(root) if root else data_dir("imports")
 
     def _entries(self) -> list[dict]:
-        entries = []
-        for dirpath, _dirs, files in os.walk(self.root):
-            for fname in files:
-                stem, ext = os.path.splitext(fname)
-                fmt = _SCORE_EXTS.get(ext.lower())
-                is_text = ext.lower() in _TEXT_EXTS
-                if fmt is None and not is_text:
-                    continue
-                title, artist = _title_and_artist(stem)
-                path = os.path.join(dirpath, fname)
-                entries.append(
-                    {
-                        "id": os.path.relpath(path, self.root),
-                        "path": path,
-                        "title": title,
-                        "artist": artist,
-                        "format": fmt or "text",
-                        "is_text": is_text,
-                    }
-                )
-        return entries
+        """The indexed files, through scoreseek's folder scan (scoreseek#7)."""
+        return [
+            {**entry, "is_text": entry["ext"] in _TEXT_EXTS}
+            for entry in scan_folder(self.root, formats=_FOLDER_FORMATS)
+        ]
 
     def search(
         self,
@@ -526,7 +505,7 @@ class LocalFolderSource:
         if not (inside and os.path.isfile(path)):  # an id never leaves the folder
             raise SongNotFound(f"No file at {song_id!r} under {self.root}")
         stem, ext = os.path.splitext(os.path.basename(song_id))
-        title, artist = _title_and_artist(stem)
+        title, artist = title_and_artist(stem)
         provenance = {
             "source": self.name,
             "id": song_id,
@@ -545,7 +524,7 @@ class LocalFolderSource:
                     meta={"title": title, "artist": artist},
                     provenance=provenance,
                 )
-        fmt = _SCORE_EXTS.get(ext.lower(), "")
+        fmt = _SCORE_FORMATS.get(ext.lower(), "")
         return Song(
             text="",
             annotations=[
