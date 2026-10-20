@@ -1,4 +1,4 @@
-> built 2026-10-20 12:28 UTC from 777f75f (main) · songleaf 0.0.20. Details: build_info.json
+> built 2026-10-20 15:03 UTC from d3da614 (main) · songleaf 0.0.21. Details: build_info.json
 
 # index.html.md
 
@@ -301,6 +301,104 @@ S3Location(bucket='b', prefix='x/datasets/', profile=None)
 
 * **Return type:**
   [`S3Location`](_autosummary/songleaf.datasets.html.md#songleaf.datasets.S3Location) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+
+# _autosummary/songleaf.diagrams.html.md
+
+# songleaf.diagrams
+
+Chord diagrams for the sheet: piano keys or guitar shapes (songleaf#13).
+
+The chords a song uses ([`song_chords()`](_autosummary/songleaf.diagrams.html.md#songleaf.diagrams.song_chords), in order of first use) are drawn as a strip
+of small diagrams. Both kinds come from the chord’s pitch classes alone
+([`chord_tones()`](_autosummary/songleaf.diagrams.html.md#songleaf.diagrams.chord_tones)), so no fingering table is needed, and none has to be licensed:
+
+- **piano**: a two-octave keyboard with the chord’s notes marked, in close position
+  from the bass;
+- **guitar**: a shape in standard tuning found by search ([`guitar_shape()`](_autosummary/songleaf.diagrams.html.md#songleaf.diagrams.guitar_shape)): the
+  lowest sounding string plays the bass (the root, or the slash bass), every chord
+  tone sounds, the fret span is at most four frets and four fingers (notes at the
+  lowest fret share one barre finger, unless an open string lies under the barre),
+  and fewer muted strings, lower positions, fewer fingers and no open string between
+  fretted ones are preferred.
+
+The layout reserves the strip’s height before it fits the font size, so the lyrics
+shrink to make room ([`strip_height()`](_autosummary/songleaf.diagrams.html.md#songleaf.diagrams.strip_height)); [`draw_strip()`](_autosummary/songleaf.diagrams.html.md#songleaf.diagrams.draw_strip) draws it.
+
+```pycon
+>>> chord_tones("Cmaj7"), chord_tones("Am/G"), chord_tones("F#m7b5")
+((0, 4, 7, 11), (7, 9, 0, 4), (6, 9, 0, 4))
+>>> guitar_shape("C"), guitar_shape("E"), guitar_shape("G")
+((None, 3, 2, 0, 1, 0), (0, 2, 2, 1, 0, 0), (3, 2, 0, 0, 0, 3))
+```
+
+### Module Attributes
+
+| [`STANDARD_TUNING`](_autosummary/songleaf.diagrams.html.md#songleaf.diagrams.STANDARD_TUNING)   | Standard guitar tuning, low to high, as pitch classes (E A D G B E).   |
+|--------------------------------------------------------------------|------------------------------------------------------------------------|
+
+### Functions
+
+| [`chord_tones`](_autosummary/songleaf.diagrams.html.md#songleaf.diagrams.chord_tones)(symbol)                              | The chord's pitch classes, bass first (the root, or the bass of a slash chord).                                           |
+|---------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| [`draw_strip`](_autosummary/songleaf.diagrams.html.md#songleaf.diagrams.draw_strip)(canvas, symbols, kind, \*, left, ...) | Draw the diagrams in rows, left to right, the strip's bottom at `bottom`.                                                 |
+| [`guitar_shape`](_autosummary/songleaf.diagrams.html.md#songleaf.diagrams.guitar_shape)(symbol, \*[, tuning, max_fret])     | Frets per string, low to high (`None` = not played), or None if none is found.                                            |
+| [`song_chords`](_autosummary/songleaf.diagrams.html.md#songleaf.diagrams.song_chords)(song)                                | The distinct chord symbols of `song` that [`chord_tones()`](_autosummary/songleaf.diagrams.html.md#songleaf.diagrams.chord_tones) reads, in order. |
+| [`strip_height`](_autosummary/songleaf.diagrams.html.md#songleaf.diagrams.strip_height)(n, kind, size, width, \*[, style])  | The height a strip of `n` diagrams takes across `width` (0 for none).                                                     |
+
+### Classes
+
+| [`DiagramStyle`](_autosummary/songleaf.diagrams.html.md#songleaf.diagrams.DiagramStyle)([piano_width, piano_height, ...])   | Sizes of a diagram, in units of the lyric font size, and its colours.   |
+|---------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|
+
+### *class* songleaf.diagrams.DiagramStyle(piano_width=4.2, piano_height=1.5, guitar_width=1.9, guitar_height=2.2, label_scale=0.6, gap=0.7, line_color='#555555', mark_color='#222222', black_key_color='#444444')
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+Sizes of a diagram, in units of the lyric font size, and its colours.
+
+### songleaf.diagrams.STANDARD_TUNING *= (4, 9, 2, 7, 11, 4)*
+
+Standard guitar tuning, low to high, as pitch classes (E A D G B E).
+
+### songleaf.diagrams.chord_tones(symbol)
+
+The chord’s pitch classes, bass first (the root, or the bass of a slash chord).
+
+Triads by quality (`m`, `dim`, `aug`/`+`, `sus2`, `sus4`, `5`), then
+sevenths (`7`, `maj7`, `dim7`, `m7b5`), sixths and added ninths. `None`
+for what [`songleaf.harmony.parse_chord()`](_autosummary/songleaf.harmony.html.md#songleaf.harmony.parse_chord) does not read as a chord.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)] | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### songleaf.diagrams.draw_strip(canvas, symbols, kind, , left, bottom, width, size, font, style=DiagramStyle(piano_width=4.2, piano_height=1.5, guitar_width=1.9, guitar_height=2.2, label_scale=0.6, gap=0.7, line_color='#555555', mark_color='#222222', black_key_color='#444444'))
+
+Draw the diagrams in rows, left to right, the strip’s bottom at `bottom`.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### songleaf.diagrams.guitar_shape(symbol, , tuning=(4, 9, 2, 7, 11, 4), max_fret=12)
+
+Frets per string, low to high (`None` = not played), or None if none is found.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int) | [`None`](https://docs.python.org/3/builtins/constants.html#None), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)] | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### songleaf.diagrams.song_chords(song)
+
+The distinct chord symbols of `song` that [`chord_tones()`](_autosummary/songleaf.diagrams.html.md#songleaf.diagrams.chord_tones) reads, in order.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### songleaf.diagrams.strip_height(n, kind, size, width, , style=DiagramStyle(piano_width=4.2, piano_height=1.5, guitar_width=1.9, guitar_height=2.2, label_scale=0.6, gap=0.7, line_color='#555555', mark_color='#222222', black_key_color='#444444'))
+
+The height a strip of `n` diagrams takes across `width` (0 for none).
+
+* **Return type:**
+  [`float`](https://docs.python.org/3/builtins/functions.html#float)
 
 
 # _autosummary/songleaf.export.html.md
@@ -664,7 +762,7 @@ Lyrics hold every word of the query, rank by popularity, and carry
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)]]
 
-### *class* songleaf.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, style=DenseStyle())
+### *class* songleaf.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, diagrams=None, style=DenseStyle())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -678,6 +776,9 @@ One way to lay a song out on a page.
     any packer with the signature of [`songleaf.packing.pack_greedy()`](_autosummary/songleaf.packing.html.md#songleaf.packing.pack_greedy).
   * **columns** ([`int`](https://docs.python.org/3/builtins/functions.html#int)) – Columns per page.
   * **shading** ([`bool`](https://docs.python.org/3/builtins/functions.html#bool)) – Shade sections, repeated lines and chord functions.
+  * **diagrams** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – `"piano"` or `"guitar"` draws the song’s chords as a strip
+    of diagrams at the foot of the first page ([`songleaf.diagrams`](_autosummary/songleaf.diagrams.html.md#module-songleaf.diagrams));
+    the lyrics shrink to make room. `None`: no diagrams.
   * **style** ([`DenseStyle`](_autosummary/songleaf.render.html.md#songleaf.render.DenseStyle)) – Typography and colours.
 
 #### *property* packer *: [Callable](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)*
@@ -898,6 +999,7 @@ The keys of the stored songs.
 | [`chordpro`](_autosummary/songleaf.chordpro.html.md#module-songleaf.chordpro)         | Parse ChordPro text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song).                              |
 |--------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | [`datasets`](_autosummary/songleaf.datasets.html.md#module-songleaf.datasets)         | Where the `datasets` data kind lives: local files by default, S3 by configuration.                                                 |
+| [`diagrams`](_autosummary/songleaf.diagrams.html.md#module-songleaf.diagrams)         | Chord diagrams for the sheet: piano keys or guitar shapes (songleaf#13).                                                           |
 | [`export`](_autosummary/songleaf.export.html.md#module-songleaf.export)             | Export a song as ChordPro or as plain text (chords over lyrics), transposition applied.                                            |
 | [`harmony`](_autosummary/songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                                                  |
 | [`importers`](_autosummary/songleaf.importers.html.md#module-songleaf.importers)       | Turn pasted text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song): a registry of format importers. |
@@ -1960,7 +2062,7 @@ Chords in the lyric line, right before their syllable; a chord-only line is a ro
   or the syllable’s start (see `_syllable_start()`); the song’s
   annotations are not changed.
 
-### songleaf.render.LAYOUT_OPTIONS *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)]* *= {'dense': {}, 'inline': {'chords': 'inline'}, 'overlap': {'chords': 'over', 'style': {'chord_halo': '#ffffff', 'chord_rise': 0.42}}, 'packed': {'packing': 'structured'}, 'shaded': {'shading': True}, 'two-column': {'columns': 2}}*
+### songleaf.render.LAYOUT_OPTIONS *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)]* *= {'dense': {}, 'guitar': {'diagrams': 'guitar'}, 'inline': {'chords': 'inline'}, 'overlap': {'chords': 'over', 'style': {'chord_halo': '#ffffff', 'chord_rise': 0.42}}, 'packed': {'packing': 'structured'}, 'piano': {'diagrams': 'piano'}, 'shaded': {'shading': True}, 'two-column': {'columns': 2}}*
 
 What each option of a layout spec changes, from the v1 layout (`dense`).
 
@@ -1974,7 +2076,7 @@ Chords above their syllables, smaller and lighter, overlapping the lyric row by 
 
 The line packers a [`SheetLayout`](_autosummary/songleaf.render.html.md#songleaf.render.SheetLayout) can name (see [`songleaf.packing`](_autosummary/songleaf.packing.html.md#module-songleaf.packing)).
 
-### *class* songleaf.render.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, style=DenseStyle())
+### *class* songleaf.render.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, diagrams=None, style=DenseStyle())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -1988,6 +2090,9 @@ One way to lay a song out on a page.
     any packer with the signature of [`songleaf.packing.pack_greedy()`](_autosummary/songleaf.packing.html.md#songleaf.packing.pack_greedy).
   * **columns** ([`int`](https://docs.python.org/3/builtins/functions.html#int)) – Columns per page.
   * **shading** ([`bool`](https://docs.python.org/3/builtins/functions.html#bool)) – Shade sections, repeated lines and chord functions.
+  * **diagrams** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – `"piano"` or `"guitar"` draws the song’s chords as a strip
+    of diagrams at the foot of the first page ([`songleaf.diagrams`](_autosummary/songleaf.diagrams.html.md#module-songleaf.diagrams));
+    the lyrics shrink to make room. `None`: no diagrams.
   * **style** ([`DenseStyle`](_autosummary/songleaf.render.html.md#songleaf.render.DenseStyle)) – Typography and colours.
 
 #### *property* packer *: [Callable](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)*
@@ -2792,18 +2897,18 @@ True
 
 # About this build
 
-This documentation was built on **2026-10-20 12:28 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/777f75f9f9718cf1cecd5affb0cb2409520c5cc0"><code>777f75f</code></a> on branch <code>main</code>, for **songleaf 0.0.20** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 15:03 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/d3da6147b5442375f83f2929bd33e779eb8f20bd"><code>d3da614</code></a> on branch <code>main</code>, for **songleaf 0.0.21** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.20) is behind the latest release on PyPI (0.0.21): `pip install songleaf` gives newer code than these docs describe.
+- The documented version (0.0.21) is behind the latest release on PyPI (0.0.22): `pip install songleaf` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/777f75f9f9718cf1cecd5affb0cb2409520c5cc0"><code>777f75f9f9718cf1cecd5affb0cb2409520c5cc0</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/d3da6147b5442375f83f2929bd33e779eb8f20bd"><code>d3da6147b5442375f83f2929bd33e779eb8f20bd</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -2814,15 +2919,15 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39422312316">39422312316</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39444540819">39444540819</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>777f75f9f9718cf1cecd5affb0cb2409520c5cc0</code> (in the history of the built commit) |
+| Event commit | <code>d3da6147b5442375f83f2929bd33e779eb8f20bd</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.20  |
+| epythet  | 0.2.21  |
 | Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
 | Python   | 3.12.15 |
@@ -2841,14 +2946,14 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.21/">0.0.21</a>, newer than the documented version (0.0.20).
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.22/">0.0.22</a>, newer than the documented version (0.0.21).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 777f75f9f9718cf1cecd5affb0cb2409520c5cc0
-pip install "epythet==0.2.20"
+git checkout d3da6147b5442375f83f2929bd33e779eb8f20bd
+pip install "epythet==0.2.21"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

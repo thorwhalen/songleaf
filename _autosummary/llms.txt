@@ -8,6 +8,7 @@
 - [songleaf](songleaf.html.md): songleaf: dense, readable one-page song sheets from searchable sources.
 - [songleaf.chordpro](songleaf.chordpro.html.md): Parse ChordPro text into a &#96;Song&#96;.
 - [songleaf.datasets](songleaf.datasets.html.md): Where the &#96;datasets&#96; data kind lives: local files by default, S3 by configuration.
+- [songleaf.diagrams](songleaf.diagrams.html.md): Chord diagrams for the sheet: piano keys or guitar shapes (songleaf#13).
 - [songleaf.export](songleaf.export.html.md): Export a song as ChordPro or as plain text (chords over lyrics), transposition applied.
 - [songleaf.harmony](songleaf.harmony.html.md): What a chord does in its song’s key, so that sheets can shade chords by function.
 - [songleaf.importers](songleaf.importers.html.md): Turn pasted text into a &#96;Song&#96;: a registry of format importers.

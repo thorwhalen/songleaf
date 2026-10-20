@@ -43,6 +43,7 @@
 
    chordpro
    datasets
+   diagrams
    export
    harmony
    importers

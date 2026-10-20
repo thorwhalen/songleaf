@@ -144,7 +144,7 @@ Lyrics hold every word of the query, rank by popularity, and carry
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](songleaf.sources.html.md#songleaf.sources.Hit)]]
 
-### *class* songleaf.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, style=DenseStyle())
+### *class* songleaf.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, diagrams=None, style=DenseStyle())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -158,6 +158,9 @@ One way to lay a song out on a page.
     any packer with the signature of [`songleaf.packing.pack_greedy()`](songleaf.packing.html.md#songleaf.packing.pack_greedy).
   * **columns** ([`int`](https://docs.python.org/3/builtins/functions.html#int)) – Columns per page.
   * **shading** ([`bool`](https://docs.python.org/3/builtins/functions.html#bool)) – Shade sections, repeated lines and chord functions.
+  * **diagrams** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – `"piano"` or `"guitar"` draws the song’s chords as a strip
+    of diagrams at the foot of the first page ([`songleaf.diagrams`](songleaf.diagrams.html.md#module-songleaf.diagrams));
+    the lyrics shrink to make room. `None`: no diagrams.
   * **style** ([`DenseStyle`](songleaf.render.html.md#songleaf.render.DenseStyle)) – Typography and colours.
 
 #### *property* packer *: [Callable](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)*
@@ -378,6 +381,7 @@ The keys of the stored songs.
 | [`chordpro`](songleaf.chordpro.html.md#module-songleaf.chordpro)         | Parse ChordPro text into a [`Song`](songleaf.model.html.md#songleaf.model.Song).                              |
 |--------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | [`datasets`](songleaf.datasets.html.md#module-songleaf.datasets)         | Where the `datasets` data kind lives: local files by default, S3 by configuration.                                                 |
+| [`diagrams`](songleaf.diagrams.html.md#module-songleaf.diagrams)         | Chord diagrams for the sheet: piano keys or guitar shapes (songleaf#13).                                                           |
 | [`export`](songleaf.export.html.md#module-songleaf.export)             | Export a song as ChordPro or as plain text (chords over lyrics), transposition applied.                                            |
 | [`harmony`](songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                                                  |
 | [`importers`](songleaf.importers.html.md#module-songleaf.importers)       | Turn pasted text into a [`Song`](songleaf.model.html.md#songleaf.model.Song): a registry of format importers. |

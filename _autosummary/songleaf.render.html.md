@@ -151,7 +151,7 @@ Chords in the lyric line, right before their syllable; a chord-only line is a ro
   or the syllable’s start (see `_syllable_start()`); the song’s
   annotations are not changed.
 
-### songleaf.render.LAYOUT_OPTIONS *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)]* *= {'dense': {}, 'inline': {'chords': 'inline'}, 'overlap': {'chords': 'over', 'style': {'chord_halo': '#ffffff', 'chord_rise': 0.42}}, 'packed': {'packing': 'structured'}, 'shaded': {'shading': True}, 'two-column': {'columns': 2}}*
+### songleaf.render.LAYOUT_OPTIONS *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)]* *= {'dense': {}, 'guitar': {'diagrams': 'guitar'}, 'inline': {'chords': 'inline'}, 'overlap': {'chords': 'over', 'style': {'chord_halo': '#ffffff', 'chord_rise': 0.42}}, 'packed': {'packing': 'structured'}, 'piano': {'diagrams': 'piano'}, 'shaded': {'shading': True}, 'two-column': {'columns': 2}}*
 
 What each option of a layout spec changes, from the v1 layout (`dense`).
 
@@ -165,7 +165,7 @@ Chords above their syllables, smaller and lighter, overlapping the lyric row by 
 
 The line packers a [`SheetLayout`](#songleaf.render.SheetLayout) can name (see [`songleaf.packing`](songleaf.packing.html.md#module-songleaf.packing)).
 
-### *class* songleaf.render.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, style=DenseStyle())
+### *class* songleaf.render.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, diagrams=None, style=DenseStyle())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -179,6 +179,9 @@ One way to lay a song out on a page.
     any packer with the signature of [`songleaf.packing.pack_greedy()`](songleaf.packing.html.md#songleaf.packing.pack_greedy).
   * **columns** ([`int`](https://docs.python.org/3/builtins/functions.html#int)) – Columns per page.
   * **shading** ([`bool`](https://docs.python.org/3/builtins/functions.html#bool)) – Shade sections, repeated lines and chord functions.
+  * **diagrams** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – `"piano"` or `"guitar"` draws the song’s chords as a strip
+    of diagrams at the foot of the first page ([`songleaf.diagrams`](songleaf.diagrams.html.md#module-songleaf.diagrams));
+    the lyrics shrink to make room. `None`: no diagrams.
   * **style** ([`DenseStyle`](#songleaf.render.DenseStyle)) – Typography and colours.
 
 #### *property* packer *: [Callable](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)*

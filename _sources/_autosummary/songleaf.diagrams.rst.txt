@@ -1,0 +1,28 @@
+songleaf.diagrams
+=================
+
+.. automodule:: songleaf.diagrams
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      STANDARD_TUNING
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      chord_tones
+      draw_strip
+      guitar_shape
+      song_chords
+      strip_height
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      DiagramStyle
+   

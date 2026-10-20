@@ -203,6 +203,7 @@
 <li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.chordpro.html">songleaf.chordpro</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.datasets.html">songleaf.datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.diagrams.html">songleaf.diagrams</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.export.html">songleaf.export</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.importers.html">songleaf.importers</a></li>
@@ -308,13 +309,15 @@
           <li><a href="_autosummary/songleaf.model.html#songleaf.model.chord">(in module songleaf.model)</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="_autosummary/songleaf.harmony.html#songleaf.harmony.chord_function">chord_function() (in module songleaf.harmony)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="_autosummary/songleaf.render.html#songleaf.render.CHORD_PLACEMENTS">CHORD_PLACEMENTS (in module songleaf.render)</a>
 </li>
         <li><a href="_autosummary/songleaf.model.html#songleaf.model.CHORD_TIMINGS">CHORD_TIMINGS (in module songleaf.model)</a>
+</li>
+        <li><a href="_autosummary/songleaf.diagrams.html#songleaf.diagrams.chord_tones">chord_tones() (in module songleaf.diagrams)</a>
 </li>
         <li><a href="_autosummary/songleaf.render.html#songleaf.render.ChordPlacement">ChordPlacement (class in songleaf.render)</a>
 </li>
@@ -336,17 +339,21 @@
 </li>
         <li><a href="_autosummary/songleaf.sources.html#songleaf.sources.default_sources">default_sources() (in module songleaf.sources)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="_autosummary/songleaf.html#songleaf.DenseStyle">DenseStyle (class in songleaf)</a>
 
         <ul>
           <li><a href="_autosummary/songleaf.render.html#songleaf.render.DenseStyle">(class in songleaf.render)</a>
 </li>
         </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="_autosummary/songleaf.importers.html#songleaf.importers.detect_format">detect_format() (in module songleaf.importers)</a>
 </li>
         <li><a href="_autosummary/songleaf.render.html#songleaf.render.DFLT_MARGIN">DFLT_MARGIN (in module songleaf.render)</a>
+</li>
+        <li><a href="_autosummary/songleaf.diagrams.html#songleaf.diagrams.DiagramStyle">DiagramStyle (class in songleaf.diagrams)</a>
+</li>
+        <li><a href="_autosummary/songleaf.diagrams.html#songleaf.diagrams.draw_strip">draw_strip() (in module songleaf.diagrams)</a>
 </li>
         <li><a href="_autosummary/songleaf.viewed.html#songleaf.viewed.drop_everywhere">drop_everywhere() (in module songleaf.viewed)</a>
 </li>
@@ -428,6 +435,8 @@
           <li><a href="_autosummary/songleaf.sources.html#songleaf.sources.get_song">(in module songleaf.sources)</a>
 </li>
         </ul></li>
+        <li><a href="_autosummary/songleaf.diagrams.html#songleaf.diagrams.guitar_shape">guitar_shape() (in module songleaf.diagrams)</a>
+</li>
     </ul></td>
   </tr></table>
 </section>
@@ -589,6 +598,8 @@
           <li><a href="_autosummary/songleaf.chordpro.html#module-songleaf.chordpro">songleaf.chordpro</a>
 </li>
           <li><a href="_autosummary/songleaf.datasets.html#module-songleaf.datasets">songleaf.datasets</a>
+</li>
+          <li><a href="_autosummary/songleaf.diagrams.html#module-songleaf.diagrams">songleaf.diagrams</a>
 </li>
           <li><a href="_autosummary/songleaf.export.html#module-songleaf.export">songleaf.export</a>
 </li>
@@ -811,6 +822,8 @@
         </ul></li>
         <li><a href="_autosummary/songleaf.tools.html#songleaf.tools.song">song() (in module songleaf.tools)</a>
 </li>
+        <li><a href="_autosummary/songleaf.diagrams.html#songleaf.diagrams.song_chords">song_chords() (in module songleaf.diagrams)</a>
+</li>
         <li><a href="_autosummary/songleaf.html#songleaf.song_store">song_store() (in module songleaf)</a>
 
         <ul>
@@ -835,13 +848,20 @@
           <li><a href="_autosummary/songleaf.chordpro.html#module-songleaf.chordpro">module</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li>
     songleaf.datasets
 
         <ul>
           <li><a href="_autosummary/songleaf.datasets.html#module-songleaf.datasets">module</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li>
+    songleaf.diagrams
+
+        <ul>
+          <li><a href="_autosummary/songleaf.diagrams.html#module-songleaf.diagrams">module</a>
 </li>
         </ul></li>
         <li>
@@ -958,6 +978,10 @@
 </li>
         </ul></li>
         <li><a href="_autosummary/songleaf.sources.html#songleaf.sources.SourceUnavailable">SourceUnavailable</a>
+</li>
+        <li><a href="_autosummary/songleaf.diagrams.html#songleaf.diagrams.STANDARD_TUNING">STANDARD_TUNING (in module songleaf.diagrams)</a>
+</li>
+        <li><a href="_autosummary/songleaf.diagrams.html#songleaf.diagrams.strip_height">strip_height() (in module songleaf.diagrams)</a>
 </li>
     </ul></td>
   </tr></table>
@@ -1077,7 +1101,7 @@
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=7c40b9fe"></script>
+</div><script src="_static/documentation_options.js?v=d500cd98"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

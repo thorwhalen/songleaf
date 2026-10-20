@@ -204,6 +204,7 @@
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../_autosummary/songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.chordpro.html">songleaf.chordpro</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.datasets.html">songleaf.datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.diagrams.html">songleaf.diagrams</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.export.html">songleaf.export</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.importers.html">songleaf.importers</a></li>
@@ -1171,6 +1172,9 @@
 <span class="sd">            any packer with the signature of :func:`songleaf.packing.pack_greedy`.</span>
 <span class="sd">        columns: Columns per page.</span>
 <span class="sd">        shading: Shade sections, repeated lines and chord functions.</span>
+<span class="sd">        diagrams: ``"piano"`` or ``"guitar"`` draws the song's chords as a strip</span>
+<span class="sd">            of diagrams at the foot of the first page (:mod:`songleaf.diagrams`);</span>
+<span class="sd">            the lyrics shrink to make room. ``None``: no diagrams.</span>
 <span class="sd">        style: Typography and colours.</span>
 <span class="sd">    """</span>
 
@@ -1178,9 +1182,16 @@
     <span class="n">packing</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Callable</span> <span class="o">=</span> <span class="s2">"greedy"</span>
     <span class="n">columns</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="n">shading</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">diagrams</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">style</span><span class="p">:</span> <span class="n">DenseStyle</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">DenseStyle</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># a bad layout fails here, not mid-render</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.diagrams</span><span class="w"> </span><span class="kn">import</span> <span class="n">DIAGRAM_KINDS</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">diagrams</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">diagrams</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">DIAGRAM_KINDS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"diagrams must be one of </span><span class="si">{</span><span class="n">DIAGRAM_KINDS</span><span class="si">}</span><span class="s2"> or None, got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">diagrams</span><span class="si">!r}</span><span class="s2">"</span>
+            <span class="p">)</span>
         <span class="n">columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">columns</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"columns must be a positive integer, got </span><span class="si">{</span><span class="n">columns</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
@@ -1231,6 +1242,8 @@
     <span class="s2">"packed"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"packing"</span><span class="p">:</span> <span class="s2">"structured"</span><span class="p">},</span>
     <span class="s2">"two-column"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"columns"</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span>
     <span class="s2">"shaded"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"shading"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+    <span class="s2">"piano"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"diagrams"</span><span class="p">:</span> <span class="s2">"piano"</span><span class="p">},</span>
+    <span class="s2">"guitar"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"diagrams"</span><span class="p">:</span> <span class="s2">"guitar"</span><span class="p">},</span>
 <span class="p">}</span>
 <span class="n">_OPTION_ALIASES</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"2col"</span><span class="p">:</span> <span class="s2">"two-column"</span><span class="p">,</span>
@@ -1304,6 +1317,7 @@
     <span class="n">overflow</span><span class="p">:</span> <span class="nb">bool</span>  <span class="c1"># some row is taller than its frame</span>
     <span class="n">column_width</span><span class="p">:</span> <span class="nb">float</span>
     <span class="n">heading_block</span><span class="p">:</span> <span class="nb">float</span>  <span class="c1"># the height the heading takes from the first page's columns</span>
+    <span class="n">diagram_block</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># the height of the chord-diagram strip on the first page</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_flow_rows</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">style</span><span class="p">:</span> <span class="n">DenseStyle</span><span class="p">,</span> <span class="n">capacities</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
@@ -1327,25 +1341,49 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_flow</span><span class="p">(</span>
-    <span class="n">pieces</span><span class="p">,</span> <span class="n">heading</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">layout</span><span class="p">:</span> <span class="n">SheetLayout</span><span class="p">,</span> <span class="n">paint</span>
+    <span class="n">pieces</span><span class="p">,</span>
+    <span class="n">heading</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">width</span><span class="p">,</span>
+    <span class="n">height</span><span class="p">,</span>
+    <span class="n">layout</span><span class="p">:</span> <span class="n">SheetLayout</span><span class="p">,</span>
+    <span class="n">paint</span><span class="p">,</span>
+    <span class="n">diagram_chords</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(),</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Flow</span><span class="p">:</span>
     <span class="n">style</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">layout</span><span class="o">.</span><span class="n">style</span><span class="p">,</span> <span class="n">layout</span><span class="o">.</span><span class="n">columns</span>
     <span class="n">options</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"chords"</span><span class="p">:</span> <span class="n">layout</span><span class="o">.</span><span class="n">placement</span><span class="p">,</span> <span class="s2">"packer"</span><span class="p">:</span> <span class="n">layout</span><span class="o">.</span><span class="n">packer</span><span class="p">,</span> <span class="s2">"paint"</span><span class="p">:</span> <span class="n">paint</span><span class="p">}</span>
+    <span class="n">strip</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">if</span> <span class="n">layout</span><span class="o">.</span><span class="n">diagrams</span> <span class="ow">and</span> <span class="n">diagram_chords</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.diagrams</span><span class="w"> </span><span class="kn">import</span> <span class="n">strip_height</span>
+
+        <span class="n">strip</span> <span class="o">=</span> <span class="n">strip_height</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">diagram_chords</span><span class="p">),</span> <span class="n">layout</span><span class="o">.</span><span class="n">diagrams</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">columns</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># the heading is the first row of the only column</span>
         <span class="n">rows</span> <span class="o">=</span> <span class="n">_layout</span><span class="p">(</span><span class="n">pieces</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">style</span><span class="p">,</span> <span class="n">heading</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">)</span>
-        <span class="n">frames</span><span class="p">,</span> <span class="n">overflow</span> <span class="o">=</span> <span class="n">_flow_rows</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">style</span><span class="p">,</span> <span class="n">itertools</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">height</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">_Flow</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">frames</span><span class="p">,</span> <span class="n">overflow</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">capacities</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">([</span><span class="n">height</span> <span class="o">-</span> <span class="n">strip</span><span class="p">],</span> <span class="n">itertools</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">height</span><span class="p">))</span>
+        <span class="n">frames</span><span class="p">,</span> <span class="n">overflow</span> <span class="o">=</span> <span class="n">_flow_rows</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">style</span><span class="p">,</span> <span class="n">capacities</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_Flow</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">frames</span><span class="p">,</span> <span class="n">overflow</span> <span class="ow">or</span> <span class="n">strip</span> <span class="o">&gt;</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">strip</span><span class="p">)</span>
     <span class="n">column_width</span> <span class="o">=</span> <span class="p">(</span><span class="n">width</span> <span class="o">-</span> <span class="n">style</span><span class="o">.</span><span class="n">column_gap</span> <span class="o">*</span> <span class="n">size</span> <span class="o">*</span> <span class="p">(</span><span class="n">columns</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">/</span> <span class="n">columns</span>
     <span class="n">head</span> <span class="o">=</span> <span class="n">_heading_row</span><span class="p">(</span><span class="n">heading</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">style</span><span class="p">)</span> <span class="k">if</span> <span class="n">heading</span> <span class="k">else</span> <span class="kc">None</span>
     <span class="n">block</span> <span class="o">=</span> <span class="n">head</span><span class="o">.</span><span class="n">top</span> <span class="o">+</span> <span class="n">head</span><span class="o">.</span><span class="n">bottom</span> <span class="o">+</span> <span class="n">style</span><span class="o">.</span><span class="n">row_gap</span> <span class="o">*</span> <span class="n">size</span> <span class="k">if</span> <span class="n">head</span> <span class="k">else</span> <span class="mf">0.0</span>
-    <span class="k">if</span> <span class="n">column_width</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">block</span> <span class="o">&gt;</span> <span class="n">height</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_Flow</span><span class="p">(</span><span class="n">head</span><span class="p">,</span> <span class="p">[[]]</span> <span class="o">*</span> <span class="p">(</span><span class="n">columns</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="kc">True</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">column_width</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">block</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">column_width</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">block</span> <span class="o">+</span> <span class="n">strip</span> <span class="o">&gt;</span> <span class="n">height</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_Flow</span><span class="p">(</span>
+            <span class="n">head</span><span class="p">,</span> <span class="p">[[]]</span> <span class="o">*</span> <span class="p">(</span><span class="n">columns</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="kc">True</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">column_width</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">block</span><span class="p">,</span> <span class="n">strip</span>
+        <span class="p">)</span>
     <span class="n">rows</span> <span class="o">=</span> <span class="n">_layout</span><span class="p">(</span><span class="n">pieces</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">column_width</span><span class="p">,</span> <span class="n">style</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">)</span>
     <span class="n">capacities</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span>
-        <span class="n">itertools</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">height</span> <span class="o">-</span> <span class="n">block</span><span class="p">,</span> <span class="n">columns</span><span class="p">),</span> <span class="n">itertools</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">height</span><span class="p">)</span>
+        <span class="n">itertools</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">height</span> <span class="o">-</span> <span class="n">block</span> <span class="o">-</span> <span class="n">strip</span><span class="p">,</span> <span class="n">columns</span><span class="p">),</span> <span class="n">itertools</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">height</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="n">frames</span><span class="p">,</span> <span class="n">overflow</span> <span class="o">=</span> <span class="n">_flow_rows</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">style</span><span class="p">,</span> <span class="n">capacities</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_Flow</span><span class="p">(</span><span class="n">head</span><span class="p">,</span> <span class="n">frames</span><span class="p">,</span> <span class="n">overflow</span><span class="p">,</span> <span class="n">column_width</span><span class="p">,</span> <span class="n">block</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_Flow</span><span class="p">(</span><span class="n">head</span><span class="p">,</span> <span class="n">frames</span><span class="p">,</span> <span class="n">overflow</span><span class="p">,</span> <span class="n">column_width</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="n">strip</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_diagram_chords</span><span class="p">(</span><span class="n">song</span><span class="p">:</span> <span class="n">Song</span><span class="p">,</span> <span class="n">layout</span><span class="p">:</span> <span class="n">SheetLayout</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">layout</span><span class="o">.</span><span class="n">diagrams</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">()</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.diagrams</span><span class="w"> </span><span class="kn">import</span> <span class="n">song_chords</span>
+
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">song_chords</span><span class="p">(</span><span class="n">song</span><span class="p">))</span>
 
 
 <div class="viewcode-block" id="fit_font_size">
@@ -1377,6 +1415,7 @@
         <span class="p">)</span>
     <span class="n">pieces</span><span class="p">,</span> <span class="n">heading</span> <span class="o">=</span> <span class="n">_pieces</span><span class="p">(</span><span class="n">song</span><span class="p">),</span> <span class="n">_heading</span><span class="p">(</span><span class="n">song</span><span class="p">)</span>
     <span class="n">paint</span> <span class="o">=</span> <span class="n">_paint</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">layout</span><span class="o">.</span><span class="n">style</span><span class="p">,</span> <span class="n">layout</span><span class="o">.</span><span class="n">shading</span><span class="p">)</span>
+    <span class="n">diagram_chords</span> <span class="o">=</span> <span class="n">_diagram_chords</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">layout</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">fits</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
         <span class="n">flow</span> <span class="o">=</span> <span class="n">_flow</span><span class="p">(</span>
@@ -1387,6 +1426,7 @@
             <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span>
             <span class="n">layout</span><span class="o">=</span><span class="n">layout</span><span class="p">,</span>
             <span class="n">paint</span><span class="o">=</span><span class="n">paint</span><span class="p">,</span>
+            <span class="n">diagram_chords</span><span class="o">=</span><span class="n">diagram_chords</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">flow</span><span class="o">.</span><span class="n">frames</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">layout</span><span class="o">.</span><span class="n">columns</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">flow</span><span class="o">.</span><span class="n">overflow</span>
 
@@ -1475,6 +1515,7 @@
     <span class="n">size</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">size</span> <span class="o">*</span> <span class="n">scale</span><span class="p">,</span> <span class="n">max_font_size</span><span class="p">)</span>
     <span class="n">heading</span> <span class="o">=</span> <span class="n">_heading</span><span class="p">(</span><span class="n">song</span><span class="p">)</span>
     <span class="n">paint</span> <span class="o">=</span> <span class="n">_paint</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">style</span><span class="p">,</span> <span class="n">layout</span><span class="o">.</span><span class="n">shading</span><span class="p">)</span>
+    <span class="n">diagram_chords</span> <span class="o">=</span> <span class="n">_diagram_chords</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">layout</span><span class="p">)</span>
     <span class="n">flow</span> <span class="o">=</span> <span class="n">_flow</span><span class="p">(</span>
         <span class="n">_pieces</span><span class="p">(</span><span class="n">song</span><span class="p">),</span>
         <span class="n">heading</span><span class="p">,</span>
@@ -1483,6 +1524,7 @@
         <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span>
         <span class="n">layout</span><span class="o">=</span><span class="n">layout</span><span class="p">,</span>
         <span class="n">paint</span><span class="o">=</span><span class="n">paint</span><span class="p">,</span>
+        <span class="n">diagram_chords</span><span class="o">=</span><span class="n">diagram_chords</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">target</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">fspath</span><span class="p">(</span><span class="n">output</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">))</span> <span class="k">else</span> <span class="n">output</span>
@@ -1498,6 +1540,19 @@
             <span class="n">canvas</span><span class="o">.</span><span class="n">showPage</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">flow</span><span class="o">.</span><span class="n">heading</span><span class="p">:</span>
             <span class="n">_draw_items</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">flow</span><span class="o">.</span><span class="n">heading</span><span class="p">,</span> <span class="n">margin</span><span class="p">,</span> <span class="n">top</span> <span class="o">-</span> <span class="n">flow</span><span class="o">.</span><span class="n">heading</span><span class="o">.</span><span class="n">top</span><span class="p">,</span> <span class="n">style</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">flow</span><span class="o">.</span><span class="n">diagram_block</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.diagrams</span><span class="w"> </span><span class="kn">import</span> <span class="n">draw_strip</span>
+
+            <span class="n">draw_strip</span><span class="p">(</span>
+                <span class="n">canvas</span><span class="p">,</span>
+                <span class="n">diagram_chords</span><span class="p">,</span>
+                <span class="n">layout</span><span class="o">.</span><span class="n">diagrams</span><span class="p">,</span>
+                <span class="n">left</span><span class="o">=</span><span class="n">margin</span><span class="p">,</span>
+                <span class="n">bottom</span><span class="o">=</span><span class="n">margin</span><span class="p">,</span>
+                <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span>
+                <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
+                <span class="n">font</span><span class="o">=</span><span class="n">usable_font</span><span class="p">(</span><span class="n">style</span><span class="o">.</span><span class="n">chord_font</span><span class="p">),</span>
+            <span class="p">)</span>
         <span class="n">frame_top</span> <span class="o">=</span> <span class="n">top</span> <span class="o">-</span> <span class="p">(</span><span class="n">flow</span><span class="o">.</span><span class="n">heading_block</span> <span class="k">if</span> <span class="n">page</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">)</span>
         <span class="n">left</span> <span class="o">=</span> <span class="n">margin</span> <span class="o">+</span> <span class="n">column</span> <span class="o">*</span> <span class="p">(</span><span class="n">flow</span><span class="o">.</span><span class="n">column_width</span> <span class="o">+</span> <span class="n">column_gap</span><span class="p">)</span>
         <span class="n">baselines</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="p">[],</span> <span class="n">frame_top</span>
@@ -1634,7 +1689,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=7c40b9fe"></script>
+</div><script src="../../_static/documentation_options.js?v=d500cd98"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

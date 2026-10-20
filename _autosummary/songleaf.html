@@ -207,6 +207,7 @@
 <li class="toctree-l2 current has-children current-page"><a class="current reference internal" href="#">songleaf</a><input aria-label="Toggle navigation of songleaf" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.chordpro.html">songleaf.chordpro</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.datasets.html">songleaf.datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="songleaf.diagrams.html">songleaf.diagrams</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.export.html">songleaf.export</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.importers.html">songleaf.importers</a></li>
@@ -487,7 +488,7 @@ Lyrics hold every word of the query, rank by popularity, and carry
 
 <dl class="py class">
 <dt class="sig sig-object py" id="songleaf.SheetLayout">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.</span></span><span class="sig-name descname"><span class="pre">SheetLayout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'over'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">packing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'greedy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">DenseStyle()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/render.html#SheetLayout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.SheetLayout" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.</span></span><span class="sig-name descname"><span class="pre">SheetLayout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'over'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">packing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'greedy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagrams</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">DenseStyle()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/render.html#SheetLayout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.SheetLayout" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>One way to lay a song out on a page.</p>
 <dl class="field-list simple">
@@ -500,6 +501,9 @@ Lyrics hold every word of the query, rank by popularity, and carry
 any packer with the signature of <a class="reference internal" href="songleaf.packing.html#songleaf.packing.pack_greedy" title="songleaf.packing.pack_greedy"><code class="xref py py-func docutils literal notranslate"><span class="pre">songleaf.packing.pack_greedy()</span></code></a>.</p></li>
 <li><p><strong>columns</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Columns per page.</p></li>
 <li><p><strong>shading</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>) – Shade sections, repeated lines and chord functions.</p></li>
+<li><p><strong>diagrams</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span>) – <code class="docutils literal notranslate"><span class="pre">&quot;piano&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;guitar&quot;</span></code> draws the song’s chords as a strip
+of diagrams at the foot of the first page (<a class="reference internal" href="songleaf.diagrams.html#module-songleaf.diagrams" title="songleaf.diagrams"><code class="xref py py-mod docutils literal notranslate"><span class="pre">songleaf.diagrams</span></code></a>);
+the lyrics shrink to make room. <code class="docutils literal notranslate"><span class="pre">None</span></code>: no diagrams.</p></li>
 <li><p><strong>style</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="songleaf.render.html#songleaf.render.DenseStyle" title="songleaf.render.DenseStyle"><code class="xref py py-class docutils literal notranslate"><span class="pre">DenseStyle</span></code></a></span>) – Typography and colours.</p></li>
 </ul>
 </dd>
@@ -805,49 +809,52 @@ more pages.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="songleaf.datasets.html#module-songleaf.datasets" title="songleaf.datasets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">datasets</span></code></a></p></td>
 <td><p>Where the <code class="docutils literal notranslate"><span class="pre">datasets</span></code> data kind lives: local files by default, S3 by configuration.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.export.html#module-songleaf.export" title="songleaf.export"><code class="xref py py-obj docutils literal notranslate"><span class="pre">export</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.diagrams.html#module-songleaf.diagrams" title="songleaf.diagrams"><code class="xref py py-obj docutils literal notranslate"><span class="pre">diagrams</span></code></a></p></td>
+<td><p>Chord diagrams for the sheet: piano keys or guitar shapes (songleaf#13).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="songleaf.export.html#module-songleaf.export" title="songleaf.export"><code class="xref py py-obj docutils literal notranslate"><span class="pre">export</span></code></a></p></td>
 <td><p>Export a song as ChordPro or as plain text (chords over lyrics), transposition applied.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="songleaf.harmony.html#module-songleaf.harmony" title="songleaf.harmony"><code class="xref py py-obj docutils literal notranslate"><span class="pre">harmony</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.harmony.html#module-songleaf.harmony" title="songleaf.harmony"><code class="xref py py-obj docutils literal notranslate"><span class="pre">harmony</span></code></a></p></td>
 <td><p>What a chord does in its song's key, so that sheets can shade chords by function.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.importers.html#module-songleaf.importers" title="songleaf.importers"><code class="xref py py-obj docutils literal notranslate"><span class="pre">importers</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="songleaf.importers.html#module-songleaf.importers" title="songleaf.importers"><code class="xref py py-obj docutils literal notranslate"><span class="pre">importers</span></code></a></p></td>
 <td><p>Turn pasted text into a <a class="reference internal" href="songleaf.model.html#songleaf.model.Song" title="songleaf.model.Song"><code class="xref py py-class docutils literal notranslate"><span class="pre">Song</span></code></a>: a registry of format importers.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="songleaf.kaggle_index.html#module-songleaf.kaggle_index" title="songleaf.kaggle_index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kaggle_index</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.kaggle_index.html#module-songleaf.kaggle_index" title="songleaf.kaggle_index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kaggle_index</span></code></a></p></td>
 <td><p>A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.library.html#module-songleaf.library" title="songleaf.library"><code class="xref py py-obj docutils literal notranslate"><span class="pre">library</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="songleaf.library.html#module-songleaf.library" title="songleaf.library"><code class="xref py py-obj docutils literal notranslate"><span class="pre">library</span></code></a></p></td>
 <td><p>The library's lists: which stored songs are in which lists, shared by everyone using it.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="songleaf.match.html#module-songleaf.match" title="songleaf.match"><code class="xref py py-obj docutils literal notranslate"><span class="pre">match</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.match.html#module-songleaf.match" title="songleaf.match"><code class="xref py py-obj docutils literal notranslate"><span class="pre">match</span></code></a></p></td>
 <td><p>Where a query matched: the words it shares with a field, as spans to highlight, and the lyric line.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.model.html#module-songleaf.model" title="songleaf.model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="songleaf.model.html#module-songleaf.model" title="songleaf.model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></a></p></td>
 <td><p>The linked-artifact model: a song is lyrics text plus standoff annotations.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="songleaf.packing.html#module-songleaf.packing" title="songleaf.packing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">packing</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.packing.html#module-songleaf.packing" title="songleaf.packing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">packing</span></code></a></p></td>
 <td><p>Line packing: which consecutive lines of a paragraph share a row.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.parse.html#module-songleaf.parse" title="songleaf.parse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="songleaf.parse.html#module-songleaf.parse" title="songleaf.parse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse</span></code></a></p></td>
 <td><p>Parse chords-over-lyrics text into a <a class="reference internal" href="songleaf.model.html#songleaf.model.Song" title="songleaf.model.Song"><code class="xref py py-class docutils literal notranslate"><span class="pre">Song</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="songleaf.render.html#module-songleaf.render" title="songleaf.render"><code class="xref py py-obj docutils literal notranslate"><span class="pre">render</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.render.html#module-songleaf.render" title="songleaf.render"><code class="xref py py-obj docutils literal notranslate"><span class="pre">render</span></code></a></p></td>
 <td><p>Render a song onto one dense page, with the lyrics as large as will fit.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.songbook.html#module-songleaf.songbook" title="songleaf.songbook"><code class="xref py py-obj docutils literal notranslate"><span class="pre">songbook</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="songleaf.songbook.html#module-songleaf.songbook" title="songleaf.songbook"><code class="xref py py-obj docutils literal notranslate"><span class="pre">songbook</span></code></a></p></td>
 <td><p>A songbook: several songs in one PDF, with a table of contents, page numbers and bookmarks.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="songleaf.sources.html#module-songleaf.sources" title="songleaf.sources"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sources</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.sources.html#module-songleaf.sources" title="songleaf.sources"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sources</span></code></a></p></td>
 <td><p>Where songs are found: sources, and a search that composes them.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.store.html#module-songleaf.store" title="songleaf.store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="songleaf.store.html#module-songleaf.store" title="songleaf.store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store</span></code></a></p></td>
 <td><p>Where songs persist: a <code class="docutils literal notranslate"><span class="pre">MutableMapping</span></code> of songs, JSON files by default.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="songleaf.tools.html#module-songleaf.tools" title="songleaf.tools"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.tools.html#module-songleaf.tools" title="songleaf.tools"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools</span></code></a></p></td>
 <td><p>The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="songleaf.viewed.html#module-songleaf.viewed" title="songleaf.viewed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">viewed</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="songleaf.viewed.html#module-songleaf.viewed" title="songleaf.viewed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">viewed</span></code></a></p></td>
 <td><p>Each viewer's <em>Viewed</em> list: the songs they opened, the most recent first.</p></td>
 </tr>
 </tbody>
@@ -961,7 +968,7 @@ more pages.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=7c40b9fe"></script>
+</div><script src="../_static/documentation_options.js?v=d500cd98"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
