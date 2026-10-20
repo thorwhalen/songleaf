@@ -729,7 +729,8 @@
       "aria-label": "Search titles, artists, lyrics and your lists", autocomplete: "off", enterkeyhint: "search", oninput: onInput,
     });
     const form = h("form", { class: "search", role: "search", onsubmit: (e) => { e.preventDefault(); refine(); query.blur(); } }, query);
-    app.replaceChildren(h("header", { class: "app-head" }, home, h("h1", {}, CONFIG.title)), form, pasteBox(), results);
+    app.replaceChildren(h("header", { class: "app-head" }, home, h("h1", {}, CONFIG.title)), form, pasteBox(pendingImport), results);
+    pendingImport = null;
     // Focus the search only on a fresh page with nothing in the library: never on Back, where
     // a phone would raise its keyboard over the list the reader came back to.
     showResults(route, results, gen, {
@@ -742,13 +743,25 @@
   // ----- paste a song ---------------------------------------------------------------------
   // Text copied from any site (Ultimate Guitar, ChordPro, OpenSong, plain chords over lyrics);
   // the server detects the format. songleaf never contacts the site: `url` is only a note.
-  function pasteBox() {
+  // The Ultimate Guitar bookmarklet (bookmarklet.js) opens this page with the chart in the
+  // fragment (`#import=`): it fills this form, and only the reader's press of Import stores it.
+  function pasteBox(prefill = null) {
     const field = (name, label, attrs = {}) => h("input", { type: "text", name, placeholder: label, "aria-label": label, autocomplete: "off", ...attrs });
     const text = h("textarea", { name: "text", rows: 8, placeholder: "Paste the chords and lyrics here", "aria-label": "Song text", spellcheck: "false" });
     const title = field("title", "Title");
     const artist = field("artist", "Artist");
     const url = field("url", "Where it came from (optional)", { inputmode: "url" });
-    const status = h("p", { class: "muted", role: "status" });
+    const extra = { key: "", capo: "", format: "" }; // what the bookmarklet read that has no field here
+    if (prefill) {
+      text.value = prefill.text;
+      title.value = prefill.title;
+      artist.value = prefill.artist;
+      url.value = prefill.url;
+      Object.assign(extra, { key: prefill.key, capo: prefill.capo, format: prefill.format });
+    }
+    const sent = prefill ? [prefill.key && `key ${prefill.key}`, prefill.capo && `capo ${prefill.capo}`].filter(Boolean).join(", ") : "";
+    const status = h("p", { class: "muted", role: "status" },
+      prefill ? `Filled in by the bookmarklet${sent ? ` (${sent})` : ""}: check it, then press Import.` : "");
     const submit = h("button", { type: "submit" }, "Import");
     const form = h("form", { class: "paste", onsubmit: async (e) => {
       e.preventDefault();
@@ -757,7 +770,7 @@
       try {
         const response = await fetch(CONFIG.api + "/import", {
           method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: text.value, title: title.value.trim(), artist: artist.value.trim(), url: url.value.trim() }),
+          body: JSON.stringify({ text: text.value, title: title.value.trim(), artist: artist.value.trim(), url: url.value.trim(), ...extra }),
         });
         if (!response.ok) throw new Error(await errorText(response));
         const info = await response.json();
@@ -767,9 +780,47 @@
       } finally {
         submit.disabled = false;
       }
-    } }, text, title, artist, url, submit, status);
-    return h("details", { class: "paste-box" }, h("summary", {}, "Paste a song"), form);
+    } }, text, title, artist, url, submit, status, bookmarkletNote());
+    return h("details", { class: "paste-box", open: Boolean(prefill) }, h("summary", {}, "Paste a song"), form);
   }
+
+  // The bookmarklet's link: its source (served at /ui/bookmarklet.js) with this page's address
+  // put in, as a `javascript:` URL to drag to the bookmarks bar. Clicking it here does nothing.
+  function bookmarkletNote() {
+    const link = h("a", { class: "bookmarklet", href: "#", onclick: (e) => e.preventDefault() }, "Send to songleaf");
+    fetch(CONFIG.api + "/ui/bookmarklet.js", { credentials: "same-origin" })
+      .then((response) => (response.ok ? response.text() : Promise.reject(new Error(String(response.status)))))
+      .then((source) => {
+        const page = JSON.stringify(location.origin + location.pathname);
+        const code = source.replace(/^\s*\/\/.*$/gm, "").replace('"__SONGLEAF_PAGE__"', () => page);
+        link.setAttribute("href", "javascript:" + encodeURIComponent(code));
+      })
+      .catch(() => { link.hidden = true; });
+    return h("p", { class: "muted bookmarklet-note" },
+      "From Ultimate Guitar: drag ", link, " to your bookmarks bar, then use it on a community chord page you have open. ",
+      "Official and Pro tabs are refused.");
+  }
+
+  // The chart the bookmarklet sent (`#import=`), read once and taken off the address at once,
+  // so it is neither kept in the history nor sent again by a reload. Only strings are kept.
+  function takeImport() {
+    const match = /^#import=(.*)$/s.exec(location.hash);
+    if (!match) return null;
+    history.replaceState(history.state, "", location.pathname + location.search);
+    if (new URLSearchParams(location.search).has("song")) return null; // the form is on the search view only
+    try {
+      const chart = JSON.parse(decodeURIComponent(match[1]));
+      if (!chart || typeof chart.text !== "string" || !chart.text.trim()) return null;
+      const out = {};
+      for (const name of ["text", "title", "artist", "url", "key", "capo", "format"]) {
+        out[name] = typeof chart[name] === "string" ? chart[name] : "";
+      }
+      return out;
+    } catch (_) {
+      return null;
+    }
+  }
+  let pendingImport = takeImport(); // shown once, by the first search view drawn
 
   function showResults(route, results, gen, after = {}) {
     if (route.q) showHits(route, results, gen, after);

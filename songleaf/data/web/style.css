@@ -487,3 +487,5 @@ body .zg-tagmenu-apply[aria-disabled="false"] { background: var(--accent); borde
 .paste-box summary { cursor: pointer; padding: 8px 0; }
 .paste { display: grid; gap: 8px; }
 .paste textarea { font-family: ui-monospace, monospace; width: 100%; box-sizing: border-box; }
+.bookmarklet-note { font-size: 0.9em; }
+.bookmarklet { font-weight: 600; padding: 2px 8px; border: 1px dashed currentColor; border-radius: 6px; text-decoration: none; }

@@ -38,6 +38,9 @@ PASTE_PROVENANCE = {"source": "paste", "license": "personal"}
 #: Characters of the text hashed into the ``paste:<hash>`` key.
 KEY_HASH_CHARS = 12
 
+#: Characters a given ``key`` or ``capo`` may have at most (``"F#m"``, ``"2"``).
+MAX_META_CHARS = 20
+
 #: Pasted text longer than this is refused (a chord chart is a few KB).
 MAX_PASTE_CHARS = 200_000
 
@@ -152,25 +155,41 @@ def import_song(
     title: str = "",
     artist: str = "",
     url: str = "",
+    key: str = "",
+    capo: str = "",
     format: str = "",
     importers: Sequence[Importer] = IMPORTERS,
 ) -> Imported:
     """Parse pasted *text* with the first importer that recognises it (or *format*).
 
-    ``title``/``artist`` given here win over those in the text.
+    ``title``/``artist``/``key``/``capo`` given here win over those in the text.
+    A ``url`` on ultimate-guitar.com is checked first (official and Pro pages are
+    refused, see :mod:`songleaf.ultimate_guitar`), keys the song ``ug:<id>``
+    instead of ``paste:<hash>``, and is noted as ``provenance.site``.
     """
+    from songleaf import ultimate_guitar as _ug
+
     if not text.strip():
         raise ValueError("Nothing to import: the text is empty.")
     if len(text) > MAX_PASTE_CHARS:
         raise ValueError(
             f"The text is too long ({len(text)} > {MAX_PASTE_CHARS} characters)."
         )
+    for name, value in (("key", key), ("capo", capo)):
+        if len(value) > MAX_META_CHARS:
+            raise ValueError(f"The {name} is too long (over {MAX_META_CHARS} characters).")
+    why = _ug.refusal(url)
+    if why:
+        raise ValueError(why)
     importer = _choose(text, importers, format)
     provenance = {**PASTE_PROVENANCE, **({"url": url} if url else {})}
+    if url and _ug.is_ultimate_guitar_url(url):
+        provenance["site"] = "ultimate-guitar"
     song = importer.parse(text, meta=None, provenance=provenance)
-    song.meta.update({k: v for k, v in (("title", title), ("artist", artist)) if v})
+    given = (("title", title), ("artist", artist), ("key", key), ("capo", capo))
+    song.meta.update({k: v.strip() for k, v in given if v and v.strip()})
     song.meta.setdefault("title", "Pasted song")
-    return Imported(paste_key(text), importer.name, song)
+    return Imported(_ug.ug_key(url) or paste_key(text), importer.name, song)
 
 
 def format_names(importers: Mapping | Sequence[Importer] = IMPORTERS) -> list[str]:
