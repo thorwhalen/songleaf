@@ -357,3 +357,40 @@ def test_a_song_downloads_as_chordpro_and_as_text(client):
     text = client.get("/song.txt", params={"key": "memory:1"})
     assert text.status_code == 200 and "Paper Boats" in text.text.splitlines()[0]
     assert client.get("/song.cho", params={"key": "memory:1", "transpose": 40}).status_code == 422
+
+
+def test_media_links_a_recording_by_link_or_id(client):
+    key = client.post("/import", json={"text": "G\nPaper boats on a stream\n"}).json()["key"]
+    info = client.put("/media", json={"key": key, "youtube": "https://youtu.be/dQw4w9WgXcQ"}).json()
+    assert info["media"] == {"youtube": "dQw4w9WgXcQ"}
+    assert client.get("/song", params={"key": key}).json()["meta"]["media"]["youtube"] == "dQw4w9WgXcQ"
+    assert client.put("/media", json={"key": key, "youtube": "-"}).json()["media"] == {}
+    assert client.put("/media", json={"key": key, "spotify": "not an id"}).status_code == 400
+    assert client.put("/media", json={"key": "paste:nothing", "youtube": "-"}).status_code == 404
+    assert client.put("/media", json={"key": key, "youtube": 3}).status_code == 400
+
+
+def test_sync_keeps_only_the_times(memory_source, tmp_path):
+    asked = []
+
+    def get_json(url, params):
+        asked.append(params)
+        return {"syncedLyrics": "[00:01.00]Paper boats on a stream\n[00:04.50]carry the names"}
+
+    store = song_store(str(tmp_path / "songs"))
+    client = TestClient(mk_app(sources=[memory_source], store=store, get_json=get_json))
+    text = "G\nPaper boats on a stream\nD\ncarry the names\n"
+    key = client.post("/import", json={"text": text, "title": "Paper Boats"}).json()["key"]
+    info = client.post("/sync", json={"key": key, "lrc": "[00:02.00]Paper boats on a stream"}).json()
+    assert info["timed"] == 1
+    info = client.post("/sync", json={"key": key, "lrclib": True}).json()
+    assert info["timed"] == 2 and asked[0]["track_name"] == "Paper Boats"
+    song = client.get("/song", params={"key": key}).json()
+    times = [a["body"]["ms"] for a in song["annotations"] if a["kind"] == "time"]
+    assert times == [1000, 4500]
+    assert song["text"] == "Paper boats on a stream\ncarry the names"  # the LRC's words are not kept
+    unmatched = client.post("/sync", json={"key": key, "lrc": "[00:09.00]nothing like it at all"})
+    assert unmatched.status_code == 400  # and the timings stay
+    assert len([a for a in client.get("/song", params={"key": key}).json()["annotations"] if a["kind"] == "time"]) == 2
+    assert client.post("/sync", json={"key": key}).status_code == 400
+    assert client.post("/sync", json={"key": key, "lrc": "x" * 200_000}).status_code == 400

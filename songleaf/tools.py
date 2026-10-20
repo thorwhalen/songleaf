@@ -501,8 +501,11 @@ def sync(
         lrc = fetch_lrclib(found.title, found.artist, get_json=get_json) or ""
     if not lrc:
         raise ValueError("no LRC: pass lrc= (an .lrc file's text) or lrclib=True")
-    timed = with_lrc(found, lrc)
     store = song_store() if store is None else store
+    found = store[key] if _is_stored(store, key) else found  # changed while LRCLIB answered
+    timed = with_lrc(found, lrc)
+    if not timed.of_kind("time"):  # a wrong file never wipes the timings a song has
+        raise ValueError("No line of the LRC matched this song's lyrics: nothing was changed.")
     store[key] = timed
     lyric_lines = sum(1 for line in found.lines() if line.text.strip())
     return {"key": key, "timed": len(timed.of_kind("time")), "lines": lyric_lines}
@@ -551,16 +554,16 @@ def media(
     store=None,
     sources=None,
 ) -> dict:
-    """Link the song's recording: a YouTube video id and/or a Spotify track id.
+    """Link the song's recording: a YouTube video and/or a Spotify track, by id or link.
 
     An id given as ``""`` is left as it is; ``"-"`` removes it. Returns
     ``{"key", "media"}``.
     """
-    from songleaf.timing import with_media
+    from songleaf.timing import media_id, with_media
 
     key, found = _resolve(query, pick=pick, refresh=False, sources=sources, store=store)
     changes = {
-        service: (None if value == "-" else value)
+        service: (None if value == "-" else media_id(service, value))
         for service, value in (("youtube", youtube), ("spotify", spotify))
         if value
     }
