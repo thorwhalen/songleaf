@@ -314,7 +314,9 @@ def mk_app(
     def set_media(payload: dict = Body(...)) -> dict:
         key = stored_song(payload)
         ids = {name: payload.get(name, "") for name in ("youtube", "spotify")}
-        if not all(isinstance(v, str) and len(v) <= _MAX_QUERY_CHARS for v in ids.values()):
+        if not all(
+            isinstance(v, str) and len(v) <= _MAX_QUERY_CHARS for v in ids.values()
+        ):
             raise HTTPException(400, "youtube and spotify must be short strings")
         try:
             return tools.media(key, **ids, store=store_now(), sources=sources)
@@ -328,7 +330,9 @@ def mk_app(
         if not isinstance(lrc, str) or not isinstance(lrclib, bool):
             raise HTTPException(400, "lrc must be a string and lrclib true or false")
         if len(lrc) > MAX_LRC_CHARS:
-            raise HTTPException(400, f"The LRC is too long (over {MAX_LRC_CHARS} characters)")
+            raise HTTPException(
+                400, f"The LRC is too long (over {MAX_LRC_CHARS} characters)"
+            )
         try:  # LRCLIB is a network call: off the event loop
             return await run_in_threadpool(
                 tools.sync,

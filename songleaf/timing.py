@@ -43,7 +43,9 @@ MEDIA_LINKS: dict[str, re.Pattern] = {
     "youtube": re.compile(
         r"(?:youtu\.be/|[?&]v=|/embed/|/shorts/|/live/)([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])"
     ),
-    "spotify": re.compile(r"(?:/track/|spotify:track:)([A-Za-z0-9]{22})(?![A-Za-z0-9])"),
+    "spotify": re.compile(
+        r"(?:/track/|spotify:track:)([A-Za-z0-9]{22})(?![A-Za-z0-9])"
+    ),
 }
 DFLT_MIN_F1 = 0.5
 
@@ -57,7 +59,9 @@ def media_id(service: str, text: str) -> str:
     '4uLU6hMCjMI75M1A2tKUQC'
     """
     if service not in MEDIA_IDS:
-        raise ValueError(f"unknown media service {service!r}; known: {sorted(MEDIA_IDS)}")
+        raise ValueError(
+            f"unknown media service {service!r}; known: {sorted(MEDIA_IDS)}"
+        )
     text = text.strip()
     if MEDIA_IDS[service].fullmatch(text):
         return text
