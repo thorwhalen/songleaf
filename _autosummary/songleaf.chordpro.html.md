@@ -14,7 +14,10 @@ lines.
 - `{soc}`/`{eoc}` (and verse, bridge, tab-less variants) and `{c: label}`
   comments become `section` annotations; a section with no lines of its own is
   a *marker* (`{"marker": True}`), as in [`songleaf.parse`](songleaf.parse.html.md#module-songleaf.parse).
-- `# comments` and unknown directives are dropped.
+- `{x_songleaf_before: 0, 3}` (written by [`songleaf.export.to_chordpro()`](songleaf.export.html.md#songleaf.export.to_chordpro)) marks the
+  chords at those positions, counted over the song’s chords in text order, as sounding
+  *before* their syllable (`timing="before"`): ChordPro has no way to say it.
+- `# comments` and other unknown directives are dropped.
 
 ```pycon
 >>> song = parse_chordpro("{title: Paper Boats}\n{soc}\nPaper [G]boats [D]drift\n{eoc}")
@@ -26,10 +29,19 @@ lines.
 ('Paper Boats', 'Chorus')
 ```
 
+### Module Attributes
+
+| [`BEFORE_DIRECTIVE`](#songleaf.chordpro.BEFORE_DIRECTIVE)   | The namespaced directive carrying `timing="before"` chords; apps that don't know it skip it.   |
+|---------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
+
 ### Functions
 
 | [`parse_chordpro`](#songleaf.chordpro.parse_chordpro)(raw, \*[, meta, provenance])   | Parse ChordPro text into a `Song`.   |
 |------------------------------------------------------------------------------------------------|--------------------------------------|
+
+### songleaf.chordpro.BEFORE_DIRECTIVE *= 'x_songleaf_before'*
+
+The namespaced directive carrying `timing="before"` chords; apps that don’t know it skip it.
 
 ### songleaf.chordpro.parse_chordpro(raw, , meta=None, provenance=None)
 

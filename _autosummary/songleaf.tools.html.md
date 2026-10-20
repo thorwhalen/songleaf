@@ -17,6 +17,7 @@ than dicts uses [`songleaf.sources`](songleaf.sources.html.md#module-songleaf.so
 
 | [`build_index`](#songleaf.tools.build_index)(\*[, path])                           | Build the search index of the Kaggle corpus, once, where the corpus zip is.                                |
 |----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| [`export`](#songleaf.tools.export)(query, \*[, format, transpose, ...])       | Export a song as ChordPro (`chordpro`) or plain text with chords over lyrics (`text`).                     |
 | [`forget`](#songleaf.tools.forget)(key, \*[, store, library_root])            | Remove a song from the stored songs, from every list it was in, and from every Viewed list.                |
 | [`import_file`](#songleaf.tools.import_file)([path, title, artist, url, ...])      | Read pasted song text from a file (`-`: standard input) and store it; see `import_text`.                   |
 | [`import_text`](#songleaf.tools.import_text)(text, \*[, title, artist, url, ...])  | Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics. |
@@ -29,7 +30,7 @@ than dicts uses [`songleaf.sources`](songleaf.sources.html.md#module-songleaf.so
 | [`view`](#songleaf.tools.view)(key, \*[, user, at, store, library_root])    | Put a stored song at the top of `user`'s Viewed list: they just opened it.                                 |
 | [`viewed`](#songleaf.tools.viewed)(\*[, user, store, library_root])           | The songs `user` opened, the most recent first: `key`, `title`, `artist`, `viewed_at`.                     |
 
-### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function songbook>, <function song>, <function songs>, <function import_file>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>)*
+### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function songbook>, <function song>, <function export>, <function songs>, <function import_file>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>)*
 
 Every operation, in the order the CLI lists them.
 
@@ -40,6 +41,19 @@ Build the search index of the Kaggle corpus, once, where the corpus zip is.
 Searching then reads the index instead of loading the whole corpus into
 memory (tens of MB instead of over a GB per process). Run it again after
 replacing the zip. `path` defaults to beside the zip under the data root.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.export(query, , format='chordpro', transpose=0, output='', pick=1, refresh=False, sources=None, store=None)
+
+Export a song as ChordPro (`chordpro`) or plain text with chords over lyrics (`text`).
+
+`query` is a song key or a search, as for `sheet`. `transpose` moves every chord
+by that many semitones (the stored song keeps its chords). The result has the `text`;
+with `output` set it is also written to that file, and `path` says where.
+ChordPro is the fleet’s interchange (Songbook Pro, OnSong and the ChordPro app read it);
+chords that sound before their syllable travel in the `x_songleaf_before` directive.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

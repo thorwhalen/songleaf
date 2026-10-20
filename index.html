@@ -207,6 +207,7 @@
 <li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.chordpro.html">songleaf.chordpro</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.datasets.html">songleaf.datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.export.html">songleaf.export</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.importers.html">songleaf.importers</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
@@ -325,6 +326,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span><span class="s2">"wonderwall oasis"</span><span class="w"> </span>--output<span class="w"> </span>wonderwall.pdf
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span><span class="s2">"wonderwall oasis"</span><span class="w"> </span>--pick<span class="w"> </span><span class="m">2</span><span class="w">      </span><span class="c1"># the second-best match</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>songs<span class="w">                                  </span><span class="c1"># songs already stored</span>
+python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span><span class="nb">export</span><span class="w"> </span>kaggle_chords:1234<span class="w"> </span>--output<span class="w"> </span>song.cho<span class="w">   </span><span class="c1"># ChordPro (or --format text); --transpose 2</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>viewed<span class="w">                                 </span><span class="c1"># the songs opened, the latest first</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span>kaggle_chords:1234<span class="w">               </span><span class="c1"># a song by its key: no search</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span>kaggle_chords:1234<span class="w"> </span>--refresh<span class="w">     </span><span class="c1"># fetch it again from its source</span>
@@ -438,7 +440,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-20 10:40 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/933d7737a8101941a3e7ceb93294392d7c7ba394">933d773</a> (main) · songleaf 0.0.19 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-20 12:28 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/777f75f9f9718cf1cecd5affb0cb2409520c5cc0">777f75f</a> (main) · songleaf 0.0.20 · <a href="about-this-build.html">about this build</a></p>
         </article>
       </div>
       <footer>
@@ -501,7 +503,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=a8acf705"></script>
+</div><script src="_static/documentation_options.js?v=7c40b9fe"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

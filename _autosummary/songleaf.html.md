@@ -378,6 +378,7 @@ The keys of the stored songs.
 | [`chordpro`](songleaf.chordpro.html.md#module-songleaf.chordpro)         | Parse ChordPro text into a [`Song`](songleaf.model.html.md#songleaf.model.Song).                              |
 |--------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | [`datasets`](songleaf.datasets.html.md#module-songleaf.datasets)         | Where the `datasets` data kind lives: local files by default, S3 by configuration.                                                 |
+| [`export`](songleaf.export.html.md#module-songleaf.export)             | Export a song as ChordPro or as plain text (chords over lyrics), transposition applied.                                            |
 | [`harmony`](songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                                                  |
 | [`importers`](songleaf.importers.html.md#module-songleaf.importers)       | Turn pasted text into a [`Song`](songleaf.model.html.md#songleaf.model.Song): a registry of format importers. |
 | [`kaggle_index`](songleaf.kaggle_index.html.md#module-songleaf.kaggle_index) | A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.                                        |

@@ -15,6 +15,7 @@ songleaf.tools
    .. autosummary::
    
       build_index
+      export
       forget
       import_file
       import_text

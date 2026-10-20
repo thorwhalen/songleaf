@@ -1,4 +1,4 @@
-> built 2026-10-20 10:40 UTC from 933d773 (main) · songleaf 0.0.19. Details: build_info.json
+> built 2026-10-20 12:28 UTC from 777f75f (main) · songleaf 0.0.20. Details: build_info.json
 
 # index.html.md
 
@@ -49,6 +49,7 @@ python -m songleaf search --artist oasis --lyrics "roads winding"   # narrower: 
 python -m songleaf sheet "wonderwall oasis" --output wonderwall.pdf
 python -m songleaf sheet "wonderwall oasis" --pick 2      # the second-best match
 python -m songleaf songs                                  # songs already stored
+python -m songleaf export kaggle_chords:1234 --output song.cho   # ChordPro (or --format text); --transpose 2
 python -m songleaf viewed                                 # the songs opened, the latest first
 python -m songleaf sheet kaggle_chords:1234               # a song by its key: no search
 python -m songleaf sheet kaggle_chords:1234 --refresh     # fetch it again from its source
@@ -191,7 +192,10 @@ lines.
 - `{soc}`/`{eoc}` (and verse, bridge, tab-less variants) and `{c: label}`
   comments become `section` annotations; a section with no lines of its own is
   a *marker* (`{"marker": True}`), as in [`songleaf.parse`](_autosummary/songleaf.parse.html.md#module-songleaf.parse).
-- `# comments` and unknown directives are dropped.
+- `{x_songleaf_before: 0, 3}` (written by [`songleaf.export.to_chordpro()`](_autosummary/songleaf.export.html.md#songleaf.export.to_chordpro)) marks the
+  chords at those positions, counted over the song’s chords in text order, as sounding
+  *before* their syllable (`timing="before"`): ChordPro has no way to say it.
+- `# comments` and other unknown directives are dropped.
 
 ```pycon
 >>> song = parse_chordpro("{title: Paper Boats}\n{soc}\nPaper [G]boats [D]drift\n{eoc}")
@@ -203,10 +207,19 @@ lines.
 ('Paper Boats', 'Chorus')
 ```
 
+### Module Attributes
+
+| [`BEFORE_DIRECTIVE`](_autosummary/songleaf.chordpro.html.md#songleaf.chordpro.BEFORE_DIRECTIVE)   | The namespaced directive carrying `timing="before"` chords; apps that don't know it skip it.   |
+|---------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
+
 ### Functions
 
 | [`parse_chordpro`](_autosummary/songleaf.chordpro.html.md#songleaf.chordpro.parse_chordpro)(raw, \*[, meta, provenance])   | Parse ChordPro text into a `Song`.   |
 |------------------------------------------------------------------------------------------------|--------------------------------------|
+
+### songleaf.chordpro.BEFORE_DIRECTIVE *= 'x_songleaf_before'*
+
+The namespaced directive carrying `timing="before"` chords; apps that don’t know it skip it.
 
 ### songleaf.chordpro.parse_chordpro(raw, , meta=None, provenance=None)
 
@@ -288,6 +301,74 @@ S3Location(bucket='b', prefix='x/datasets/', profile=None)
 
 * **Return type:**
   [`S3Location`](_autosummary/songleaf.datasets.html.md#songleaf.datasets.S3Location) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+
+# _autosummary/songleaf.export.html.md
+
+# songleaf.export
+
+Export a song as ChordPro or as plain text (chords over lyrics), transposition applied.
+
+ChordPro is the fleet’s text interchange: Songbook Pro, OnSong and the ChordPro app read it.
+[`to_chordpro()`](_autosummary/songleaf.export.html.md#songleaf.export.to_chordpro) writes what [`songleaf.chordpro.parse_chordpro()`](_autosummary/songleaf.chordpro.html.md#songleaf.chordpro.parse_chordpro) reads, so a song
+survives the round trip (text, chords, sections, `title`/`artist`/`key`/`capo`/`tempo`).
+A chord that sounds ahead of its syllable (`timing="before"`) has no ChordPro spelling; the
+song carries it in the namespaced directive `{x_songleaf_before: ...}`, which other apps ignore.
+
+[`to_text()`](_autosummary/songleaf.export.html.md#songleaf.export.to_text) is the monospaced form: each line of lyrics with its chords on the line above,
+a `[Label]` line at each section. It is for reading and pasting; it does not carry timing.
+
+```pycon
+>>> from songleaf.model import Song, chord, section
+>>> song = Song("Paper boats drift", [chord(6, "G"), chord(12, "D"), section(0, 17, "Chorus")],
+...             meta={"title": "Paper Boats"})
+>>> print(to_chordpro(song))
+{title: Paper Boats}
+{start_of_chorus: Chorus}
+Paper [G]boats [D]drift
+{end_of_chorus}
+>>> print(to_text(song))
+Paper Boats
+
+[Chorus]
+      G     D
+Paper boats drift
+```
+
+### Module Attributes
+
+| [`FORMATS`](_autosummary/songleaf.export.html.md#songleaf.export.FORMATS)   | name -> (function, file extension, media type).   |
+|------------------------------------------------------------|---------------------------------------------------|
+
+### Functions
+
+| [`to_chordpro`](_autosummary/songleaf.export.html.md#songleaf.export.to_chordpro)(song, \*[, transpose])   | The song as ChordPro text, every chord moved by `transpose` semitones.           |
+|---------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| [`to_text`](_autosummary/songleaf.export.html.md#songleaf.export.to_text)(song, \*[, transpose])       | The song as plain text: chords above their syllables, `[Label]` at each section. |
+
+### songleaf.export.FORMATS *= {'chordpro': (<function to_chordpro>, 'cho', 'text/plain; charset=utf-8'), 'text': (<function to_text>, 'txt', 'text/plain; charset=utf-8')}*
+
+name -> (function, file extension, media type).
+
+* **Type:**
+  Export formats
+
+### songleaf.export.to_chordpro(song, , transpose=0)
+
+The song as ChordPro text, every chord moved by `transpose` semitones.
+
+Metadata become directives, sections `start_of_*`/`end_of_*` environments carrying
+their label, chords go inline in brackets at the syllable they land on.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### songleaf.export.to_text(song, , transpose=0)
+
+The song as plain text: chords above their syllables, `[Label]` at each section.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 
 # _autosummary/songleaf.harmony.html.md
@@ -817,6 +898,7 @@ The keys of the stored songs.
 | [`chordpro`](_autosummary/songleaf.chordpro.html.md#module-songleaf.chordpro)         | Parse ChordPro text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song).                              |
 |--------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | [`datasets`](_autosummary/songleaf.datasets.html.md#module-songleaf.datasets)         | Where the `datasets` data kind lives: local files by default, S3 by configuration.                                                 |
+| [`export`](_autosummary/songleaf.export.html.md#module-songleaf.export)             | Export a song as ChordPro or as plain text (chords over lyrics), transposition applied.                                            |
 | [`harmony`](_autosummary/songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                                                  |
 | [`importers`](_autosummary/songleaf.importers.html.md#module-songleaf.importers)       | Turn pasted text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song): a registry of format importers. |
 | [`kaggle_index`](_autosummary/songleaf.kaggle_index.html.md#module-songleaf.kaggle_index) | A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.                                        |
@@ -2411,6 +2493,7 @@ than dicts uses [`songleaf.sources`](_autosummary/songleaf.sources.html.md#modul
 
 | [`build_index`](_autosummary/songleaf.tools.html.md#songleaf.tools.build_index)(\*[, path])                           | Build the search index of the Kaggle corpus, once, where the corpus zip is.                                |
 |----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| [`export`](_autosummary/songleaf.tools.html.md#songleaf.tools.export)(query, \*[, format, transpose, ...])       | Export a song as ChordPro (`chordpro`) or plain text with chords over lyrics (`text`).                     |
 | [`forget`](_autosummary/songleaf.tools.html.md#songleaf.tools.forget)(key, \*[, store, library_root])            | Remove a song from the stored songs, from every list it was in, and from every Viewed list.                |
 | [`import_file`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_file)([path, title, artist, url, ...])      | Read pasted song text from a file (`-`: standard input) and store it; see `import_text`.                   |
 | [`import_text`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_text)(text, \*[, title, artist, url, ...])  | Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics. |
@@ -2423,7 +2506,7 @@ than dicts uses [`songleaf.sources`](_autosummary/songleaf.sources.html.md#modul
 | [`view`](_autosummary/songleaf.tools.html.md#songleaf.tools.view)(key, \*[, user, at, store, library_root])    | Put a stored song at the top of `user`'s Viewed list: they just opened it.                                 |
 | [`viewed`](_autosummary/songleaf.tools.html.md#songleaf.tools.viewed)(\*[, user, store, library_root])           | The songs `user` opened, the most recent first: `key`, `title`, `artist`, `viewed_at`.                     |
 
-### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function songbook>, <function song>, <function songs>, <function import_file>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>)*
+### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function songbook>, <function song>, <function export>, <function songs>, <function import_file>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>)*
 
 Every operation, in the order the CLI lists them.
 
@@ -2434,6 +2517,19 @@ Build the search index of the Kaggle corpus, once, where the corpus zip is.
 Searching then reads the index instead of loading the whole corpus into
 memory (tens of MB instead of over a GB per process). Run it again after
 replacing the zip. `path` defaults to beside the zip under the data root.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.export(query, , format='chordpro', transpose=0, output='', pick=1, refresh=False, sources=None, store=None)
+
+Export a song as ChordPro (`chordpro`) or plain text with chords over lyrics (`text`).
+
+`query` is a song key or a search, as for `sheet`. `transpose` moves every chord
+by that many semitones (the stored song keeps its chords). The result has the `text`;
+with `output` set it is also written to that file, and `path` says where.
+ChordPro is the fleet’s interchange (Songbook Pro, OnSong and the ChordPro app read it);
+chords that sound before their syllable travel in the `x_songleaf_before` directive.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -2696,18 +2792,18 @@ True
 
 # About this build
 
-This documentation was built on **2026-10-20 10:40 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/933d7737a8101941a3e7ceb93294392d7c7ba394"><code>933d773</code></a> on branch <code>main</code>, for **songleaf 0.0.19** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 12:28 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/777f75f9f9718cf1cecd5affb0cb2409520c5cc0"><code>777f75f</code></a> on branch <code>main</code>, for **songleaf 0.0.20** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.19) is behind the latest release on PyPI (0.0.20): `pip install songleaf` gives newer code than these docs describe.
+- The documented version (0.0.20) is behind the latest release on PyPI (0.0.21): `pip install songleaf` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/933d7737a8101941a3e7ceb93294392d7c7ba394"><code>933d7737a8101941a3e7ceb93294392d7c7ba394</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/777f75f9f9718cf1cecd5affb0cb2409520c5cc0"><code>777f75f9f9718cf1cecd5affb0cb2409520c5cc0</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -2718,15 +2814,15 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39409388964">39409388964</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39422312316">39422312316</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>933d7737a8101941a3e7ceb93294392d7c7ba394</code> (in the history of the built commit) |
+| Event commit | <code>777f75f9f9718cf1cecd5affb0cb2409520c5cc0</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.19  |
+| epythet  | 0.2.20  |
 | Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
 | Python   | 3.12.15 |
@@ -2745,14 +2841,14 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.20/">0.0.20</a>, newer than the documented version (0.0.19).
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.21/">0.0.21</a>, newer than the documented version (0.0.20).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 933d7737a8101941a3e7ceb93294392d7c7ba394
-pip install "epythet==0.2.19"
+git checkout 777f75f9f9718cf1cecd5affb0cb2409520c5cc0
+pip install "epythet==0.2.20"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

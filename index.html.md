@@ -45,6 +45,7 @@ python -m songleaf search --artist oasis --lyrics "roads winding"   # narrower: 
 python -m songleaf sheet "wonderwall oasis" --output wonderwall.pdf
 python -m songleaf sheet "wonderwall oasis" --pick 2      # the second-best match
 python -m songleaf songs                                  # songs already stored
+python -m songleaf export kaggle_chords:1234 --output song.cho   # ChordPro (or --format text); --transpose 2
 python -m songleaf viewed                                 # the songs opened, the latest first
 python -m songleaf sheet kaggle_chords:1234               # a song by its key: no search
 python -m songleaf sheet kaggle_chords:1234 --refresh     # fetch it again from its source

@@ -207,6 +207,7 @@
 <li class="toctree-l2 current has-children"><a class="reference internal" href="songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l3 current current-page"><a class="current reference internal" href="#">songleaf.chordpro</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.datasets.html">songleaf.datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="songleaf.export.html">songleaf.export</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.importers.html">songleaf.importers</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
@@ -279,7 +280,10 @@ forms) become metadata.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">{soc}</span></code>/<code class="docutils literal notranslate"><span class="pre">{eoc}</span></code> (and verse, bridge, tab-less variants) and <code class="docutils literal notranslate"><span class="pre">{c:</span> <span class="pre">label}</span></code>
 comments become <code class="docutils literal notranslate"><span class="pre">section</span></code> annotations; a section with no lines of its own is
 a <em>marker</em> (<code class="docutils literal notranslate"><span class="pre">{&quot;marker&quot;:</span> <span class="pre">True}</span></code>), as in <a class="reference internal" href="songleaf.parse.html#module-songleaf.parse" title="songleaf.parse"><code class="xref py py-mod docutils literal notranslate"><span class="pre">songleaf.parse</span></code></a>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">comments</span></code> and unknown directives are dropped.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">{x_songleaf_before:</span> <span class="pre">0,</span> <span class="pre">3}</span></code> (written by <a class="reference internal" href="songleaf.export.html#songleaf.export.to_chordpro" title="songleaf.export.to_chordpro"><code class="xref py py-func docutils literal notranslate"><span class="pre">songleaf.export.to_chordpro()</span></code></a>) marks the
+chords at those positions, counted over the song’s chords in text order, as sounding
+<em>before</em> their syllable (<code class="docutils literal notranslate"><span class="pre">timing=&quot;before&quot;</span></code>): ChordPro has no way to say it.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">comments</span></code> and other unknown directives are dropped.</p></li>
 </ul>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">song</span> <span class="o">=</span> <span class="n">parse_chordpro</span><span class="p">(</span><span class="s2">"{title: Paper Boats}</span><span class="se">\n</span><span class="si">{soc}</span><span class="se">\n</span><span class="s2">Paper [G]boats [D]drift</span><span class="se">\n</span><span class="si">{eoc}</span><span class="s2">"</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">song</span><span class="o">.</span><span class="n">text</span>
@@ -289,6 +293,16 @@ a <em>marker</em> (<code class="docutils literal notranslate"><span class="pre">
 <span class="gp">&gt;&gt;&gt; </span><span class="n">song</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span> <span class="n">song</span><span class="o">.</span><span class="n">of_kind</span><span class="p">(</span><span class="s2">"section"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="s2">"label"</span><span class="p">]</span>
 <span class="go">('Paper Boats', 'Chorus')</span>
 </pre></div>
+</div>
+<p class="rubric">Module Attributes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.chordpro.BEFORE_DIRECTIVE" title="songleaf.chordpro.BEFORE_DIRECTIVE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BEFORE_DIRECTIVE</span></code></a></p></td>
+<td><p>The namespaced directive carrying <code class="docutils literal notranslate"><span class="pre">timing=&quot;before&quot;</span></code> chords; apps that don't know it skip it.</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 <p class="rubric">Functions</p>
 <div class="table-wrapper autosummary longtable docutils container">
@@ -300,6 +314,12 @@ a <em>marker</em> (<code class="docutils literal notranslate"><span class="pre">
 </tbody>
 </table>
 </div>
+<dl class="py data">
+<dt class="sig sig-object py" id="songleaf.chordpro.BEFORE_DIRECTIVE">
+<span class="sig-prename descclassname"><span class="pre">songleaf.chordpro.</span></span><span class="sig-name descname"><span class="pre">BEFORE_DIRECTIVE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'x_songleaf_before'</span></span><a class="headerlink" href="#songleaf.chordpro.BEFORE_DIRECTIVE" title="Link to this definition">¶</a></dt>
+<dd><p>The namespaced directive carrying <code class="docutils literal notranslate"><span class="pre">timing=&quot;before&quot;</span></code> chords; apps that don’t know it skip it.</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="songleaf.chordpro.parse_chordpro">
 <span class="sig-prename descclassname"><span class="pre">songleaf.chordpro.</span></span><span class="sig-name descname"><span class="pre">parse_chordpro</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">provenance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/chordpro.html#parse_chordpro"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.chordpro.parse_chordpro" title="Link to this definition">¶</a></dt>
@@ -372,6 +392,7 @@ a <em>marker</em> (<code class="docutils literal notranslate"><span class="pre">
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">songleaf.chordpro</a><ul>
+<li><a class="reference internal" href="#songleaf.chordpro.BEFORE_DIRECTIVE"><code class="docutils literal notranslate"><span class="pre">BEFORE_DIRECTIVE</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.chordpro.parse_chordpro"><code class="docutils literal notranslate"><span class="pre">parse_chordpro()</span></code></a></li>
 </ul>
 </li>
@@ -384,7 +405,7 @@ a <em>marker</em> (<code class="docutils literal notranslate"><span class="pre">
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=a8acf705"></script>
+</div><script src="../_static/documentation_options.js?v=7c40b9fe"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

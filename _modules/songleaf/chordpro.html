@@ -204,6 +204,7 @@
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../_autosummary/songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.chordpro.html">songleaf.chordpro</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.datasets.html">songleaf.datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.export.html">songleaf.export</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.importers.html">songleaf.importers</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
@@ -270,7 +271,10 @@
 <span class="sd">- ``{soc}``/``{eoc}`` (and verse, bridge, tab-less variants) and ``{c: label}``</span>
 <span class="sd">  comments become ``section`` annotations; a section with no lines of its own is</span>
 <span class="sd">  a *marker* (``{"marker": True}``), as in :mod:`songleaf.parse`.</span>
-<span class="sd">- ``# comments`` and unknown directives are dropped.</span>
+<span class="sd">- ``{x_songleaf_before: 0, 3}`` (written by :func:`songleaf.export.to_chordpro`) marks the</span>
+<span class="sd">  chords at those positions, counted over the song's chords in text order, as sounding</span>
+<span class="sd">  *before* their syllable (``timing="before"``): ChordPro has no way to say it.</span>
+<span class="sd">- ``# comments`` and other unknown directives are dropped.</span>
 
 <span class="sd">&gt;&gt;&gt; song = parse_chordpro("{title: Paper Boats}\\n{soc}\\nPaper [G]boats [D]drift\\n{eoc}")</span>
 <span class="sd">&gt;&gt;&gt; song.text</span>
@@ -315,6 +319,8 @@
 <span class="n">_END_ENVIRONMENTS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
     <span class="p">{</span><span class="s2">"eoc"</span><span class="p">,</span> <span class="s2">"end_of_chorus"</span><span class="p">,</span> <span class="s2">"eov"</span><span class="p">,</span> <span class="s2">"end_of_verse"</span><span class="p">,</span> <span class="s2">"eob"</span><span class="p">,</span> <span class="s2">"end_of_bridge"</span><span class="p">}</span>
 <span class="p">)</span>
+<span class="c1">#: The namespaced directive carrying ``timing="before"`` chords; apps that don't know it skip it.</span>
+<span class="n">BEFORE_DIRECTIVE</span> <span class="o">=</span> <span class="s2">"x_songleaf_before"</span>
 <span class="n">_COMMENTS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">"c"</span><span class="p">,</span> <span class="s2">"comment"</span><span class="p">,</span> <span class="s2">"ci"</span><span class="p">,</span> <span class="s2">"comment_italic"</span><span class="p">,</span> <span class="s2">"cb"</span><span class="p">,</span> <span class="s2">"comment_box"</span><span class="p">})</span>
 
 
@@ -355,6 +361,7 @@
     <span class="n">markers</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="n">pending</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># a section label, waiting for the first line of its content</span>
     <span class="n">meta</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">meta</span> <span class="ow">or</span> <span class="p">{})</span>
+    <span class="n">before</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># positions among the chords, in text order</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">is_blank</span><span class="p">(</span><span class="n">index</span><span class="p">):</span>
         <span class="n">text</span><span class="p">,</span> <span class="n">chords</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
@@ -392,6 +399,8 @@
                     <span class="n">pending</span> <span class="o">=</span> <span class="n">value</span> <span class="ow">or</span> <span class="n">_ENVIRONMENTS</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
             <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">_END_ENVIRONMENTS</span><span class="p">:</span>
                 <span class="n">close_pending</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="n">BEFORE_DIRECTIVE</span><span class="p">:</span>
+                <span class="n">before</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\d+"</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
             <span class="k">continue</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">pending</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">lines</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_blank</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
@@ -409,10 +418,14 @@
         <span class="n">offset</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
     <span class="n">text</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span> <span class="k">for</span> <span class="n">text</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">)</span>
 
-    <span class="n">annotations</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Annotation</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">chord</span><span class="p">(</span><span class="n">starts</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">+</span> <span class="n">at</span><span class="p">,</span> <span class="n">symbol</span><span class="p">)</span>
+    <span class="n">placed</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">starts</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">+</span> <span class="n">at</span><span class="p">,</span> <span class="n">symbol</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">chords</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">at</span><span class="p">,</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">chords</span>
+    <span class="p">]</span>
+    <span class="n">annotations</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Annotation</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">chord</span><span class="p">(</span><span class="n">at</span><span class="p">,</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">timing</span><span class="o">=</span><span class="s2">"before"</span> <span class="k">if</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">before</span> <span class="k">else</span> <span class="s2">"at"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="p">(</span><span class="n">at</span><span class="p">,</span> <span class="n">symbol</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">placed</span><span class="p">)</span>
     <span class="p">]</span>
     <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">marker</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sections</span><span class="p">):</span>
         <span class="n">start</span> <span class="o">=</span> <span class="n">starts</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
@@ -455,7 +468,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=a8acf705"></script>
+</div><script src="../../_static/documentation_options.js?v=7c40b9fe"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

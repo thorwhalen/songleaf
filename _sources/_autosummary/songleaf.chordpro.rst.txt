@@ -4,6 +4,12 @@ songleaf.chordpro
 .. automodule:: songleaf.chordpro
 
    
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      BEFORE_DIRECTIVE
+   
    .. rubric:: Functions
 
    .. autosummary::
