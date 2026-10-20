@@ -409,6 +409,7 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 .library-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .library-head h2 { margin-bottom: 0.2em; }
 .library-head button.text { min-width: var(--tap); padding: 6px 4px; }
+.library-head a.text { margin-left: auto; min-width: var(--tap); padding: 6px 4px; }
 .edit-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 6px; }
 button.danger { background: #b3261e; border-color: #b3261e; color: #fff; }
 button.danger:disabled { opacity: 0.4; cursor: default; }
