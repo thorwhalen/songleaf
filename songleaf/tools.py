@@ -532,7 +532,12 @@ def snippet(
     store = song_store() if store is None else store
     store[key] = marked
     (score,) = marked.of_kind("score")
-    return {"key": key, "start": score.start, "end": score.end, "rule": score.body["rule"]}
+    return {
+        "key": key,
+        "start": score.start,
+        "end": score.end,
+        "rule": score.body["rule"],
+    }
 
 
 def media(

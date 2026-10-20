@@ -100,8 +100,14 @@ def _length(num: str, slashes: str, den: str) -> Fraction:
         raise ValueError("A note length must be positive.")
     length = UNIT_LENGTH * Fraction(numerator, denominator)
     if not MIN_LENGTH <= length <= MAX_LENGTH:
-        raise ValueError(f"A note length must be between {MIN_LENGTH} and {MAX_LENGTH} whole notes.")
-    plain = length.numerator == 1 or length.denominator == 1 and length.numerator in (1, 2, 4)
+        raise ValueError(
+            f"A note length must be between {MIN_LENGTH} and {MAX_LENGTH} whole notes."
+        )
+    plain = (
+        length.numerator == 1
+        or length.denominator == 1
+        and length.numerator in (1, 2, 4)
+    )
     dotted = length.numerator == 3 and length.denominator > 1
     if not (plain or dotted):
         raise ValueError(f"A length of {length} needs a tie: write it as two notes.")
@@ -118,7 +124,9 @@ def parse_abc(notation: str) -> Tune:
             f"A snippet is a few bars: at most {MAX_NOTATION_CHARS} characters."
         )
     events, chord = [], ""
-    body = _SKIPPED_RE.sub("", notation)  # header fields ("K:G") and decorations ("!fermata!")
+    body = _SKIPPED_RE.sub(
+        "", notation
+    )  # header fields ("K:G") and decorations ("!fermata!")
     for match in _TOKEN_RE.finditer(body):
         group = match.groupdict()
         if group["chord"] is not None:
@@ -138,7 +146,9 @@ def parse_abc(notation: str) -> Tune:
         else:
             events.append(Bar(group["bar"]))
     if not any(isinstance(e, Note) for e in events):
-        raise ValueError("No note in the notation: write notes as ABC, as in 'G2 AB c2'.")
+        raise ValueError(
+            "No note in the notation: write notes as ABC, as in 'G2 AB c2'."
+        )
     return Tune(tuple(events))
 
 
@@ -328,12 +338,16 @@ def layout_tune(tune: Tune) -> ScoreSnippet:
         canvas.line(to_x(0), to_y(0), to_x(0), to_y(4))
         for at, event in placed:
             if isinstance(event, Bar):
-                canvas.setLineWidth((_LINE_WIDTH * (3 if event.kind in ("|]", "||") else 1.5)) * space)
+                canvas.setLineWidth(
+                    (_LINE_WIDTH * (3 if event.kind in ("|]", "||") else 1.5)) * space
+                )
                 canvas.line(to_x(at), to_y(0), to_x(at), to_y(4))
                 if ":" in event.kind:
                     dot_x = at - 0.5 if event.kind == ":|" else at + 0.5
                     for dot_y in (1.5, 2.5):
-                        canvas.circle(to_x(dot_x), to_y(dot_y), 0.18 * space, stroke=0, fill=1)
+                        canvas.circle(
+                            to_x(dot_x), to_y(dot_y), 0.18 * space, stroke=0, fill=1
+                        )
                 continue
             if event.chord:
                 canvas.setFont(font, 1.5 * space)
@@ -344,12 +358,20 @@ def layout_tune(tune: Tune) -> ScoreSnippet:
     return ScoreSnippet(width, height, draw)
 
 
-def _draw_event(canvas, event: Note, at: float, to_x, to_y, space: float, font: str) -> None:
+def _draw_event(
+    canvas, event: Note, at: float, to_x, to_y, space: float, font: str
+) -> None:
     filled, flags, dotted = _shape(event.length)
-    if event.pitch is None:  # a rest: a block for long ones, a slanted stroke for short ones
+    if (
+        event.pitch is None
+    ):  # a rest: a block for long ones, a slanted stroke for short ones
         if event.length >= 0.5:
-            y = 2.5 if event.length >= 1 else 2  # a whole rest hangs from a line, a half sits on one
-            canvas.rect(to_x(at), to_y(y), _HEAD_WIDTH * space, 0.5 * space, stroke=0, fill=1)
+            y = (
+                2.5 if event.length >= 1 else 2
+            )  # a whole rest hangs from a line, a half sits on one
+            canvas.rect(
+                to_x(at), to_y(y), _HEAD_WIDTH * space, 0.5 * space, stroke=0, fill=1
+            )
         else:
             canvas.setLineWidth(_STEM_WIDTH * 1.5 * space)
             canvas.line(to_x(at + 0.3), to_y(3), to_x(at + 0.9), to_y(1.2))
@@ -358,17 +380,36 @@ def _draw_event(canvas, event: Note, at: float, to_x, to_y, space: float, font: 
     y = position / 2
     canvas.setLineWidth(_LINE_WIDTH * space)
     for ledger in [*range(-2, position - 1, -2), *range(10, position + 1, 2)]:
-        canvas.line(to_x(at - 0.3), to_y(ledger / 2), to_x(at + _HEAD_WIDTH + 0.3), to_y(ledger / 2))
+        canvas.line(
+            to_x(at - 0.3),
+            to_y(ledger / 2),
+            to_x(at + _HEAD_WIDTH + 0.3),
+            to_y(ledger / 2),
+        )
     if event.accidental:
         canvas.setFont(font, 1.8 * space)
-        canvas.drawString(to_x(at - _ACCIDENTAL_ADVANCE), to_y(y - 0.5), _ACCIDENTAL_SIGNS[event.accidental])
+        canvas.drawString(
+            to_x(at - _ACCIDENTAL_ADVANCE),
+            to_y(y - 0.5),
+            _ACCIDENTAL_SIGNS[event.accidental],
+        )
     canvas.setLineWidth(_STEM_WIDTH * 1.4 * space)
     canvas.ellipse(
-        to_x(at), to_y(y - _HEAD_HEIGHT / 2), to_x(at + _HEAD_WIDTH), to_y(y + _HEAD_HEIGHT / 2),
-        stroke=1, fill=1 if filled else 0,
+        to_x(at),
+        to_y(y - _HEAD_HEIGHT / 2),
+        to_x(at + _HEAD_WIDTH),
+        to_y(y + _HEAD_HEIGHT / 2),
+        stroke=1,
+        fill=1 if filled else 0,
     )
     if dotted:
-        canvas.circle(to_x(at + _HEAD_WIDTH + 0.45), to_y(y + (0.25 if position % 2 == 0 else 0)), 0.16 * space, stroke=0, fill=1)
+        canvas.circle(
+            to_x(at + _HEAD_WIDTH + 0.45),
+            to_y(y + (0.25 if position % 2 == 0 else 0)),
+            0.16 * space,
+            stroke=0,
+            fill=1,
+        )
     if event.length >= 1:  # a whole note has no stem
         return
     up = position < 4
@@ -378,7 +419,12 @@ def _draw_event(canvas, event: Note, at: float, to_x, to_y, space: float, font: 
     canvas.line(to_x(stem_x), to_y(y), to_x(stem_x), to_y(end))
     for k in range(flags):
         tip = end - (k * 0.8 if up else -k * 0.8)
-        canvas.line(to_x(stem_x), to_y(tip), to_x(stem_x + 0.9), to_y(tip - (1.4 if up else -1.4)))
+        canvas.line(
+            to_x(stem_x),
+            to_y(tip),
+            to_x(stem_x + 0.9),
+            to_y(tip - (1.4 if up else -1.4)),
+        )
 
 
 def abc_snippet(song: Song) -> ScoreSnippet | None:

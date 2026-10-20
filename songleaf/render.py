@@ -272,7 +272,9 @@ class _Row:
     bottom: float  # extent below the baseline
     gap_before: float = 0.0
     shade: str = ""  # background colour of the row's band, if any
-    figure: tuple | None = None  # (ScoreSnippet, staff space): a snippet row has no items
+    figure: tuple | None = (
+        None  # (ScoreSnippet, staff space): a snippet row has no items
+    )
 
 
 def _words(text: str) -> str:
@@ -859,7 +861,9 @@ def _layout(
     return rows
 
 
-def _snippet_row(snippet, size: float, width: float, style: DenseStyle, after: bool) -> _Row:
+def _snippet_row(
+    snippet, size: float, width: float, style: DenseStyle, after: bool
+) -> _Row:
     space = min(style.staff_space * size, width / snippet.width)
     gap = style.paragraph_gap * size if after else 0.0
     return _Row([], snippet.height * space, 0.0, gap, figure=(snippet, space))
@@ -1058,7 +1062,13 @@ def _flow_rows(rows, size: float, style: DenseStyle, capacities) -> tuple[list, 
             need += row.gap_before + style.row_gap * size
         if row.figure and k + 1 < len(rows):  # a snippet stays with the line under it
             after = rows[k + 1]
-            keep = need + after.gap_before + style.row_gap * size + after.top + after.bottom
+            keep = (
+                need
+                + after.gap_before
+                + style.row_gap * size
+                + after.top
+                + after.bottom
+            )
         else:
             keep = need
         if current and used + keep > capacity + _EPSILON:
