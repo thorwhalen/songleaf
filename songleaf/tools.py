@@ -473,6 +473,33 @@ def sync(
     return {"key": key, "timed": len(timed.of_kind("time")), "lines": lyric_lines}
 
 
+def snippet(
+    query: str,
+    notation: str,
+    *,
+    line: int = 0,
+    pick: int = 1,
+    store=None,
+    sources=None,
+) -> dict:
+    """Put a score snippet over one line of a song; the ``score`` layout draws it on the sheet.
+
+    ``notation`` is a few bars of ABC (``"G2 AB c2 | d4"``; the unit is an eighth
+    note). ``line`` is the 1-based lyric line it goes with; ``0`` lets the rule
+    choose (the first line of the chorus, else the most repeated line, else the
+    first). Returns ``{"key", "start", "end", "rule"}``.
+    """
+    from songleaf.snippets import mark_segment, segment_at_line
+
+    key, found = _resolve(query, pick=pick, refresh=False, sources=sources, store=store)
+    segment = segment_at_line(found, line) if line else None
+    marked = mark_segment(found, notation, segment=segment)
+    store = song_store() if store is None else store
+    store[key] = marked
+    (score,) = marked.of_kind("score")
+    return {"key": key, "start": score.start, "end": score.end, "rule": score.body["rule"]}
+
+
 def media(
     query: str,
     *,
@@ -610,4 +637,5 @@ TOOLS = (
     build_index,
     sync,
     media,
+    snippet,
 )
