@@ -113,12 +113,15 @@ class KaggleChordsIndex(KaggleChordsSource):
     def _no_dataframe():
         raise AssertionError("KaggleChordsIndex never loads the corpus DataFrame")
 
-    def _check_built(self) -> None:
-        if not os.path.isfile(self.path):
+    def _read(self, read, *args):
+        """``read(path, *args)`` from ``sung.chords_index``; no file is a ``SourceUnavailable``."""
+        try:
+            return read(self.path, *args)
+        except FileNotFoundError as error:
             raise SourceUnavailable(
                 f"No search index at {self.path}: run `songleaf build-index` "
                 "where the corpus zip is"
-            )
+            ) from error
 
     _CACHED = (
         "_ids",
@@ -161,9 +164,8 @@ class KaggleChordsIndex(KaggleChordsSource):
         if self._columns_loaded is None:
             with self._columns_lock:
                 if self._columns_loaded is None:
-                    self._check_built()
                     self._loaded_version = self._version()
-                    self._columns_loaded = chords_index.read_columns(self.path)
+                    self._columns_loaded = self._read(chords_index.read_columns)
         return self._columns_loaded
 
     @cached_property
@@ -192,9 +194,8 @@ class KaggleChordsIndex(KaggleChordsSource):
         tokens = utils.default_process(words).split()
         if not tokens:
             return {}
-        self._check_built()
-        return dict.fromkeys(chords_index.rows_with_words(self.path, tokens), 100.0)
+        rows = self._read(chords_index.rows_with_words, tokens)
+        return dict.fromkeys(rows, 100.0)
 
     def _text(self, row: int) -> str:
-        self._check_built()
-        return chords_index.read_chart(self.path, row)
+        return self._read(chords_index.read_chart, row)
