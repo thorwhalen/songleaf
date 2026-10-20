@@ -56,9 +56,13 @@ def engrave_svg(notation: str, format: str = "abc") -> str:
     import verovio
 
     if format not in ENGRAVE_FORMATS:
-        raise ValueError(f"format must be one of {sorted(ENGRAVE_FORMATS)}, got {format!r}")
+        raise ValueError(
+            f"format must be one of {sorted(ENGRAVE_FORMATS)}, got {format!r}"
+        )
     if len(notation) > MAX_ENGRAVE_CHARS:
-        raise ValueError(f"The notation is too long to engrave ({len(notation)} characters).")
+        raise ValueError(
+            f"The notation is too long to engrave ({len(notation)} characters)."
+        )
     verovio.enableLog(False)
     toolkit = verovio.toolkit()
     toolkit.setOptions(
@@ -92,7 +96,9 @@ def snippet_from_svg(svg: str, *, start: int = 0) -> ScoreSnippet:
         raise ValueError("The engraved SVG could not be read.")
     found = _SVG_SIZE_RE.search(svg)
     pixels = float(found.group(1)) if found else drawing.width
-    per_space = 2 * VEROVIO_UNIT * drawing.width / pixels  # drawing units per staff space
+    per_space = (
+        2 * VEROVIO_UNIT * drawing.width / pixels
+    )  # drawing units per staff space
 
     def draw(canvas, left, bottom, space, *, color="#333333", font="Helvetica"):
         from reportlab.graphics import renderPDF
@@ -103,7 +109,9 @@ def snippet_from_svg(svg: str, *, start: int = 0) -> ScoreSnippet:
         renderPDF.draw(drawing, canvas, 0, 0)
         canvas.restoreState()
 
-    return ScoreSnippet(drawing.width / per_space, drawing.height / per_space, draw, start)
+    return ScoreSnippet(
+        drawing.width / per_space, drawing.height / per_space, draw, start
+    )
 
 
 def engraved_snippet(song: Song) -> ScoreSnippet | None:
@@ -117,7 +125,9 @@ def engraved_snippet(song: Song) -> ScoreSnippet | None:
         if not notation or format not in ENGRAVE_FORMATS:
             continue
         try:
-            return snippet_from_svg(engrave_svg(notation, format), start=annotation.start)
+            return snippet_from_svg(
+                engrave_svg(notation, format), start=annotation.start
+            )
         except (ValueError, RuntimeError):
             return None
     return None
