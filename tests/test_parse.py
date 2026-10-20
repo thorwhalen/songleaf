@@ -135,3 +135,47 @@ def test_key_and_tuning_lines_become_metadata():
     song = parse_chords_over_lyrics("Tom: G\nTuning: DADGAD\nla")
     assert song.meta == {"key": "G", "tuning": "DADGAD"}
     assert song.text == "la"
+
+
+# --- chord-line spellings (#11); every line below is synthesized -------------
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "F#m-E  G-D/F#  (B-E9)",  # chords joined by "-"
+        "Bb7(4)(9)  C7(4)(9)  A7/sus4",  # stacked alterations, sus bass
+        "Dm  /B  /E  G",  # a bare bass note
+        "Intro: G  D  Em",  # a note ending in ":"
+        "G  D  tab  Em  end  {Fill}",  # tab, end, {Fill}
+        "Am  F  C  G  x2",
+    ],
+)
+def test_newly_read_chord_line_spellings(line):
+    from songleaf.parse import is_chord_line
+
+    assert is_chord_line(line), line
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "Hold me close and never let go",
+        "Bad Dad",
+        "A day in the life",
+        "End of the road",
+        "Tab is on the table",
+        "I - B - C",  # ordinary words keep it a lyric
+    ],
+)
+def test_lyric_lines_stay_lyrics(line):
+    from songleaf.parse import is_chord_line
+
+    assert not is_chord_line(line), line
+
+
+def test_joined_chords_become_separate_anchored_chords():
+    from songleaf.parse import parse_chords_over_lyrics
+
+    song = parse_chords_over_lyrics("F#m-E   G\nla la la la la")
+    assert [a.body["symbol"] for a in song.of_kind("chord")][:3] == ["F#m", "E", "G"]
