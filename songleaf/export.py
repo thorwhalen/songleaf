@@ -81,7 +81,9 @@ def to_chordpro(song, *, transpose: int = 0) -> str:
         if song.meta.get(name) not in (None, ""):
             out.append(f"{{{name}: {song.meta[name]}}}")
     sections = sorted(_sections(song), key=lambda s: (s[1], not s[3]))
-    opened: list[tuple[int, str]] = []  # (end offset, end directive) of the open section
+    opened: list[
+        tuple[int, str]
+    ] = []  # (end offset, end directive) of the open section
     ordinal = 0
     before: list[int] = []
     pending = iter(sections)
@@ -100,7 +102,11 @@ def to_chordpro(song, *, transpose: int = 0) -> str:
             upcoming = next(pending, None)
             if marker:
                 break
-        if any(s[3] and s[1] == line.start for s in sections) and not line.text and not own:
+        if (
+            any(s[3] and s[1] == line.start for s in sections)
+            and not line.text
+            and not own
+        ):
             continue  # the empty line a label-only section sits on
         if not line.text:
             out.append(" ".join(f"[{symbol}]" for _, symbol, _ in own))

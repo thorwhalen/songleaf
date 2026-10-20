@@ -348,7 +348,9 @@ def mk_app(
             },
         )
 
-    _transpose = Query(0, ge=SHEET_LIMITS["transpose"][0], le=SHEET_LIMITS["transpose"][1])
+    _transpose = Query(
+        0, ge=SHEET_LIMITS["transpose"][0], le=SHEET_LIMITS["transpose"][1]
+    )
 
     @app.get("/song.cho")
     def song_chordpro(key: str, transpose: int = _transpose):
