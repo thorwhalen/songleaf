@@ -21,6 +21,11 @@ Kinds used so far:
   intro, an instrumental bar) sit, in order, on an empty line of the text.
 - `"score"`: a link to a score snippet for `[start, end)`,
   `body={"source": ..., "id": ..., "url": ..., "format": ...}`.
+- `"time"`: a point at the start of a lyric line, when the recording reaches it,
+  `body={"ms": 61230, "source": "lrc"}` ([`songleaf.timing`](songleaf.timing.html.md#module-songleaf.timing)). Only times, never
+  the text they were aligned from.
+
+`meta["media"]` holds the recording’s ids: `{"youtube": ..., "spotify": ...}`.
 
 ```pycon
 >>> song = Song("Hello there", [chord(0, "C"), chord(6, "G")], meta={"title": "Hi"})

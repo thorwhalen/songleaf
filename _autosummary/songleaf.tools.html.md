@@ -21,16 +21,18 @@ than dicts uses [`songleaf.sources`](songleaf.sources.html.md#module-songleaf.so
 | [`forget`](#songleaf.tools.forget)(key, \*[, store, library_root])            | Remove a song from the stored songs, from every list it was in, and from every Viewed list.                |
 | [`import_file`](#songleaf.tools.import_file)([path, title, artist, url, ...])      | Read pasted song text from a file (`-`: standard input) and store it; see `import_text`.                   |
 | [`import_text`](#songleaf.tools.import_text)(text, \*[, title, artist, url, ...])  | Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics. |
+| [`media`](#songleaf.tools.media)(query, \*[, youtube, spotify, pick, ...])   | Link the song's recording: a YouTube video id and/or a Spotify track id.                                   |
 | [`search`](#songleaf.tools.search)([query, title, artist, lyrics, ...])       | Find songs with one query: in your lists' names, then titles, artists and lyrics.                          |
 | [`sheet`](#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...])    | Make a one-page song sheet (PDF) for the best match of `query`.                                            |
 | [`song`](#songleaf.tools.song)(query, \*[, pick, refresh, ...])             | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.                   |
 | [`songbook`](#songleaf.tools.songbook)(group, \*[, output, title, layout, ...]) | Render a list (group) of songs as one PDF: a table of contents, then every song at its fitted size.        |
 | [`songs`](#songleaf.tools.songs)(\*[, store])                                | The keys of the stored songs.                                                                              |
+| [`sync`](#songleaf.tools.sync)(query, \*[, lrc, lrclib, pick, store, ...])  | Time the song's lines from an LRC, so the page can scroll with the recording.                              |
 | [`unview`](#songleaf.tools.unview)(key, \*[, user, library_root])             | Take a song out of `user`'s Viewed list.                                                                   |
 | [`view`](#songleaf.tools.view)(key, \*[, user, at, store, library_root])    | Put a stored song at the top of `user`'s Viewed list: they just opened it.                                 |
 | [`viewed`](#songleaf.tools.viewed)(\*[, user, store, library_root])           | The songs `user` opened, the most recent first: `key`, `title`, `artist`, `viewed_at`.                     |
 
-### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function songbook>, <function song>, <function export>, <function songs>, <function import_file>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>)*
+### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function songbook>, <function song>, <function export>, <function songs>, <function import_file>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>, <function sync>, <function media>)*
 
 Every operation, in the order the CLI lists them.
 
@@ -84,6 +86,16 @@ The format is detected (`format` forces one of `ultimate-guitar`,
 recorded as provenance: songleaf never contacts it. The song is stored
 under `paste:<hash>` (the same text, the same key) and is then usable like
 any other: `sheet <key>`, `song <key>`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.media(query, , youtube='', spotify='', pick=1, store=None, sources=None)
+
+Link the song’s recording: a YouTube video id and/or a Spotify track id.
+
+An id given as `""` is left as it is; `"-"` removes it. Returns
+`{"key", "media"}`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -170,6 +182,18 @@ The keys of the stored songs.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### songleaf.tools.sync(query, , lrc='', lrclib=False, pick=1, store=None, sources=None, get_json=None)
+
+Time the song’s lines from an LRC, so the page can scroll with the recording.
+
+`lrc` is the LRC text (an `.lrc` file’s content); with `lrclib` and no
+`lrc`, LRCLIB is asked for the song’s synced lyrics. Only the times are stored
+(`"time"` annotations), never the LRC’s text. Returns `{"key", "timed",
+"lines"}`: how many lyric lines got a time, of how many.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### songleaf.tools.unview(key, , user='', library_root=None)
 

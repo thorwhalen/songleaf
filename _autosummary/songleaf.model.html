@@ -221,6 +221,7 @@
 <li class="toctree-l3"><a class="reference internal" href="songleaf.songbook.html">songleaf.songbook</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.store.html">songleaf.store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="songleaf.timing.html">songleaf.timing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.tools.html">songleaf.tools</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.viewed.html">songleaf.viewed</a></li>
 </ul>
@@ -287,7 +288,11 @@ syllable the chord lands on, <code class="docutils literal notranslate"><span cl
 intro, an instrumental bar) sit, in order, on an empty line of the text.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">&quot;score&quot;</span></code>: a link to a score snippet for <code class="docutils literal notranslate"><span class="pre">[start,</span> <span class="pre">end)</span></code>,
 <code class="docutils literal notranslate"><span class="pre">body={&quot;source&quot;:</span> <span class="pre">...,</span> <span class="pre">&quot;id&quot;:</span> <span class="pre">...,</span> <span class="pre">&quot;url&quot;:</span> <span class="pre">...,</span> <span class="pre">&quot;format&quot;:</span> <span class="pre">...}</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;time&quot;</span></code>: a point at the start of a lyric line, when the recording reaches it,
+<code class="docutils literal notranslate"><span class="pre">body={&quot;ms&quot;:</span> <span class="pre">61230,</span> <span class="pre">&quot;source&quot;:</span> <span class="pre">&quot;lrc&quot;}</span></code> (<a class="reference internal" href="songleaf.timing.html#module-songleaf.timing" title="songleaf.timing"><code class="xref py py-mod docutils literal notranslate"><span class="pre">songleaf.timing</span></code></a>). Only times, never
+the text they were aligned from.</p></li>
 </ul>
+<p><code class="docutils literal notranslate"><span class="pre">meta[&quot;media&quot;]</span></code> holds the recording’s ids: <code class="docutils literal notranslate"><span class="pre">{&quot;youtube&quot;:</span> <span class="pre">...,</span> <span class="pre">&quot;spotify&quot;:</span> <span class="pre">...}</span></code>.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">song</span> <span class="o">=</span> <span class="n">Song</span><span class="p">(</span><span class="s2">"Hello there"</span><span class="p">,</span> <span class="p">[</span><span class="n">chord</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">"C"</span><span class="p">),</span> <span class="n">chord</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="s2">"G"</span><span class="p">)],</span> <span class="n">meta</span><span class="o">=</span><span class="p">{</span><span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Hi"</span><span class="p">})</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="p">[(</span><span class="n">a</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="s2">"symbol"</span><span class="p">])</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">song</span><span class="o">.</span><span class="n">of_kind</span><span class="p">(</span><span class="s2">"chord"</span><span class="p">)]</span>
 <span class="go">[(0, 'C'), (6, 'G')]</span>
@@ -547,7 +552,7 @@ intro, an instrumental bar) sit, in order, on an empty line of the text.</p></li
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=d500cd98"></script>
+</div><script src="../_static/documentation_options.js?v=f5b15773"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

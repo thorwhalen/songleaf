@@ -1,0 +1,23 @@
+songleaf.timing
+===============
+
+.. automodule:: songleaf.timing
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      GetJson
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      align_lrc
+      fetch_lrclib
+      parse_lrc
+      token_f1
+      with_lrc
+      with_media
+   

@@ -218,6 +218,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.songbook.html">songleaf.songbook</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.store.html">songleaf.store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.timing.html">songleaf.timing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.tools.html">songleaf.tools</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.viewed.html">songleaf.viewed</a></li>
 </ul>
@@ -279,6 +280,11 @@
 <span class="sd">  intro, an instrumental bar) sit, in order, on an empty line of the text.</span>
 <span class="sd">- ``"score"``: a link to a score snippet for ``[start, end)``,</span>
 <span class="sd">  ``body={"source": ..., "id": ..., "url": ..., "format": ...}``.</span>
+<span class="sd">- ``"time"``: a point at the start of a lyric line, when the recording reaches it,</span>
+<span class="sd">  ``body={"ms": 61230, "source": "lrc"}`` (:mod:`songleaf.timing`). Only times, never</span>
+<span class="sd">  the text they were aligned from.</span>
+
+<span class="sd">``meta["media"]`` holds the recording's ids: ``{"youtube": ..., "spotify": ...}``.</span>
 
 <span class="sd">&gt;&gt;&gt; song = Song("Hello there", [chord(0, "C"), chord(6, "G")], meta={"title": "Hi"})</span>
 <span class="sd">&gt;&gt;&gt; [(a.start, a.body["symbol"]) for a in song.of_kind("chord")]</span>
@@ -473,7 +479,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=d500cd98"></script>
+</div><script src="../../_static/documentation_options.js?v=f5b15773"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

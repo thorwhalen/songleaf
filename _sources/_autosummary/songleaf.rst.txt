@@ -57,6 +57,7 @@
    songbook
    sources
    store
+   timing
    tools
    viewed
    web

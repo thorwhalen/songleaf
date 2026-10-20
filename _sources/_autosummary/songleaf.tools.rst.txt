@@ -19,11 +19,13 @@ songleaf.tools
       forget
       import_file
       import_text
+      media
       search
       sheet
       song
       songbook
       songs
+      sync
       unview
       view
       viewed

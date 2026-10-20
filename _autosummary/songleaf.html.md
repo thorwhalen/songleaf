@@ -395,5 +395,6 @@ The keys of the stored songs.
 | [`songbook`](songleaf.songbook.html.md#module-songleaf.songbook)         | A songbook: several songs in one PDF, with a table of contents, page numbers and bookmarks.                                        |
 | [`sources`](songleaf.sources.html.md#module-songleaf.sources)           | Where songs are found: sources, and a search that composes them.                                                                   |
 | [`store`](songleaf.store.html.md#module-songleaf.store)               | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                                           |
+| [`timing`](songleaf.timing.html.md#module-songleaf.timing)             | Play-along: a song's media links and line timings (songleaf#30).                                                                   |
 | [`tools`](songleaf.tools.html.md#module-songleaf.tools)               | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.                                 |
 | [`viewed`](songleaf.viewed.html.md#module-songleaf.viewed)             | Each viewer's *Viewed* list: the songs they opened, the most recent first.                                                         |

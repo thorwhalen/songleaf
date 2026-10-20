@@ -218,6 +218,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.songbook.html">songleaf.songbook</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.store.html">songleaf.store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.timing.html">songleaf.timing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.tools.html">songleaf.tools</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.viewed.html">songleaf.viewed</a></li>
 </ul>
@@ -726,6 +727,71 @@
 
 
 
+<div class="viewcode-block" id="sync">
+<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.sync">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sync</span><span class="p">(</span>
+    <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">lrc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">lrclib</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">pick</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">get_json</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Time the song's lines from an LRC, so the page can scroll with the recording.</span>
+
+<span class="sd">    ``lrc`` is the LRC text (an ``.lrc`` file's content); with ``lrclib`` and no</span>
+<span class="sd">    ``lrc``, LRCLIB is asked for the song's synced lyrics. Only the times are stored</span>
+<span class="sd">    (``"time"`` annotations), never the LRC's text. Returns ``{"key", "timed",</span>
+<span class="sd">    "lines"}``: how many lyric lines got a time, of how many.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.timing</span><span class="w"> </span><span class="kn">import</span> <span class="n">fetch_lrclib</span><span class="p">,</span> <span class="n">with_lrc</span>
+
+    <span class="n">key</span><span class="p">,</span> <span class="n">found</span> <span class="o">=</span> <span class="n">_resolve</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">pick</span><span class="o">=</span><span class="n">pick</span><span class="p">,</span> <span class="n">refresh</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">lrc</span> <span class="ow">and</span> <span class="n">lrclib</span><span class="p">:</span>
+        <span class="n">lrc</span> <span class="o">=</span> <span class="n">fetch_lrclib</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">found</span><span class="o">.</span><span class="n">artist</span><span class="p">,</span> <span class="n">get_json</span><span class="o">=</span><span class="n">get_json</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">lrc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"no LRC: pass lrc= (an .lrc file's text) or lrclib=True"</span><span class="p">)</span>
+    <span class="n">timed</span> <span class="o">=</span> <span class="n">with_lrc</span><span class="p">(</span><span class="n">found</span><span class="p">,</span> <span class="n">lrc</span><span class="p">)</span>
+    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
+    <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">timed</span>
+    <span class="n">lyric_lines</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">found</span><span class="o">.</span><span class="n">lines</span><span class="p">()</span> <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"key"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span> <span class="s2">"timed"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">timed</span><span class="o">.</span><span class="n">of_kind</span><span class="p">(</span><span class="s2">"time"</span><span class="p">)),</span> <span class="s2">"lines"</span><span class="p">:</span> <span class="n">lyric_lines</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="media">
+<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.media">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">media</span><span class="p">(</span>
+    <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">youtube</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">spotify</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">pick</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Link the song's recording: a YouTube video id and/or a Spotify track id.</span>
+
+<span class="sd">    An id given as ``""`` is left as it is; ``"-"`` removes it. Returns</span>
+<span class="sd">    ``{"key", "media"}``.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.timing</span><span class="w"> </span><span class="kn">import</span> <span class="n">with_media</span>
+
+    <span class="n">key</span><span class="p">,</span> <span class="n">found</span> <span class="o">=</span> <span class="n">_resolve</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">pick</span><span class="o">=</span><span class="n">pick</span><span class="p">,</span> <span class="n">refresh</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">)</span>
+    <span class="n">changes</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">service</span><span class="p">:</span> <span class="p">(</span><span class="kc">None</span> <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="s2">"-"</span> <span class="k">else</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">service</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">"youtube"</span><span class="p">,</span> <span class="n">youtube</span><span class="p">),</span> <span class="p">(</span><span class="s2">"spotify"</span><span class="p">,</span> <span class="n">spotify</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">value</span>
+    <span class="p">}</span>
+    <span class="n">linked</span> <span class="o">=</span> <span class="n">with_media</span><span class="p">(</span><span class="n">found</span><span class="p">,</span> <span class="o">**</span><span class="n">changes</span><span class="p">)</span>
+    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
+    <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">linked</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"key"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span> <span class="s2">"media"</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">linked</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"media"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})}</span></div>
+
+
+
 <div class="viewcode-block" id="viewed">
 <a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.viewed">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">viewed</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">user</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">library_root</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
@@ -848,6 +914,8 @@
     <span class="n">unview</span><span class="p">,</span>
     <span class="n">forget</span><span class="p">,</span>
     <span class="n">build_index</span><span class="p">,</span>
+    <span class="n">sync</span><span class="p">,</span>
+    <span class="n">media</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
         </article>
@@ -877,7 +945,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=d500cd98"></script>
+</div><script src="../../_static/documentation_options.js?v=f5b15773"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
