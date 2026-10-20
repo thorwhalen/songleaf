@@ -52,6 +52,7 @@
    packing
    parse
    render
+   songbook
    sources
    store
    tools

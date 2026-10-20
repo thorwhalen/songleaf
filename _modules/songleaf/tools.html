@@ -213,6 +213,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.parse.html">songleaf.parse</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.render.html">songleaf.render</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.songbook.html">songleaf.songbook</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.tools.html">songleaf.tools</a></li>
@@ -448,6 +449,74 @@
         <span class="s2">"title"</span><span class="p">:</span> <span class="n">song</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
         <span class="s2">"artist"</span><span class="p">:</span> <span class="n">song</span><span class="o">.</span><span class="n">artist</span><span class="p">,</span>
         <span class="o">**</span><span class="n">renderer</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">output</span><span class="p">),</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="songbook">
+<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.songbook">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">songbook</span><span class="p">(</span>
+    <span class="n">group</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">output</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">layout</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"dense"</span><span class="p">,</span>
+    <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">library_root</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">renderer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Render a list (group) of songs as one PDF: a table of contents, then every song at its fitted size.</span>
+
+<span class="sd">    ``group`` is a list's id or its name (the best match of the name). The</span>
+<span class="sd">    songs come in the order they were filed in the list, nested lists</span>
+<span class="sd">    included, so the list order is the set list. Page numbers are stamped on</span>
+<span class="sd">    every page and each song is a PDF bookmark. ``title`` defaults to the</span>
+<span class="sd">    list's name. ``layout`` and ``scale`` are as for ``sheet``. The PDF goes to</span>
+<span class="sd">    ``output``, by default the ``sheets`` data directory.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.library</span><span class="w"> </span><span class="kn">import</span> <span class="n">list_members</span><span class="p">,</span> <span class="n">list_names</span><span class="p">,</span> <span class="n">lists_matching</span><span class="p">,</span> <span class="n">read_groups</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.render</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_renderer</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.songbook</span><span class="w"> </span><span class="kn">import</span> <span class="n">render_songbook</span>
+
+    <span class="n">snapshot</span> <span class="o">=</span> <span class="n">read_groups</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">library_root</span><span class="p">)[</span><span class="s2">"snapshot"</span><span class="p">]</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="n">list_names</span><span class="p">(</span><span class="n">snapshot</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+        <span class="n">list_id</span> <span class="o">=</span> <span class="n">group</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="n">lists_matching</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">snapshot</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No list named </span><span class="si">{</span><span class="n">group</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">list_id</span> <span class="o">=</span> <span class="n">found</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"id"</span><span class="p">]</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="n">list_members</span><span class="p">(</span><span class="n">snapshot</span><span class="p">,</span> <span class="n">list_id</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">keys</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The list </span><span class="si">{</span><span class="n">names</span><span class="p">[</span><span class="n">list_id</span><span class="p">]</span><span class="si">!r}</span><span class="s2"> has no songs"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">renderer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">renderer</span> <span class="o">=</span> <span class="n">make_renderer</span><span class="p">(</span><span class="n">layout</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">layout</span> <span class="o">!=</span> <span class="s2">"dense"</span> <span class="ow">or</span> <span class="n">scale</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"Pass a layout and scale, or a renderer, not both: the renderer decides them"</span>
+        <span class="p">)</span>
+    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
+    <span class="n">songs</span><span class="p">,</span> <span class="n">skipped</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">songs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">_resolve</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">pick</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">refresh</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">LookupError</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="n">skipped</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>  <span class="c1"># a song whose source is gone does not sink the book</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">songs</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"None of the songs in </span><span class="si">{</span><span class="n">names</span><span class="p">[</span><span class="n">list_id</span><span class="p">]</span><span class="si">!r}</span><span class="s2"> could be found"</span><span class="p">)</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">title</span> <span class="ow">or</span> <span class="n">names</span><span class="p">[</span><span class="n">list_id</span><span class="p">]</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">output</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">data_dir</span><span class="p">(</span><span class="s2">"sheets"</span><span class="p">),</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\W+"</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">,</span> <span class="n">title</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">"-"</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"-songbook.pdf"</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"group"</span><span class="p">:</span> <span class="n">list_id</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">render_songbook</span><span class="p">(</span><span class="n">songs</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">renderer</span><span class="o">=</span><span class="n">renderer</span><span class="p">),</span>
+        <span class="s2">"skipped"</span><span class="p">:</span> <span class="n">skipped</span><span class="p">,</span>
     <span class="p">}</span></div>
 
 
@@ -720,6 +789,7 @@
 <span class="n">TOOLS</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">search</span><span class="p">,</span>
     <span class="n">sheet</span><span class="p">,</span>
+    <span class="n">songbook</span><span class="p">,</span>
     <span class="n">song</span><span class="p">,</span>
     <span class="n">songs</span><span class="p">,</span>
     <span class="n">import_file</span><span class="p">,</span>
@@ -757,7 +827,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=a39b7224"></script>
+</div><script src="../../_static/documentation_options.js?v=01ec8363"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

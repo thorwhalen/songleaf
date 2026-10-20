@@ -17,6 +17,7 @@
 - [songleaf.packing](songleaf.packing.html.md): Line packing: which consecutive lines of a paragraph share a row.
 - [songleaf.parse](songleaf.parse.html.md): Parse chords-over-lyrics text into a &#96;Song&#96;.
 - [songleaf.render](songleaf.render.html.md): Render a song onto one dense page, with the lyrics as large as will fit.
+- [songleaf.songbook](songleaf.songbook.html.md): A songbook: several songs in one PDF, with a table of contents, page numbers and bookmarks.
 - [songleaf.sources](songleaf.sources.html.md): Where songs are found: sources, and a search that composes them.
 - [songleaf.store](songleaf.store.html.md): Where songs persist: a &#96;MutableMapping&#96; of songs, JSON files by default.
 - [songleaf.tools](songleaf.tools.html.md): The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.

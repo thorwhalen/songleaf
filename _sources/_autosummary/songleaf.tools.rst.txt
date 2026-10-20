@@ -21,6 +21,7 @@ songleaf.tools
       search
       sheet
       song
+      songbook
       songs
       unview
       view

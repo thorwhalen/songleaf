@@ -1,4 +1,4 @@
-> built 2026-10-20 07:19 UTC from 9b88349 (main) · songleaf 0.0.17. Details: build_info.json
+> built 2026-10-20 09:49 UTC from ee8fbb5 (main) · songleaf 0.0.18. Details: build_info.json
 
 # index.html.md
 
@@ -54,6 +54,7 @@ python -m songleaf sheet kaggle_chords:1234               # a song by its key: n
 python -m songleaf sheet kaggle_chords:1234 --refresh     # fetch it again from its source
 python -m songleaf sheet "wonderwall oasis" --transpose 2 # chords up a whole tone, spelled for the new key
 python -m songleaf sheet "wonderwall oasis" --scale 0.8   # 80% of the size that fills the page
+python -m songleaf songbook Campfire                       # a whole list as one PDF: contents, page numbers, bookmarks, in list order
 python -m songleaf import chart.txt --title "Paper Boats"   # paste from any site: Ultimate Guitar markup, ChordPro, OpenSong, plain; "-" reads stdin
 python -m songleaf sheet paste:ea2a9d845214                 # the key `import` printed
 python -m songleaf song kaggle_chords:1234                # the song as data: text, chords, every key's chord table
@@ -825,6 +826,7 @@ The keys of the stored songs.
 | [`packing`](_autosummary/songleaf.packing.html.md#module-songleaf.packing)           | Line packing: which consecutive lines of a paragraph share a row.                                                                  |
 | [`parse`](_autosummary/songleaf.parse.html.md#module-songleaf.parse)               | Parse chords-over-lyrics text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song).                    |
 | [`render`](_autosummary/songleaf.render.html.md#module-songleaf.render)             | Render a song onto one dense page, with the lyrics as large as will fit.                                                           |
+| [`songbook`](_autosummary/songleaf.songbook.html.md#module-songleaf.songbook)         | A songbook: several songs in one PDF, with a table of contents, page numbers and bookmarks.                                        |
 | [`sources`](_autosummary/songleaf.sources.html.md#module-songleaf.sources)           | Where songs are found: sources, and a search that composes them.                                                                   |
 | [`store`](_autosummary/songleaf.store.html.md#module-songleaf.store)               | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                                           |
 | [`tools`](_autosummary/songleaf.tools.html.md#module-songleaf.tools)               | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.                                 |
@@ -2025,6 +2027,35 @@ warning says so. Any other name is returned unchanged.
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 
+# _autosummary/songleaf.songbook.html.md
+
+# songleaf.songbook
+
+A songbook: several songs in one PDF, with a table of contents, page numbers and bookmarks.
+
+`render_songbook(songs, output)` renders each song through the same renderer
+a single sheet uses (so each is at its fitted size), puts a table of contents
+in front, stamps “page n of N” at the foot of every page and adds one PDF
+bookmark per song. The renderer is a seam, as in [`songleaf.tools.sheet()`](_autosummary/songleaf.tools.html.md#songleaf.tools.sheet).
+
+### Functions
+
+| [`render_songbook`](_autosummary/songleaf.songbook.html.md#songleaf.songbook.render_songbook)(songs, output, \*[, title, ...])   | Render `songs` (`(key, song)` pairs, in set-list order) as one PDF to `output`.   |
+|-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+
+### songleaf.songbook.render_songbook(songs, output, , title='Songbook', renderer=None, page_size='A4', toc_size=12.0, footer_size=8.0)
+
+Render `songs` (`(key, song)` pairs, in set-list order) as one PDF to `output`.
+
+`output` is a path or a binary file object. `renderer` is a
+`(song, output) -> dict` renderer (default: the dense layout). Returns
+`{"path", "title", "pages", "songs": [{"key", "title", "artist", "page"}]}`
+where `page` is the song’s first page in the book.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+
 # _autosummary/songleaf.sources.html.md
 
 # songleaf.sources
@@ -2373,20 +2404,21 @@ than dicts uses [`songleaf.sources`](_autosummary/songleaf.sources.html.md#modul
 
 ### Functions
 
-| [`build_index`](_autosummary/songleaf.tools.html.md#songleaf.tools.build_index)(\*[, path])                          | Build the search index of the Kaggle corpus, once, where the corpus zip is.                                |
-|---------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
-| [`forget`](_autosummary/songleaf.tools.html.md#songleaf.tools.forget)(key, \*[, store, library_root])           | Remove a song from the stored songs, from every list it was in, and from every Viewed list.                |
-| [`import_file`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_file)([path, title, artist, url, ...])     | Read pasted song text from a file (`-`: standard input) and store it; see `import_text`.                   |
-| [`import_text`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_text)(text, \*[, title, artist, url, ...]) | Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics. |
-| [`search`](_autosummary/songleaf.tools.html.md#songleaf.tools.search)([query, title, artist, lyrics, ...])      | Find songs with one query: in your lists' names, then titles, artists and lyrics.                          |
-| [`sheet`](_autosummary/songleaf.tools.html.md#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...])   | Make a one-page song sheet (PDF) for the best match of `query`.                                            |
-| [`song`](_autosummary/songleaf.tools.html.md#songleaf.tools.song)(query, \*[, pick, refresh, ...])            | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.                   |
-| [`songs`](_autosummary/songleaf.tools.html.md#songleaf.tools.songs)(\*[, store])                               | The keys of the stored songs.                                                                              |
-| [`unview`](_autosummary/songleaf.tools.html.md#songleaf.tools.unview)(key, \*[, user, library_root])            | Take a song out of `user`'s Viewed list.                                                                   |
-| [`view`](_autosummary/songleaf.tools.html.md#songleaf.tools.view)(key, \*[, user, at, store, library_root])   | Put a stored song at the top of `user`'s Viewed list: they just opened it.                                 |
-| [`viewed`](_autosummary/songleaf.tools.html.md#songleaf.tools.viewed)(\*[, user, store, library_root])          | The songs `user` opened, the most recent first: `key`, `title`, `artist`, `viewed_at`.                     |
+| [`build_index`](_autosummary/songleaf.tools.html.md#songleaf.tools.build_index)(\*[, path])                           | Build the search index of the Kaggle corpus, once, where the corpus zip is.                                |
+|----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| [`forget`](_autosummary/songleaf.tools.html.md#songleaf.tools.forget)(key, \*[, store, library_root])            | Remove a song from the stored songs, from every list it was in, and from every Viewed list.                |
+| [`import_file`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_file)([path, title, artist, url, ...])      | Read pasted song text from a file (`-`: standard input) and store it; see `import_text`.                   |
+| [`import_text`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_text)(text, \*[, title, artist, url, ...])  | Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics. |
+| [`search`](_autosummary/songleaf.tools.html.md#songleaf.tools.search)([query, title, artist, lyrics, ...])       | Find songs with one query: in your lists' names, then titles, artists and lyrics.                          |
+| [`sheet`](_autosummary/songleaf.tools.html.md#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...])    | Make a one-page song sheet (PDF) for the best match of `query`.                                            |
+| [`song`](_autosummary/songleaf.tools.html.md#songleaf.tools.song)(query, \*[, pick, refresh, ...])             | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.                   |
+| [`songbook`](_autosummary/songleaf.tools.html.md#songleaf.tools.songbook)(group, \*[, output, title, layout, ...]) | Render a list (group) of songs as one PDF: a table of contents, then every song at its fitted size.        |
+| [`songs`](_autosummary/songleaf.tools.html.md#songleaf.tools.songs)(\*[, store])                                | The keys of the stored songs.                                                                              |
+| [`unview`](_autosummary/songleaf.tools.html.md#songleaf.tools.unview)(key, \*[, user, library_root])             | Take a song out of `user`'s Viewed list.                                                                   |
+| [`view`](_autosummary/songleaf.tools.html.md#songleaf.tools.view)(key, \*[, user, at, store, library_root])    | Put a stored song at the top of `user`'s Viewed list: they just opened it.                                 |
+| [`viewed`](_autosummary/songleaf.tools.html.md#songleaf.tools.viewed)(\*[, user, store, library_root])           | The songs `user` opened, the most recent first: `key`, `title`, `artist`, `viewed_at`.                     |
 
-### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function song>, <function songs>, <function import_file>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>)*
+### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function songbook>, <function song>, <function songs>, <function import_file>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>)*
 
 Every operation, in the order the CLI lists them.
 
@@ -2489,6 +2521,20 @@ in order of first appearance), `sections` (`{"start", "end", "label",
 no chords) and `transpositions`: one table per shift from
 `-transpositions + 1` to `transpositions` semitones, each
 `{"semitones", "key", "chords": {original: transposed}}`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.songbook(group, , output='', title='', layout='dense', scale=1.0, library_root=None, sources=None, store=None, renderer=None)
+
+Render a list (group) of songs as one PDF: a table of contents, then every song at its fitted size.
+
+`group` is a list’s id or its name (the best match of the name). The
+songs come in the order they were filed in the list, nested lists
+included, so the list order is the set list. Page numbers are stamped on
+every page and each song is a PDF bookmark. `title` defaults to the
+list’s name. `layout` and `scale` are as for `sheet`. The PDF goes to
+`output`, by default the `sheets` data directory.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -2645,18 +2691,18 @@ True
 
 # About this build
 
-This documentation was built on **2026-10-20 07:19 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/9b883497d1db9776e90f638d17eb4c2f6f7cccfb"><code>9b88349</code></a> on branch <code>main</code>, for **songleaf 0.0.17** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 09:49 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/ee8fbb5254694c73f104ad606e0137b88209896a"><code>ee8fbb5</code></a> on branch <code>main</code>, for **songleaf 0.0.18** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.17) is behind the latest release on PyPI (0.0.18): `pip install songleaf` gives newer code than these docs describe.
+- The documented version (0.0.18) is behind the latest release on PyPI (0.0.19): `pip install songleaf` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/9b883497d1db9776e90f638d17eb4c2f6f7cccfb"><code>9b883497d1db9776e90f638d17eb4c2f6f7cccfb</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/ee8fbb5254694c73f104ad606e0137b88209896a"><code>ee8fbb5254694c73f104ad606e0137b88209896a</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -2667,9 +2713,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39385461899">39385461899</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39403278363">39403278363</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>9b883497d1db9776e90f638d17eb4c2f6f7cccfb</code> (in the history of the built commit) |
+| Event commit | <code>ee8fbb5254694c73f104ad606e0137b88209896a</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -2694,13 +2740,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.18/">0.0.18</a>, newer than the documented version (0.0.17).
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.19/">0.0.19</a>, newer than the documented version (0.0.18).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 9b883497d1db9776e90f638d17eb4c2f6f7cccfb
+git checkout ee8fbb5254694c73f104ad606e0137b88209896a
 pip install "epythet==0.2.18"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

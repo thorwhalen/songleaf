@@ -387,6 +387,7 @@ The keys of the stored songs.
 | [`packing`](songleaf.packing.html.md#module-songleaf.packing)           | Line packing: which consecutive lines of a paragraph share a row.                                                                  |
 | [`parse`](songleaf.parse.html.md#module-songleaf.parse)               | Parse chords-over-lyrics text into a [`Song`](songleaf.model.html.md#songleaf.model.Song).                    |
 | [`render`](songleaf.render.html.md#module-songleaf.render)             | Render a song onto one dense page, with the lyrics as large as will fit.                                                           |
+| [`songbook`](songleaf.songbook.html.md#module-songleaf.songbook)         | A songbook: several songs in one PDF, with a table of contents, page numbers and bookmarks.                                        |
 | [`sources`](songleaf.sources.html.md#module-songleaf.sources)           | Where songs are found: sources, and a search that composes them.                                                                   |
 | [`store`](songleaf.store.html.md#module-songleaf.store)               | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                                           |
 | [`tools`](songleaf.tools.html.md#module-songleaf.tools)               | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.                                 |

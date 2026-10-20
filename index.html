@@ -216,6 +216,7 @@
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.parse.html">songleaf.parse</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.render.html">songleaf.render</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.songbook.html">songleaf.songbook</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.tools.html">songleaf.tools</a></li>
@@ -329,6 +330,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span>kaggle_chords:1234<span class="w"> </span>--refresh<span class="w">     </span><span class="c1"># fetch it again from its source</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span><span class="s2">"wonderwall oasis"</span><span class="w"> </span>--transpose<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="c1"># chords up a whole tone, spelled for the new key</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span><span class="s2">"wonderwall oasis"</span><span class="w"> </span>--scale<span class="w"> </span><span class="m">0</span>.8<span class="w">   </span><span class="c1"># 80% of the size that fills the page</span>
+python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>songbook<span class="w"> </span>Campfire<span class="w">                       </span><span class="c1"># a whole list as one PDF: contents, page numbers, bookmarks, in list order</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>import<span class="w"> </span>chart.txt<span class="w"> </span>--title<span class="w"> </span><span class="s2">"Paper Boats"</span><span class="w">   </span><span class="c1"># paste from any site: Ultimate Guitar markup, ChordPro, OpenSong, plain; "-" reads stdin</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span>paste:ea2a9d845214<span class="w">                 </span><span class="c1"># the key `import` printed</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>song<span class="w"> </span>kaggle_chords:1234<span class="w">                </span><span class="c1"># the song as data: text, chords, every key's chord table</span>
@@ -436,7 +438,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-20 07:19 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/9b883497d1db9776e90f638d17eb4c2f6f7cccfb">9b88349</a> (main) · songleaf 0.0.17 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-20 09:49 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/ee8fbb5254694c73f104ad606e0137b88209896a">ee8fbb5</a> (main) · songleaf 0.0.18 · <a href="about-this-build.html">about this build</a></p>
         </article>
       </div>
       <footer>
@@ -499,7 +501,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=a39b7224"></script>
+</div><script src="_static/documentation_options.js?v=01ec8363"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

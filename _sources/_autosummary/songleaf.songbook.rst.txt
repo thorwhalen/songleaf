@@ -1,0 +1,12 @@
+songleaf.songbook
+=================
+
+.. automodule:: songleaf.songbook
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      render_songbook
+   
