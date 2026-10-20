@@ -347,3 +347,13 @@ def test_import_stores_a_pasted_song_and_it_can_be_read(client):
 def test_import_refuses_empty_text_and_non_strings(client):
     assert client.post("/import", json={"text": "  "}).status_code == 400
     assert client.post("/import", json={"text": 3}).status_code == 400
+
+
+def test_a_song_downloads_as_chordpro_and_as_text(client):
+    cho = client.get("/song.cho", params={"key": "memory:1", "transpose": 2})
+    assert cho.status_code == 200 and "attachment" in cho.headers["content-disposition"]
+    assert ".cho" in cho.headers["content-disposition"] and "%28%2B2%29" in cho.headers["content-disposition"]
+    assert cho.text.startswith("{title: Paper Boats}")
+    text = client.get("/song.txt", params={"key": "memory:1"})
+    assert text.status_code == 200 and "Paper Boats" in text.text.splitlines()[0]
+    assert client.get("/song.cho", params={"key": "memory:1", "transpose": 40}).status_code == 422

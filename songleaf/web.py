@@ -23,6 +23,8 @@ apps.thorwhalen.com). Its routes:
   in plain words (:data:`LAYOUT_CONTROLS`), and the default colours
 - ``GET /song?key=``: the song as JSON (``tools.song``): text, chords, sections, its
   key and a chord table for every key it can move to; the page draws it as text
+- ``GET /song.cho?key=&transpose=``, ``GET /song.txt?key=&transpose=``: the song as a ChordPro
+  or a chords-over-lyrics text download (``tools.export``)
 - ``GET /sheet?key=&...``: render the sheet; its title, artist, font size and pages
 - ``GET /sheet.pdf?key=&...``: the sheet itself
 - ``GET /sheet.png?key=&...&page=``: one page of it as an image, for browsers that
@@ -325,6 +327,36 @@ def mk_app(
     @app.get("/song")
     def song(key: str) -> dict:
         return tools.song(key, sources=sources, store=store)
+
+    def exported(key: str, format: str, transpose: int) -> Response:
+        from songleaf.export import FORMATS
+
+        result = tools.export(
+            key, format=format, transpose=transpose, sources=sources, store=store
+        )
+        _, extension, media_type = FORMATS[format]
+        name = " - ".join(filter(None, (result["artist"], result["title"]))) or "song"
+        if transpose:
+            name += f" ({transpose:+d})"
+        return Response(
+            result["text"],
+            media_type=media_type,
+            headers={
+                "Content-Disposition": "attachment; filename*=UTF-8''"
+                + quote(f"{name}.{extension}", safe=""),
+                **_PRIVATE_CACHE,
+            },
+        )
+
+    _transpose = Query(0, ge=SHEET_LIMITS["transpose"][0], le=SHEET_LIMITS["transpose"][1])
+
+    @app.get("/song.cho")
+    def song_chordpro(key: str, transpose: int = _transpose):
+        return exported(key, "chordpro", transpose)
+
+    @app.get("/song.txt")
+    def song_text(key: str, transpose: int = _transpose):
+        return exported(key, "text", transpose)
 
     @lru_cache(maxsize=sheet_cache_size)
     def rendered(request: SheetRequest) -> tuple[bytes, dict]:
