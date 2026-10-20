@@ -911,8 +911,8 @@ class SheetLayout:
     columns: int = 1
     shading: bool = False
     diagrams: str | None = None
-    score: bool = False
     style: DenseStyle = field(default_factory=DenseStyle)
+    score: bool = False
 
     def __post_init__(self):  # a bad layout fails here, not mid-render
         from songleaf.diagrams import DIAGRAM_KINDS
@@ -1051,11 +1051,17 @@ def _flow_rows(rows, size: float, style: DenseStyle, capacities) -> tuple[list, 
     frames, current, used, overflow = [], [], 0.0, False
     capacities = iter(capacities)
     capacity = next(capacities)
-    for row in rows:
+    rows = list(rows)
+    for k, row in enumerate(rows):
         need = row.top + row.bottom
         if current:
             need += row.gap_before + style.row_gap * size
-        if current and used + need > capacity + _EPSILON:
+        if row.figure and k + 1 < len(rows):  # a snippet stays with the line under it
+            after = rows[k + 1]
+            keep = need + after.gap_before + style.row_gap * size + after.top + after.bottom
+        else:
+            keep = need
+        if current and used + keep > capacity + _EPSILON:
             frames.append(current)
             current, used, capacity = [], 0.0, next(capacities)
             need = row.top + row.bottom
@@ -1126,7 +1132,7 @@ def _snippet(song: Song, layout: SheetLayout, provider) -> tuple | None:
     if provider is None:
         from songleaf.snippets import abc_snippet as provider
     found = provider(song)
-    if found is None:
+    if found is None or not (found.width > 0 and found.height > 0):
         return None
     line = sum(1 for line in song.lines() if line.end < found.start)
     return found, line

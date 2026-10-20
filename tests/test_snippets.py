@@ -7,6 +7,8 @@ import pytest
 from songleaf import tools
 from songleaf.parse import parse_chords_over_lyrics
 from songleaf.render import SheetLayout, fit_font_size, render_sheet
+from songleaf.model import score_link
+from songleaf.render import _flow_rows, _Row, DenseStyle
 from songleaf.snippets import (
     Bar,
     ScoreSnippet,
@@ -31,7 +33,8 @@ def test_the_abc_subset():
     assert notes[6].pitch is None
     assert notes[7].pitch == 1 + 7 * 6  # d' is D6
     assert [e.kind for e in tune.events if isinstance(e, Bar)] == ["|", "|", "|]"]
-    for bad in ("", "| | |", "x" * 500, "C0"):
+    assert [n.pitch for n in parse_abc("T:Title\nK:G\n!fermata!G A").notes] == [32, 33]
+    for bad in ("", "| | |", "x" * 500, "C0", "C5", "A/" + "9" * 330, "A" + "9" * 330):
         with pytest.raises(ValueError):
             parse_abc(bad)
 
@@ -115,3 +118,23 @@ def test_the_tool_records_a_snippet(memory_source, tmp_path, page_count):
     info = tools.snippet("memory:1", "G2 AB c2", line=1, store=store, sources=[memory_source])
     assert info["rule"] == "chosen"
     assert abc_snippet(store["memory:1"]) is not None
+
+
+def test_marking_keeps_score_links(chart):
+    song = parse_chords_over_lyrics(chart)
+    song.annotations.append(score_link(0, 5, source="scoreseek", id="x"))
+    marked = mark_segment(mark_segment(song, "C D"), "E F")
+    assert sorted(a.body.get("notation", "") for a in marked.of_kind("score")) == ["", "E F"]
+
+
+def test_a_snippet_row_is_never_left_alone_at_a_frame_end():
+    snippet = ScoreSnippet(10, 4, lambda *a, **k: None)
+    rows = [_Row([], 30, 0), _Row([], 30, 0, figure=(snippet, 1.0)), _Row([], 30, 0)]
+    frames, _ = _flow_rows(rows, 10, DenseStyle(row_gap=0), [70, 100])
+    assert [len(f) for f in frames] == [1, 2] and frames[1][0].figure
+
+
+def test_an_empty_snippet_is_ignored(chart):
+    song = parse_chords_over_lyrics(chart)
+    empty = lambda song: ScoreSnippet(0, 0, lambda *a, **k: None)  # noqa: E731
+    assert fit_font_size(song, layout="score", snippets=empty) == fit_font_size(song)

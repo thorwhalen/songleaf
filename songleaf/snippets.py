@@ -12,7 +12,8 @@ sense of the melody or the rhythm. Three parts, each replaceable:
   injected into :func:`songleaf.render.render_sheet` (``snippets=``) and never
   imported by it. The default, :func:`abc_snippet`, draws the short ABC notation
   recorded on the annotation with reportlab lines only: one voice, treble staff,
-  notes, rests, accidentals, bar lines and chord names. Fuller engraving
+  notes, rests, accidentals, bar lines and chord names, placed as on a treble staff
+  (no clef is drawn). Fuller engraving
   (MusicXML, whole ABC tunes) belongs in a provider behind an optional extra.
 - **Where it goes**: the ``score`` layout option makes the renderer place the
   snippet as a row above its line; the font fit counts its height, so the
@@ -21,8 +22,9 @@ sense of the melody or the rhythm. Three parts, each replaceable:
 ABC subset read by :func:`parse_abc`: notes ``A-G a-g`` with ``,`` / ``'``
 octave marks, ``^`` ``_`` ``=`` accidentals, lengths ``2`` ``/2`` ``3/2`` ``/``
 (the unit is an eighth note), rests ``z``, bar lines ``|`` ``||`` ``|]`` ``|:``
-``:|``, and ``"G"`` chord names over the next note. Anything else (ties, slurs,
-decorations, spaces) is skipped.
+``:|``, and ``"G"`` chord names over the next note. A length that needs a tie
+(``5``) is refused. Header lines (``K:G``), decorations (``!fermata!``) and
+anything else (ties, slurs, spaces) are skipped.
 
 >>> [(n.pitch, n.length) for n in parse_abc("C2 D/2 z |").notes]
 [(28, 0.25), (29, 0.0625), (None, 0.125)]
@@ -40,6 +42,8 @@ from songleaf.model import Annotation, Song, score_link
 
 #: The length of an unmarked ABC note, as a fraction of a whole note.
 UNIT_LENGTH = Fraction(1, 8)
+#: The shortest and longest note lengths read, in whole notes.
+MIN_LENGTH, MAX_LENGTH = Fraction(1, 64), Fraction(4)
 #: Notations longer than this are refused: a snippet is a few bars.
 MAX_NOTATION_CHARS = 400
 #: What a provider-less recorded snippet is noted as.
@@ -54,6 +58,7 @@ _TOKEN_RE = re.compile(
     r"|(?P<rest>[zx])(?P<rnum>\d*)(?P<rslashes>/*)(?P<rden>\d*)"
     r"|(?P<bar>\|\]|\|\||:\||\|:|\|)"
 )
+_SKIPPED_RE = re.compile(r"^[ \t]*[A-Za-z]:.*$|![^!\n]*!|\+[^+\n]*\+", re.MULTILINE)
 _ACCIDENTAL_SIGNS = {"^": "♯", "^^": "♯♯", "_": "♭", "__": "♭♭", "=": "♮"}
 
 
@@ -93,7 +98,14 @@ def _length(num: str, slashes: str, den: str) -> Fraction:
         denominator = 1
     if numerator <= 0 or denominator <= 0:
         raise ValueError("A note length must be positive.")
-    return UNIT_LENGTH * Fraction(numerator, denominator)
+    length = UNIT_LENGTH * Fraction(numerator, denominator)
+    if not MIN_LENGTH <= length <= MAX_LENGTH:
+        raise ValueError(f"A note length must be between {MIN_LENGTH} and {MAX_LENGTH} whole notes.")
+    plain = length.numerator == 1 or length.denominator == 1 and length.numerator in (1, 2, 4)
+    dotted = length.numerator == 3 and length.denominator > 1
+    if not (plain or dotted):
+        raise ValueError(f"A length of {length} needs a tie: write it as two notes.")
+    return length
 
 
 def parse_abc(notation: str) -> Tune:
@@ -106,7 +118,8 @@ def parse_abc(notation: str) -> Tune:
             f"A snippet is a few bars: at most {MAX_NOTATION_CHARS} characters."
         )
     events, chord = [], ""
-    for match in _TOKEN_RE.finditer(notation):
+    body = _SKIPPED_RE.sub("", notation)  # header fields ("K:G") and decorations ("!fermata!")
+    for match in _TOKEN_RE.finditer(body):
         group = match.groupdict()
         if group["chord"] is not None:
             chord = group["chord"].strip()
@@ -207,8 +220,16 @@ def mark_segment(
         notation=notation,
         rule=segment.rule,
     )
-    kept = [a for a in song.annotations if a.kind != "score"]
+    kept = [a for a in song.annotations if not _is_recorded(a)]
     return replace(song, annotations=sorted([*kept, link], key=lambda a: a.start))
+
+
+def _is_recorded(annotation: Annotation) -> bool:
+    """A score annotation holding notation: what :func:`mark_segment` replaces (links stay)."""
+    body = annotation.body
+    return annotation.kind == "score" and (
+        bool(body.get("notation")) or body.get("source") == INLINE_SOURCE
+    )
 
 
 def recorded_snippet(song: Song, *, format: str = "abc") -> Annotation | None:
@@ -327,7 +348,7 @@ def _draw_event(canvas, event: Note, at: float, to_x, to_y, space: float, font: 
     filled, flags, dotted = _shape(event.length)
     if event.pitch is None:  # a rest: a block for long ones, a slanted stroke for short ones
         if event.length >= 0.5:
-            y = 2 if event.length >= 1 else 1.5
+            y = 2.5 if event.length >= 1 else 2  # a whole rest hangs from a line, a half sits on one
             canvas.rect(to_x(at), to_y(y), _HEAD_WIDTH * space, 0.5 * space, stroke=0, fill=1)
         else:
             canvas.setLineWidth(_STEM_WIDTH * 1.5 * space)
@@ -370,7 +391,7 @@ def abc_snippet(song: Song) -> ScoreSnippet | None:
         return None
     try:
         tune = parse_abc(annotation.body["notation"])
-    except ValueError:
+    except (ValueError, OverflowError):
         return None
     return replace(layout_tune(tune), start=annotation.start)
 
