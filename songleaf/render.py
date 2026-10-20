@@ -1018,7 +1018,9 @@ class _Flow:
     overflow: bool  # some row is taller than its frame
     column_width: float
     heading_block: float  # the height the heading takes from the first page's columns
-    diagram_block: float = 0.0  # the height of the chord-diagram strip on the first page
+    diagram_block: float = (
+        0.0  # the height of the chord-diagram strip on the first page
+    )
 
 
 def _flow_rows(rows, size: float, style: DenseStyle, capacities) -> tuple[list, bool]:

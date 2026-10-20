@@ -66,7 +66,9 @@ def chord_tones(symbol: str) -> tuple[int, ...] | None:
         fifth = 8
     intervals = [0, third, fifth]
     if quality == "open":  # suspended or power: no third
-        intervals = [0, 7] if re.match(r"5(?!\d)", rest) else [0, 2 if "sus2" in rest else 5, 7]
+        intervals = (
+            [0, 7] if re.match(r"5(?!\d)", rest) else [0, 2 if "sus2" in rest else 5, 7]
+        )
     if "dim7" in rest or rest in ("°7", "o7"):
         intervals.append(9)
     elif re.search(r"(maj|M|Δ)(7|9|11|13)", rest):
@@ -106,7 +108,8 @@ def guitar_shape(
     for low in range(0, max_fret - MAX_SPAN + 1):
         window = [0, *range(max(low, 1), low + MAX_SPAN + 1)]
         options = [
-            [None] + [f for f in window if (string + f) % 12 in wanted] for string in tuning
+            [None] + [f for f in window if (string + f) % 12 in wanted]
+            for string in tuning
         ]
         for frets in itertools.product(*options):
             sounding = [(i, f) for i, f in enumerate(frets) if f is not None]
@@ -175,7 +178,12 @@ def _box(kind: str, size: float, style: DiagramStyle) -> tuple[float, float]:
 
 
 def strip_height(
-    n: int, kind: str, size: float, width: float, *, style: DiagramStyle = DiagramStyle()
+    n: int,
+    kind: str,
+    size: float,
+    width: float,
+    *,
+    style: DiagramStyle = DiagramStyle(),
 ) -> float:
     """The height a strip of ``n`` diagrams takes across ``width`` (0 for none)."""
     if not n:
@@ -216,7 +224,9 @@ def draw_strip(
         if kind == "piano":
             _draw_piano(canvas, chord_tones(symbol), x, box_top - h, w, h, style)
         else:
-            _draw_guitar(canvas, guitar_shape(symbol), x, box_top - h, w, h, style, size)
+            _draw_guitar(
+                canvas, guitar_shape(symbol), x, box_top - h, w, h, style, size
+            )
 
 
 def _color(hex_color: str):
@@ -257,9 +267,17 @@ def _draw_piano(canvas, tones, x, y, w, h, style) -> None:
             continue
         octave, pc = divmod(note, 12)
         if pc in _WHITE:
-            cx, cy, white = x + (octave * 7 + _WHITE.index(pc) + 0.5) * key_w, y + h * 0.18, True
+            cx, cy, white = (
+                x + (octave * 7 + _WHITE.index(pc) + 0.5) * key_w,
+                y + h * 0.18,
+                True,
+            )
         else:
-            cx, cy, white = x + (octave * 7 + _BLACK[pc] + 1) * key_w, y + h * 0.55, False
+            cx, cy, white = (
+                x + (octave * 7 + _BLACK[pc] + 1) * key_w,
+                y + h * 0.55,
+                False,
+            )
         canvas.setFillColor(_color(style.mark_color if white else "#ffffff"))
         canvas.circle(cx, cy, key_w * 0.28, stroke=0, fill=1)
 
@@ -276,7 +294,9 @@ def _draw_guitar(canvas, frets, x, y, w, h, style, size) -> None:
     canvas.line(left, grid_top, left + dx * (strings - 1), grid_top)  # the nut
     canvas.setLineWidth(0.4)
     for r in range(1, rows + 1):
-        canvas.line(left, grid_top - r * dy, left + dx * (strings - 1), grid_top - r * dy)
+        canvas.line(
+            left, grid_top - r * dy, left + dx * (strings - 1), grid_top - r * dy
+        )
     for s in range(strings):
         canvas.line(left + s * dx, grid_top, left + s * dx, grid_top - rows * dy)
     canvas.setFillColor(_color(style.mark_color))
