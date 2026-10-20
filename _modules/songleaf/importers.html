@@ -302,7 +302,13 @@
 <span class="n">_DIRECTIVE_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"^\s*\{\s*[\w-]+\s*(?::.*)?\}\s*$"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>
 <span class="n">_INLINE_CHORD_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\w[^\n\[\]]*\[([^\[\]\s]+)\]|^\[([^\[\]\s]+)\]\S"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">M</span><span class="p">)</span>
 <span class="n">_OPENSONG_CHORD_LINE_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"^\."</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>
-<span class="n">_OPENSONG_TAGS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"V"</span><span class="p">:</span> <span class="s2">"Verse"</span><span class="p">,</span> <span class="s2">"C"</span><span class="p">:</span> <span class="s2">"Chorus"</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">:</span> <span class="s2">"Bridge"</span><span class="p">,</span> <span class="s2">"P"</span><span class="p">:</span> <span class="s2">"Pre-chorus"</span><span class="p">,</span> <span class="s2">"T"</span><span class="p">:</span> <span class="s2">"Tag"</span><span class="p">}</span>
+<span class="n">_OPENSONG_TAGS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"V"</span><span class="p">:</span> <span class="s2">"Verse"</span><span class="p">,</span>
+    <span class="s2">"C"</span><span class="p">:</span> <span class="s2">"Chorus"</span><span class="p">,</span>
+    <span class="s2">"B"</span><span class="p">:</span> <span class="s2">"Bridge"</span><span class="p">,</span>
+    <span class="s2">"P"</span><span class="p">:</span> <span class="s2">"Pre-chorus"</span><span class="p">,</span>
+    <span class="s2">"T"</span><span class="p">:</span> <span class="s2">"Tag"</span><span class="p">,</span>
+<span class="p">}</span>
 <span class="n">_OPENSONG_TAG_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"^\[([VCBPT])(\d*)\]\s*$"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>
 
 
@@ -353,16 +359,16 @@
 
 <span class="c1">#: Tried in order; the last one accepts anything.</span>
 <span class="n">IMPORTERS</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Importer</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">Importer</span><span class="p">(</span><span class="s2">"ultimate-guitar"</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">_UG_RE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">t</span><span class="p">)),</span> <span class="n">_parse_ultimate_guitar</span><span class="p">),</span>
+    <span class="n">Importer</span><span class="p">(</span>
+        <span class="s2">"ultimate-guitar"</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">_UG_RE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">t</span><span class="p">)),</span> <span class="n">_parse_ultimate_guitar</span>
+    <span class="p">),</span>
     <span class="n">Importer</span><span class="p">(</span><span class="s2">"chordpro"</span><span class="p">,</span> <span class="n">_is_chordpro</span><span class="p">,</span> <span class="n">_chordpro</span><span class="o">.</span><span class="n">parse_chordpro</span><span class="p">),</span>
     <span class="n">Importer</span><span class="p">(</span>
         <span class="s2">"opensong"</span><span class="p">,</span>
         <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">_OPENSONG_CHORD_LINE_RE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">t</span><span class="p">)),</span>
         <span class="n">_parse_opensong</span><span class="p">,</span>
     <span class="p">),</span>
-    <span class="n">Importer</span><span class="p">(</span>
-        <span class="s2">"chords-over-lyrics"</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="n">_parse</span><span class="o">.</span><span class="n">parse_chords_over_lyrics</span>
-    <span class="p">),</span>
+    <span class="n">Importer</span><span class="p">(</span><span class="s2">"chords-over-lyrics"</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="n">_parse</span><span class="o">.</span><span class="n">parse_chords_over_lyrics</span><span class="p">),</span>
 <span class="p">)</span>
 
 
@@ -427,7 +433,9 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Nothing to import: the text is empty."</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">MAX_PASTE_CHARS</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The text is too long (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="n">MAX_PASTE_CHARS</span><span class="si">}</span><span class="s2"> characters)."</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"The text is too long (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="n">MAX_PASTE_CHARS</span><span class="si">}</span><span class="s2"> characters)."</span>
+        <span class="p">)</span>
     <span class="n">importer</span> <span class="o">=</span> <span class="n">_choose</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">importers</span><span class="p">,</span> <span class="nb">format</span><span class="p">)</span>
     <span class="n">provenance</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">PASTE_PROVENANCE</span><span class="p">,</span> <span class="o">**</span><span class="p">({</span><span class="s2">"url"</span><span class="p">:</span> <span class="n">url</span><span class="p">}</span> <span class="k">if</span> <span class="n">url</span> <span class="k">else</span> <span class="p">{})}</span>
     <span class="n">song</span> <span class="o">=</span> <span class="n">importer</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">provenance</span><span class="o">=</span><span class="n">provenance</span><span class="p">)</span>
@@ -467,7 +475,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=0adb0642"></script>
+</div><script src="../../_static/documentation_options.js?v=a39b7224"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

@@ -1,4 +1,4 @@
-> built 2026-10-20 07:16 UTC from 2b1c58e (main) · songleaf 0.0.16. Details: build_info.json
+> built 2026-10-20 07:19 UTC from 9b88349 (main) · songleaf 0.0.17. Details: build_info.json
 
 # index.html.md
 
@@ -129,7 +129,7 @@ Other sources surveyed, plus the Ultimate Guitar / MuseScore decisions, are in [
 
 ## Web app
 
-`songleaf.web.mk_app()` is a FastAPI app over the same functions: search, the stored songs, the layout options, and the sheet as JSON, PDF and a PNG per page (for phone browsers that show no PDF inline). It also serves its own page, built phone first: the song starts right under the title and one row of controls. That row holds the text size, the key (−1 / +1, and a key picker that lists every chord of the song beside what it becomes), **Aa** and **⋯**. **Aa** holds the reader’s settings: paper (auto, light, sepia, dark, black), where the chords go (above the words, in the line, or off), one or two columns, shaded choruses, and under *Fine tuning* the colour and opacity of lyrics and chords, chord size, line spacing and font. **⋯** leads to **Print**, which shows the one-page PDF sheet. Its layout starts from the reader’s settings and can be changed there in the same words (chords above, on the words or in the line; rows filled or broken at rhymes; one or two columns; shading). Opacity prints as the matching shade on white paper. The page is a two-line HTML shell that loads its script and style from the app, so it changes with the package.
+`songleaf.web.mk_app()` is a FastAPI app over the same functions: search, `POST /import` (paste a song; the page has a “Paste a song” box), the stored songs, the layout options, and the sheet as JSON, PDF and a PNG per page (for phone browsers that show no PDF inline). It also serves its own page, built phone first: the song starts right under the title and one row of controls. That row holds the text size, the key (−1 / +1, and a key picker that lists every chord of the song beside what it becomes), **Aa** and **⋯**. **Aa** holds the reader’s settings: paper (auto, light, sepia, dark, black), where the chords go (above the words, in the line, or off), one or two columns, shaded choruses, and under *Fine tuning* the colour and opacity of lyrics and chords, chord size, line spacing and font. **⋯** leads to **Print**, which shows the one-page PDF sheet. Its layout starts from the reader’s settings and can be changed there in the same words (chords above, on the words or in the line; rows filled or broken at rhymes; one or two columns; shading). Opacity prints as the matching shade on white paper. The page is a two-line HTML shell that loads its script and style from the app, so it changes with the package.
 
 ```bash
 pip install "songleaf[web]"
@@ -2645,18 +2645,18 @@ True
 
 # About this build
 
-This documentation was built on **2026-10-20 07:16 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/2b1c58ec024c9610e85d67caf8f03f0ad0eef8eb"><code>2b1c58e</code></a> on branch <code>main</code>, for **songleaf 0.0.16** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 07:19 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/9b883497d1db9776e90f638d17eb4c2f6f7cccfb"><code>9b88349</code></a> on branch <code>main</code>, for **songleaf 0.0.17** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.16) is behind the latest release on PyPI (0.0.17): `pip install songleaf` gives newer code than these docs describe.
+- The documented version (0.0.17) is behind the latest release on PyPI (0.0.18): `pip install songleaf` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/2b1c58ec024c9610e85d67caf8f03f0ad0eef8eb"><code>2b1c58ec024c9610e85d67caf8f03f0ad0eef8eb</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/9b883497d1db9776e90f638d17eb4c2f6f7cccfb"><code>9b883497d1db9776e90f638d17eb4c2f6f7cccfb</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -2667,9 +2667,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39385173519">39385173519</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39385461899">39385461899</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>2b1c58ec024c9610e85d67caf8f03f0ad0eef8eb</code> (in the history of the built commit) |
+| Event commit | <code>9b883497d1db9776e90f638d17eb4c2f6f7cccfb</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -2694,13 +2694,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.17/">0.0.17</a>, newer than the documented version (0.0.16).
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.18/">0.0.18</a>, newer than the documented version (0.0.17).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 2b1c58ec024c9610e85d67caf8f03f0ad0eef8eb
+git checkout 9b883497d1db9776e90f638d17eb4c2f6f7cccfb
 pip install "epythet==0.2.18"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
