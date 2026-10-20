@@ -49,6 +49,8 @@ python -m songleaf sheet kaggle_chords:1234               # a song by its key: n
 python -m songleaf sheet kaggle_chords:1234 --refresh     # fetch it again from its source
 python -m songleaf sheet "wonderwall oasis" --transpose 2 # chords up a whole tone, spelled for the new key
 python -m songleaf sheet "wonderwall oasis" --scale 0.8   # 80% of the size that fills the page
+python -m songleaf import chart.txt --title "Paper Boats"   # paste from any site: Ultimate Guitar markup, ChordPro, OpenSong, plain; "-" reads stdin
+python -m songleaf sheet paste:ea2a9d845214                 # the key `import` printed
 python -m songleaf song kaggle_chords:1234                # the song as data: text, chords, every key's chord table
 python -m songleaf build-index                            # once: search from an index, not the whole corpus in memory
 ```

@@ -256,6 +256,63 @@ def _resolve(query: str, *, pick: int, refresh: bool, sources, store):
     return key, store[key]
 
 
+def import_text(
+    text: str,
+    *,
+    title: str = "",
+    artist: str = "",
+    url: str = "",
+    format: str = "",
+    store=None,
+) -> dict:
+    """Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics.
+
+    The format is detected (``format`` forces one of ``ultimate-guitar``,
+    ``chordpro``, ``opensong``, ``chords-over-lyrics``). ``url`` is only
+    recorded as provenance: songleaf never contacts it. The song is stored
+    under ``paste:<hash>`` (the same text, the same key) and is then usable like
+    any other: ``sheet <key>``, ``song <key>``.
+    """
+    from songleaf.importers import import_song
+
+    imported = import_song(text, title=title, artist=artist, url=url, format=format)
+    store = song_store() if store is None else store
+    store[imported.key] = imported.song
+    return {
+        "key": imported.key,
+        "format": imported.format,
+        "title": imported.song.title,
+        "artist": imported.song.artist,
+        "lines": len(imported.song.text.split("\n")),
+        "chords": len(imported.song.of_kind("chord")),
+    }
+
+
+def import_file(
+    path: str = "-",
+    *,
+    title: str = "",
+    artist: str = "",
+    url: str = "",
+    format: str = "",
+    store=None,
+) -> dict:
+    """Read pasted song text from a file (``-``: standard input) and store it; see ``import_text``."""
+    import sys
+
+    if path == "-":
+        text = sys.stdin.read()
+    else:
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+    return import_text(
+        text, title=title, artist=artist, url=url, format=format, store=store
+    )
+
+
+import_file.__name__ = "import"  # the CLI command is ``songleaf import``
+
+
 def forget(key: str, *, store=None, library_root=None) -> dict:
     """Remove a song from the stored songs, from every list it was in, and from every Viewed list.
 
@@ -370,4 +427,15 @@ def _file_name(song, key: str, layout: str = "") -> str:
 
 
 #: Every operation, in the order the CLI lists them.
-TOOLS = (search, sheet, song, songs, viewed, view, unview, forget, build_index)
+TOOLS = (
+    search,
+    sheet,
+    song,
+    songs,
+    import_file,
+    viewed,
+    view,
+    unview,
+    forget,
+    build_index,
+)
