@@ -389,5 +389,8 @@ def test_sync_keeps_only_the_times(memory_source, tmp_path):
     times = [a["body"]["ms"] for a in song["annotations"] if a["kind"] == "time"]
     assert times == [1000, 4500]
     assert song["text"] == "Paper boats on a stream\ncarry the names"  # the LRC's words are not kept
+    unmatched = client.post("/sync", json={"key": key, "lrc": "[00:09.00]nothing like it at all"})
+    assert unmatched.status_code == 400  # and the timings stay
+    assert len([a for a in client.get("/song", params={"key": key}).json()["annotations"] if a["kind"] == "time"]) == 2
     assert client.post("/sync", json={"key": key}).status_code == 400
     assert client.post("/sync", json={"key": key, "lrc": "x" * 200_000}).status_code == 400

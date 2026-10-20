@@ -1658,7 +1658,12 @@
       if (!times.length || Date.now() < followHeldUntil) return;
       let i = -1;
       while (i + 1 < times.length && times[i + 1].ms <= ms) i += 1;
-      const el = i >= 0 ? app.querySelector(`.reader [data-at="${times[i].at}"]`) : null;
+      if (i < 0) { // before the first timed line (a seek back): nothing is current
+        if (current) current.classList.remove("now");
+        current = null;
+        return;
+      }
+      const el = app.querySelector(`.reader [data-at="${times[i].at}"]`);
       if (!el || el === current) return;
       if (current) current.classList.remove("now");
       current = el;
@@ -1693,10 +1698,12 @@
 
   // Each service's player API is a script of its own, loaded once, the first time it is used.
   const playerApis = {};
+  const pageReadyHooks = {}; // whatever the page had in a ready hook before we set it, once
   function playerApi(name, src, readyHook, resolveWith) {
     if (!playerApis[name]) {
+      if (!(readyHook in pageReadyHooks)) pageReadyHooks[readyHook] = window[readyHook];
       playerApis[name] = new Promise((resolve, reject) => {
-        const previous = window[readyHook];
+        const previous = pageReadyHooks[readyHook];
         window[readyHook] = (...args) => { if (typeof previous === "function") previous(...args); resolve(resolveWith(...args)); };
         const script = h("script", { src, async: true });
         script.addEventListener("error", () => { delete playerApis[name]; reject(new Error(`${name} could not be reached`)); });
@@ -1724,6 +1731,7 @@
             follow(player.getCurrentTime() * 1000);
           }, FOLLOW_TICK_MS);
         },
+        onError: () => { frame.replaceChildren(h("p", { class: "muted" }, "YouTube cannot play this video here.")); },
       },
     });
   }
@@ -1733,8 +1741,10 @@
     const target = h("div");
     frame.replaceChildren(target);
     api.createController(target, { uri: `spotify:track:${id}`, width: "100%", height: 152 }, (controller) => {
+      const watch = setInterval(() => { // a paused player sends nothing: notice the song was left
+        if (!frame.isConnected) { clearInterval(watch); controller.destroy(); }
+      }, 1000);
       controller.addListener("playback_update", (event) => {
-        if (!frame.isConnected) { controller.destroy(); return; }
         if (event.data && !event.data.isPaused) follow(event.data.position);
       });
     });
@@ -1742,10 +1752,15 @@
 
   // Under ⋯ in Read view: link the recording, and time the lines from an LRC file or LRCLIB.
   // The server checks the ids and keeps only the LRC's times; the song is then redrawn.
+  let recordingNotice = ""; // what the last save said, shown again by the redrawn form
   function recordingForm(song, route) {
     const media = (song.meta && song.meta.media) || {};
-    const status = h("p", { class: "muted", role: "status" });
+    const status = h("p", { class: "muted", role: "status" }, recordingNotice);
+    recordingNotice = "";
+    let busy = false;
     const send = async (method, path, body, done) => {
+      if (busy) return;
+      busy = true;
       status.textContent = "Saving…";
       try {
         const response = await fetch(CONFIG.api + path, {
@@ -1754,10 +1769,12 @@
         if (!response.ok) throw new Error(await errorText(response));
         const info = await response.json();
         songCache.delete(route.song);
-        status.textContent = done(info);
-        setTimeout(() => goSong(route, {}), 600); // redraw with the new player or timings
+        status.textContent = recordingNotice = done(info);
+        if (app.dataset.song === route.song && readRoute().song === route.song) goSong(route, {}); // redraw with the new player or timings
       } catch (error) {
         status.textContent = `Not saved: ${error.message}`;
+      } finally {
+        busy = false;
       }
     };
     const link = h("input", {
@@ -1768,13 +1785,17 @@
       e.preventDefault();
       const value = link.value.trim();
       if (!value) return;
-      const service = /spotify/i.test(value) ? "spotify" : "youtube";
+      let host = "";
+      try { host = new URL(value).hostname; } catch (_) { /* a bare id */ }
+      const spotify = /^spotify:/i.test(value) || /(^|\.)spotify\.com$/i.test(host) || /^[A-Za-z0-9]{22}$/.test(value);
+      const service = spotify ? "spotify" : "youtube";
       send("PUT", "/media", { [service]: value }, () => "Recording linked.");
     };
     const remove = (service) => () => send("PUT", "/media", { [service]: "-" }, () => "Recording removed.");
     const file = h("input", { type: "file", accept: ".lrc,text/plain", "aria-label": "An LRC file" });
     file.addEventListener("change", async () => {
       const chosen = file.files && file.files[0];
+      file.value = ""; // the same file can be chosen again
       if (!chosen) return;
       if (chosen.size > MAX_LRC_BYTES) { status.textContent = "That file is too large for an LRC."; return; }
       send("POST", "/sync", { lrc: await chosen.text() }, (info) => `${info.timed} of ${info.lines} lines timed.`);
