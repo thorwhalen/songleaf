@@ -398,7 +398,9 @@ def mk_app(
     def songbook_pdf(
         group: str = Query(..., min_length=1, max_length=_MAX_QUERY_CHARS),
         layout: str = "dense",
-        scale: float = Query(1.0, ge=SHEET_LIMITS["scale"][0], le=SHEET_LIMITS["scale"][1]),
+        scale: float = Query(
+            1.0, ge=SHEET_LIMITS["scale"][0], le=SHEET_LIMITS["scale"][1]
+        ),
     ):
         try:
             layout = layout_spec(layout)

@@ -49,8 +49,7 @@ def render_songbook(
         renderer(song, buffer)
         parts.append(PdfReader(io.BytesIO(buffer.getvalue())))
     entries = [
-        {"key": key, "title": song.title, "artist": song.artist}
-        for key, song in songs
+        {"key": key, "title": song.title, "artist": song.artist} for key, song in songs
     ]
     # The TOC may run to several pages; its length decides where the songs start.
     toc_pages = 1

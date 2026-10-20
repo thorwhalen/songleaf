@@ -245,7 +245,8 @@ def songbook(
         raise LookupError(f"None of the songs in {names[list_id]!r} could be found")
     title = title or names[list_id]
     output = output or os.path.join(
-        data_dir("sheets"), re.sub(r"\W+", "-", title.lower()).strip("-") + "-songbook.pdf"
+        data_dir("sheets"),
+        re.sub(r"\W+", "-", title.lower()).strip("-") + "-songbook.pdf",
     )
     return {
         "group": list_id,
