@@ -513,6 +513,7 @@ def snippet(
     notation: str,
     *,
     line: int = 0,
+    format: str = "abc",
     pick: int = 1,
     store=None,
     sources=None,
@@ -522,13 +523,14 @@ def snippet(
     ``notation`` is a few bars of ABC (``"G2 AB c2 | d4"``; the unit is an eighth
     note). ``line`` is the 1-based lyric line it goes with; ``0`` lets the rule
     choose (the first line of the chorus, else the most repeated line, else the
-    first). Returns ``{"key", "start", "end", "rule"}``.
+    first). ``format`` may also be ``musicxml`` or ``mei`` (drawn with the
+    ``score`` extra only). Returns ``{"key", "start", "end", "rule"}``.
     """
     from songleaf.snippets import mark_segment, segment_at_line
 
     key, found = _resolve(query, pick=pick, refresh=False, sources=sources, store=store)
     segment = segment_at_line(found, line) if line else None
-    marked = mark_segment(found, notation, segment=segment)
+    marked = mark_segment(found, notation, segment=segment, format=format)
     store = song_store() if store is None else store
     store[key] = marked
     (score,) = marked.of_kind("score")
