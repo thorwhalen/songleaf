@@ -50,6 +50,11 @@ False
 
 True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`).
 
+```pycon
+>>> is_chord_token("Bb7(4)(9)"), is_chord_token("A7/sus4"), is_chord_token("Bridge")
+(True, True, False)
+```
+
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 

@@ -293,8 +293,8 @@
     <span class="sa">r</span><span class="s2">"(?:maj|min|dim|aug|sus|add|m|M|\+|°|º|ø)?"</span>  <span class="c1"># quality</span>
     <span class="sa">r</span><span class="s2">"\d{0,2}[M+\-]?"</span>  <span class="c1"># extension: 7, 9, 13; Brazilian 7M, 7+, 5-</span>
     <span class="sa">r</span><span class="s2">"(?:sus\d{0,2}|(?:maj|add|dim|aug|no|m|b|#|\+|-)\d{1,2}[+\-]?)*"</span>  <span class="c1"># b5, sus, add9</span>
-    <span class="sa">r</span><span class="s2">"(?:/[#b]?\d{1,2}[+\-#b]?)*"</span>  <span class="c1"># stacked extensions: 7/9, 4/7, 5-/7, /b13, 7/9b</span>
-    <span class="sa">r</span><span class="s2">"(?:\([^()\s]{1,10}\))?"</span>  <span class="c1"># parenthesised alterations: (#9), (4/9), (b5)</span>
+    <span class="sa">r</span><span class="s2">"(?:/(?:[#b]?\d{1,2}[+\-#b]?|sus\d{0,2}))*"</span>  <span class="c1"># stacked: 7/9, 4/7, 5-/7, /b13, 7/9b, 7/sus4</span>
+    <span class="sa">r</span><span class="s2">"(?:\([^()\s]{1,10}\))*"</span>  <span class="c1"># parenthesised alterations: (#9), (4/9), (b5), 7(4)(9)</span>
     <span class="sa">r</span><span class="s2">"(?:/[A-G][#b]?)?"</span>  <span class="c1"># bass</span>
     <span class="sa">r</span><span class="s2">"\)?\*?"</span>
 <span class="p">)</span>
@@ -302,7 +302,9 @@
 <span class="c1"># marks, and short notes such as "(riff)" or "(walking bass)".</span>
 <span class="n">_FILLER_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
     <span class="sa">r</span><span class="s2">"\|+:?|:?\|+|-+|/+|%|\.+|\*+|[()?]|x|\d{1,2}"</span>
-    <span class="sa">r</span><span class="s2">"|\(?(?:x\s*\d+|\d+\s*x)\)?|N\.?C\.?|\(\w{1,12}\)?|\w{1,12}\)"</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">"|\(?(?:x\s*\d+|\d+\s*x)\)?|N\.?C\.?|\(\w{1,12}\)?|\w{1,12}\)"</span>
+    <span class="sa">r</span><span class="s2">"|\w{1,12}:|tab|end|\{\w{1,12}\}"</span>  <span class="c1"># notes: "Intro:", "tab", "end", "{Fill}"</span>
+    <span class="sa">r</span><span class="s2">"|/[A-G][#b]?"</span><span class="p">,</span>  <span class="c1"># a bare bass note: "/B"</span>
     <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">_SECTION_WORDS</span> <span class="o">=</span> <span class="p">(</span>
@@ -340,9 +342,33 @@
 <div class="viewcode-block" id="is_chord_token">
 <a class="viewcode-back" href="../../_autosummary/songleaf.parse.html#songleaf.is_chord_token">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">is_chord_token</span><span class="p">(</span><span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""True if ``token`` reads as a chord symbol (``G``, ``F#m7b5``, ``E7(#9)``, ``C/G``)."""</span>
+<span class="w">    </span><span class="sd">"""True if ``token`` reads as a chord symbol (``G``, ``F#m7b5``, ``E7(#9)``, ``C/G``).</span>
+
+<span class="sd">    &gt;&gt;&gt; is_chord_token("Bb7(4)(9)"), is_chord_token("A7/sus4"), is_chord_token("Bridge")</span>
+<span class="sd">    (True, True, False)</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">_CHORD_RE</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">token</span><span class="p">))</span></div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_chords_in</span><span class="p">(</span><span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""The ``(offset in token, chord)`` pairs of a chord token, or of chords joined by ``-``; else ``[]``.</span>
+
+<span class="sd">    &gt;&gt;&gt; _chords_in("F#m-E"), _chords_in("(B-E9)"), _chords_in("G"), _chords_in("Bridge")</span>
+<span class="sd">    ([(0, 'F#m'), (4, 'E')], [(1, 'B'), (3, 'E9')], [(0, 'G')], [])</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">is_chord_token</span><span class="p">(</span><span class="n">token</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="n">token</span><span class="p">)]</span>
+    <span class="n">inner</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">"()"</span><span class="p">)</span>
+    <span class="n">pieces</span> <span class="o">=</span> <span class="n">inner</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"-"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pieces</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">is_chord_token</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pieces</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">inner</span><span class="p">)</span>
+    <span class="n">out</span><span class="p">,</span> <span class="n">at</span> <span class="o">=</span> <span class="p">[],</span> <span class="n">start</span>
+    <span class="k">for</span> <span class="n">piece</span> <span class="ow">in</span> <span class="n">pieces</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">at</span><span class="p">,</span> <span class="n">piece</span><span class="p">))</span>
+        <span class="n">at</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">piece</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">out</span>
 
 
 <div class="viewcode-block" id="is_chord_line">
@@ -356,8 +382,8 @@
 <span class="sd">    False</span>
 <span class="sd">    """</span>
     <span class="n">tokens</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-    <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">is_chord_token</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
-        <span class="n">is_chord_token</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_FILLER_RE</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span>
+    <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">_chords_in</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
+        <span class="n">_chords_in</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_FILLER_RE</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span>
     <span class="p">)</span></div>
 
 
@@ -416,17 +442,16 @@
     <span class="n">text</span> <span class="o">=</span> <span class="n">lyric_line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
     <span class="n">chords</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\S+"</span><span class="p">,</span> <span class="n">chord_line</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_chord_token</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">()):</span>
-            <span class="k">continue</span>
-        <span class="n">offset</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="o">-</span> <span class="n">indent</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
-        <span class="k">while</span> <span class="n">offset</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="ow">and</span> <span class="n">text</span><span class="p">[</span><span class="n">offset</span><span class="p">]</span> <span class="o">==</span> <span class="s2">" "</span><span class="p">:</span>
-            <span class="n">offset</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="n">chords</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">offset</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">()))</span>
+        <span class="k">for</span> <span class="n">delta</span><span class="p">,</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">_chords_in</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">()):</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="o">+</span> <span class="n">delta</span> <span class="o">-</span> <span class="n">indent</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
+            <span class="k">while</span> <span class="n">offset</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="ow">and</span> <span class="n">text</span><span class="p">[</span><span class="n">offset</span><span class="p">]</span> <span class="o">==</span> <span class="s2">" "</span><span class="p">:</span>
+                <span class="n">offset</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">chords</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">offset</span><span class="p">,</span> <span class="n">symbol</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">text</span><span class="p">,</span> <span class="n">chords</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_bare_chords</span><span class="p">(</span><span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-    <span class="k">return</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="n">token</span><span class="p">)</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">if</span> <span class="n">is_chord_token</span><span class="p">(</span><span class="n">token</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="n">symbol</span><span class="p">)</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">_chords_in</span><span class="p">(</span><span class="n">token</span><span class="p">)]</span>
 
 
 <div class="viewcode-block" id="parse_chords_over_lyrics">
@@ -550,7 +575,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=01ec8363"></script>
+</div><script src="../../_static/documentation_options.js?v=a8acf705"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

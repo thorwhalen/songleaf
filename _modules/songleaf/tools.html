@@ -511,7 +511,8 @@
         <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"None of the songs in </span><span class="si">{</span><span class="n">names</span><span class="p">[</span><span class="n">list_id</span><span class="p">]</span><span class="si">!r}</span><span class="s2"> could be found"</span><span class="p">)</span>
     <span class="n">title</span> <span class="o">=</span> <span class="n">title</span> <span class="ow">or</span> <span class="n">names</span><span class="p">[</span><span class="n">list_id</span><span class="p">]</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">output</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-        <span class="n">data_dir</span><span class="p">(</span><span class="s2">"sheets"</span><span class="p">),</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\W+"</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">,</span> <span class="n">title</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">"-"</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"-songbook.pdf"</span>
+        <span class="n">data_dir</span><span class="p">(</span><span class="s2">"sheets"</span><span class="p">),</span>
+        <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\W+"</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">,</span> <span class="n">title</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">"-"</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"-songbook.pdf"</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="p">{</span>
         <span class="s2">"group"</span><span class="p">:</span> <span class="n">list_id</span><span class="p">,</span>
@@ -827,7 +828,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=01ec8363"></script>
+</div><script src="../../_static/documentation_options.js?v=a8acf705"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

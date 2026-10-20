@@ -1,4 +1,4 @@
-> built 2026-10-20 09:49 UTC from ee8fbb5 (main) · songleaf 0.0.18. Details: build_info.json
+> built 2026-10-20 10:40 UTC from 933d773 (main) · songleaf 0.0.19. Details: build_info.json
 
 # index.html.md
 
@@ -1702,6 +1702,11 @@ False
 
 True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`).
 
+```pycon
+>>> is_chord_token("Bb7(4)(9)"), is_chord_token("A7/sus4"), is_chord_token("Bridge")
+(True, True, False)
+```
+
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
@@ -2691,18 +2696,18 @@ True
 
 # About this build
 
-This documentation was built on **2026-10-20 09:49 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/ee8fbb5254694c73f104ad606e0137b88209896a"><code>ee8fbb5</code></a> on branch <code>main</code>, for **songleaf 0.0.18** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 10:40 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/933d7737a8101941a3e7ceb93294392d7c7ba394"><code>933d773</code></a> on branch <code>main</code>, for **songleaf 0.0.19** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.18) is behind the latest release on PyPI (0.0.19): `pip install songleaf` gives newer code than these docs describe.
+- The documented version (0.0.19) is behind the latest release on PyPI (0.0.20): `pip install songleaf` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/ee8fbb5254694c73f104ad606e0137b88209896a"><code>ee8fbb5254694c73f104ad606e0137b88209896a</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/933d7737a8101941a3e7ceb93294392d7c7ba394"><code>933d7737a8101941a3e7ceb93294392d7c7ba394</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -2713,15 +2718,15 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39403278363">39403278363</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39409388964">39409388964</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>ee8fbb5254694c73f104ad606e0137b88209896a</code> (in the history of the built commit) |
+| Event commit | <code>933d7737a8101941a3e7ceb93294392d7c7ba394</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.18  |
+| epythet  | 0.2.19  |
 | Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
 | Python   | 3.12.15 |
@@ -2740,14 +2745,14 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.19/">0.0.19</a>, newer than the documented version (0.0.18).
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.20/">0.0.20</a>, newer than the documented version (0.0.19).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout ee8fbb5254694c73f104ad606e0137b88209896a
-pip install "epythet==0.2.18"
+git checkout 933d7737a8101941a3e7ceb93294392d7c7ba394
+pip install "epythet==0.2.19"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 
