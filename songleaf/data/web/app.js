@@ -729,7 +729,7 @@
       "aria-label": "Search titles, artists, lyrics and your lists", autocomplete: "off", enterkeyhint: "search", oninput: onInput,
     });
     const form = h("form", { class: "search", role: "search", onsubmit: (e) => { e.preventDefault(); refine(); query.blur(); } }, query);
-    app.replaceChildren(h("header", { class: "app-head" }, home, h("h1", {}, CONFIG.title)), form, results);
+    app.replaceChildren(h("header", { class: "app-head" }, home, h("h1", {}, CONFIG.title)), form, pasteBox(), results);
     // Focus the search only on a fresh page with nothing in the library: never on Back, where
     // a phone would raise its keyboard over the list the reader came back to.
     showResults(route, results, gen, {
@@ -737,6 +737,38 @@
       restoreY,
       onEmpty: fresh && restoreY === null ? () => query.focus() : null,
     });
+  }
+
+  // ----- paste a song ---------------------------------------------------------------------
+  // Text copied from any site (Ultimate Guitar, ChordPro, OpenSong, plain chords over lyrics);
+  // the server detects the format. songleaf never contacts the site: `url` is only a note.
+  function pasteBox() {
+    const field = (name, label, attrs = {}) => h("input", { type: "text", name, placeholder: label, "aria-label": label, autocomplete: "off", ...attrs });
+    const text = h("textarea", { name: "text", rows: 8, placeholder: "Paste the chords and lyrics here", "aria-label": "Song text", spellcheck: "false" });
+    const title = field("title", "Title");
+    const artist = field("artist", "Artist");
+    const url = field("url", "Where it came from (optional)", { inputmode: "url" });
+    const status = h("p", { class: "muted", role: "status" });
+    const submit = h("button", { type: "submit" }, "Import");
+    const form = h("form", { class: "paste", onsubmit: async (e) => {
+      e.preventDefault();
+      submit.disabled = true;
+      status.textContent = "Importing…";
+      try {
+        const response = await fetch(CONFIG.api + "/import", {
+          method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: text.value, title: title.value.trim(), artist: artist.value.trim(), url: url.value.trim() }),
+        });
+        if (!response.ok) throw new Error(await errorText(response));
+        const info = await response.json();
+        navigate({ song: info.key, t: prefs.transposeOf(info.key) }, { state: { from: "search", title: info.title, artist: info.artist } });
+      } catch (error) {
+        status.textContent = `Not imported: ${error.message}`;
+      } finally {
+        submit.disabled = false;
+      }
+    } }, text, title, artist, url, submit, status);
+    return h("details", { class: "paste-box" }, h("summary", {}, "Paste a song"), form);
   }
 
   function showResults(route, results, gen, after = {}) {

@@ -110,6 +110,8 @@ READER_LAYOUT: dict[str, dict[str, str]] = {
     "shade": {"true": "shaded"},
 }
 _MAX_LIMIT = 50
+#: The fields of a ``POST /import`` body (``text`` first, the rest optional).
+_IMPORT_FIELDS = ("text", "title", "artist", "url", "format")
 _MAX_QUERY_CHARS = 200  # a remembered line, not a pasted song
 _CLOCK_SLACK_SECONDS = (
     300  # an undo's ``at`` may be this far ahead of the server's clock
@@ -196,7 +198,7 @@ def mk_app(
     ``image_scale`` is pixels per PDF point for ``/sheet.png`` (2: an A4 page is
     1190 pixels wide, sharp on a phone).
     """
-    from fastapi import Depends, FastAPI, HTTPException, Query
+    from fastapi import Body, Depends, FastAPI, HTTPException, Query
     from starlette.concurrency import run_in_threadpool
     from fastapi.responses import JSONResponse, Response
 
@@ -260,6 +262,17 @@ def mk_app(
         if not result["removed"]:
             raise SongNotFound(f"{key!r} is not in your Viewed list")
         return result
+
+    @app.post("/import")
+    def import_text(payload: dict = Body(...)) -> dict:
+        """Store pasted text: ``{"text", "title", "artist", "url", "format"}`` (only ``text`` is required)."""
+        fields = {k: payload.get(k, "") for k in _IMPORT_FIELDS}
+        if not all(isinstance(v, str) for v in fields.values()):
+            raise HTTPException(400, f"{', '.join(_IMPORT_FIELDS)} must be strings")
+        try:
+            return tools.import_text(**fields, store=store)
+        except ValueError as error:
+            raise HTTPException(400, str(error)) from error
 
     @app.get("/songs")
     def songs() -> list[dict]:

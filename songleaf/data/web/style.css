@@ -481,3 +481,8 @@ body .zg-tagmenu-list { max-height: 45vh; }
 /* the keyboard's highlight only while the menu has focus: on a phone it reads as "selected" */
 body .zg-tagmenu:not(:focus-within) .zg-tagmenu-option.is-active { background: none; outline: none; }
 body .zg-tagmenu-apply[aria-disabled="false"] { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+
+.paste-box { margin: 4px 0 8px; }
+.paste-box summary { cursor: pointer; padding: 8px 0; }
+.paste { display: grid; gap: 8px; }
+.paste textarea { font-family: ui-monospace, monospace; width: 100%; box-sizing: border-box; }
