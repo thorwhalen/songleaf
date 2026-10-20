@@ -12,7 +12,10 @@ lines.
 - ``{soc}``/``{eoc}`` (and verse, bridge, tab-less variants) and ``{c: label}``
   comments become ``section`` annotations; a section with no lines of its own is
   a *marker* (``{"marker": True}``), as in :mod:`songleaf.parse`.
-- ``# comments`` and unknown directives are dropped.
+- ``{x_songleaf_before: 0, 3}`` (written by :func:`songleaf.export.to_chordpro`) marks the
+  chords at those positions, counted over the song's chords in text order, as sounding
+  *before* their syllable (``timing="before"``): ChordPro has no way to say it.
+- ``# comments`` and other unknown directives are dropped.
 
 >>> song = parse_chordpro("{title: Paper Boats}\\n{soc}\\nPaper [G]boats [D]drift\\n{eoc}")
 >>> song.text
@@ -57,6 +60,8 @@ _ENVIRONMENTS = {
 _END_ENVIRONMENTS = frozenset(
     {"eoc", "end_of_chorus", "eov", "end_of_verse", "eob", "end_of_bridge"}
 )
+#: The namespaced directive carrying ``timing="before"`` chords; apps that don't know it skip it.
+BEFORE_DIRECTIVE = "x_songleaf_before"
 _COMMENTS = frozenset({"c", "comment", "ci", "comment_italic", "cb", "comment_box"})
 
 
@@ -95,6 +100,7 @@ def parse_chordpro(
     markers: set[int] = set()
     pending = None  # a section label, waiting for the first line of its content
     meta = dict(meta or {})
+    before: set[int] = set()  # positions among the chords, in text order
 
     def is_blank(index):
         text, chords = lines[index]
@@ -132,6 +138,8 @@ def parse_chordpro(
                     pending = value or _ENVIRONMENTS[name]
             elif name in _END_ENVIRONMENTS:
                 close_pending()
+            elif name == BEFORE_DIRECTIVE:
+                before.update(int(n) for n in re.findall(r"\d+", value))
             continue
         if not line.strip():
             if pending is None and lines and not is_blank(len(lines) - 1):
@@ -149,10 +157,14 @@ def parse_chordpro(
         offset += len(text) + 1
     text = "\n".join(text for text, _ in lines)
 
-    annotations: list[Annotation] = [
-        chord(starts[index] + at, symbol)
+    placed = [
+        (starts[index] + at, symbol)
         for index, (_, chords) in enumerate(lines)
         for at, symbol in chords
+    ]
+    annotations: list[Annotation] = [
+        chord(at, symbol, timing="before" if n in before else "at")
+        for n, (at, symbol) in enumerate(placed)
     ]
     for k, (label, index, marker) in enumerate(sections):
         start = starts[index]

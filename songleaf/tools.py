@@ -307,6 +307,49 @@ def song(
     }
 
 
+def export(
+    query: str,
+    *,
+    format: str = "chordpro",
+    transpose: int = 0,
+    output: str = "",
+    pick: int = 1,
+    refresh: bool = False,
+    sources=None,
+    store=None,
+) -> dict:
+    """Export a song as ChordPro (``chordpro``) or plain text with chords over lyrics (``text``).
+
+    ``query`` is a song key or a search, as for ``sheet``. ``transpose`` moves every chord
+    by that many semitones (the stored song keeps its chords). The result has the ``text``;
+    with ``output`` set it is also written to that file, and ``path`` says where.
+    ChordPro is the fleet's interchange (Songbook Pro, OnSong and the ChordPro app read it);
+    chords that sound before their syllable travel in the ``x_songleaf_before`` directive.
+    """
+    from songleaf.export import FORMATS
+
+    if format not in FORMATS:
+        raise ValueError(f"format is one of {sorted(FORMATS)}, got {format!r}")
+    if pick < 1:
+        raise ValueError(f"pick counts from 1, got {pick}")
+    key, found = _resolve(
+        query, pick=pick, refresh=refresh, sources=sources, store=store
+    )
+    write, _, _ = FORMATS[format]
+    result = {
+        "key": key,
+        "title": found.title,
+        "artist": found.artist,
+        "format": format,
+        "text": write(found, transpose=transpose),
+    }
+    if output:
+        with open(output, "w", encoding="utf-8") as file:
+            file.write(result["text"])
+        result["path"] = output
+    return result
+
+
 def _resolve(query: str, *, pick: int, refresh: bool, sources, store):
     """``(key, song)`` for a song key or a search, fetching the song into the store if needed."""
     store = song_store() if store is None else store
@@ -498,6 +541,7 @@ TOOLS = (
     sheet,
     songbook,
     song,
+    export,
     songs,
     import_file,
     viewed,
