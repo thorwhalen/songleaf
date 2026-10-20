@@ -205,6 +205,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.chordpro.html">songleaf.chordpro</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.datasets.html">songleaf.datasets</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.diagrams.html">songleaf.diagrams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.engrave.html">songleaf.engrave</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.export.html">songleaf.export</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.importers.html">songleaf.importers</a></li>
@@ -808,6 +809,7 @@
     <span class="n">notation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">line</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="nb">format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"abc"</span><span class="p">,</span>
     <span class="n">pick</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -817,17 +819,23 @@
 <span class="sd">    ``notation`` is a few bars of ABC (``"G2 AB c2 | d4"``; the unit is an eighth</span>
 <span class="sd">    note). ``line`` is the 1-based lyric line it goes with; ``0`` lets the rule</span>
 <span class="sd">    choose (the first line of the chorus, else the most repeated line, else the</span>
-<span class="sd">    first). Returns ``{"key", "start", "end", "rule"}``.</span>
+<span class="sd">    first). ``format`` may also be ``musicxml`` or ``mei`` (drawn with the</span>
+<span class="sd">    ``score`` extra only). Returns ``{"key", "start", "end", "rule"}``.</span>
 <span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.snippets</span><span class="w"> </span><span class="kn">import</span> <span class="n">mark_segment</span><span class="p">,</span> <span class="n">segment_at_line</span>
 
     <span class="n">key</span><span class="p">,</span> <span class="n">found</span> <span class="o">=</span> <span class="n">_resolve</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">pick</span><span class="o">=</span><span class="n">pick</span><span class="p">,</span> <span class="n">refresh</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">)</span>
     <span class="n">segment</span> <span class="o">=</span> <span class="n">segment_at_line</span><span class="p">(</span><span class="n">found</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span> <span class="k">if</span> <span class="n">line</span> <span class="k">else</span> <span class="kc">None</span>
-    <span class="n">marked</span> <span class="o">=</span> <span class="n">mark_segment</span><span class="p">(</span><span class="n">found</span><span class="p">,</span> <span class="n">notation</span><span class="p">,</span> <span class="n">segment</span><span class="o">=</span><span class="n">segment</span><span class="p">)</span>
+    <span class="n">marked</span> <span class="o">=</span> <span class="n">mark_segment</span><span class="p">(</span><span class="n">found</span><span class="p">,</span> <span class="n">notation</span><span class="p">,</span> <span class="n">segment</span><span class="o">=</span><span class="n">segment</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">)</span>
     <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
     <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">marked</span>
     <span class="p">(</span><span class="n">score</span><span class="p">,)</span> <span class="o">=</span> <span class="n">marked</span><span class="o">.</span><span class="n">of_kind</span><span class="p">(</span><span class="s2">"score"</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">"key"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span> <span class="s2">"start"</span><span class="p">:</span> <span class="n">score</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="s2">"end"</span><span class="p">:</span> <span class="n">score</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="s2">"rule"</span><span class="p">:</span> <span class="n">score</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="s2">"rule"</span><span class="p">]}</span></div>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"key"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span>
+        <span class="s2">"start"</span><span class="p">:</span> <span class="n">score</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+        <span class="s2">"end"</span><span class="p">:</span> <span class="n">score</span><span class="o">.</span><span class="n">end</span><span class="p">,</span>
+        <span class="s2">"rule"</span><span class="p">:</span> <span class="n">score</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="s2">"rule"</span><span class="p">],</span>
+    <span class="p">}</span></div>
 
 
 
@@ -1017,7 +1025,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=b4d262a5"></script>
+</div><script src="../../_static/documentation_options.js?v=1d9216c3"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

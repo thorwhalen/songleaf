@@ -1,4 +1,4 @@
-> built 2026-10-20 15:26 UTC from a16f466 (main) · songleaf 0.0.24. Details: build_info.json
+> built 2026-10-20 15:29 UTC from 92e9ed5 (main) · songleaf 0.0.25. Details: build_info.json
 
 # index.html.md
 
@@ -399,6 +399,99 @@ The height a strip of `n` diagrams takes across `width` (0 for none).
 
 * **Return type:**
   [`float`](https://docs.python.org/3/builtins/functions.html#float)
+
+
+# _autosummary/songleaf.engrave.html.md
+
+# songleaf.engrave
+
+Score snippets engraved by Verovio: the `score` extra (`pip install songleaf[score]`).
+
+The default snippet provider ([`songleaf.snippets.abc_snippet()`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.abc_snippet)) draws a
+short ABC subset with reportlab lines. With this extra, [`engraved_snippet()`](_autosummary/songleaf.engrave.html.md#songleaf.engrave.engraved_snippet)
+engraves the notation recorded on the song’s `score` annotation properly
+(clef, key and time signatures, beams, ties, chord names) from ABC (a body, or a
+whole tune with its header), MusicXML or MEI: Verovio renders it to SVG, and
+`svglib` turns the SVG into a reportlab drawing placed on the sheet.
+
+[`songleaf.snippets.default_provider()`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.default_provider) prefers this provider when the extra
+is installed. Nothing here touches the network: the notation is the text stored
+on the song.
+
+Both libraries are LGPL-3.0 and only imported when a snippet is drawn.
+
+### Module Attributes
+
+| [`ENGRAVE_FORMATS`](_autosummary/songleaf.engrave.html.md#songleaf.engrave.ENGRAVE_FORMATS)   | The notation formats Verovio reads here, as recorded in a score annotation's `format`.   |
+|--------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| [`MAX_ENGRAVE_CHARS`](_autosummary/songleaf.engrave.html.md#songleaf.engrave.MAX_ENGRAVE_CHARS) | Notation longer than this is not engraved (a snippet is a few bars).                     |
+| [`VEROVIO_UNIT`](_autosummary/songleaf.engrave.html.md#songleaf.engrave.VEROVIO_UNIT)      | Verovio's half staff space, in its units at scale 100 (its default).                     |
+| [`ABC_HEADER`](_autosummary/songleaf.engrave.html.md#songleaf.engrave.ABC_HEADER)        | the same eighth-note unit as the subset.                                                 |
+
+### Functions
+
+| [`as_abc_tune`](_autosummary/songleaf.engrave.html.md#songleaf.engrave.as_abc_tune)(notation)              | *notation* as a whole ABC tune: a body with no `X:` header gets [`ABC_HEADER`](_autosummary/songleaf.engrave.html.md#songleaf.engrave.ABC_HEADER).       |
+|-------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| [`available`](_autosummary/songleaf.engrave.html.md#songleaf.engrave.available)()                        | Whether the `score` extra (verovio, svglib) is installed.                                                                          |
+| [`engrave_svg`](_autosummary/songleaf.engrave.html.md#songleaf.engrave.engrave_svg)(notation[, format])    | The SVG of *notation* (`format`: a key of [`ENGRAVE_FORMATS`](_autosummary/songleaf.engrave.html.md#songleaf.engrave.ENGRAVE_FORMATS)), cropped to the music. |
+| [`engraved_snippet`](_autosummary/songleaf.engrave.html.md#songleaf.engrave.engraved_snippet)(song)             | The provider: the song's first `score` annotation with notation Verovio reads, engraved.                                           |
+| [`snippet_from_svg`](_autosummary/songleaf.engrave.html.md#songleaf.engrave.snippet_from_svg)(svg, \*[, start]) | A `ScoreSnippet` drawing a Verovio *svg*, sized in its staff spaces.                                                               |
+
+### songleaf.engrave.ABC_HEADER *= 'X:1\\nL:1/8\\nK:C\\n'*
+
+the same eighth-note unit as the subset.
+
+* **Type:**
+  The header given to an ABC body with none
+
+### songleaf.engrave.ENGRAVE_FORMATS *= {'abc': 'abc', 'mei': 'mei', 'musicxml': 'musicxml'}*
+
+The notation formats Verovio reads here, as recorded in a score annotation’s `format`.
+
+### songleaf.engrave.MAX_ENGRAVE_CHARS *= 200000*
+
+Notation longer than this is not engraved (a snippet is a few bars).
+
+### songleaf.engrave.VEROVIO_UNIT *= 9*
+
+Verovio’s half staff space, in its units at scale 100 (its default).
+
+### songleaf.engrave.as_abc_tune(notation)
+
+*notation* as a whole ABC tune: a body with no `X:` header gets [`ABC_HEADER`](_autosummary/songleaf.engrave.html.md#songleaf.engrave.ABC_HEADER).
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### songleaf.engrave.available()
+
+Whether the `score` extra (verovio, svglib) is installed.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+### songleaf.engrave.engrave_svg(notation, format='abc')
+
+The SVG of *notation* (`format`: a key of [`ENGRAVE_FORMATS`](_autosummary/songleaf.engrave.html.md#songleaf.engrave.ENGRAVE_FORMATS)), cropped to the music.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### songleaf.engrave.engraved_snippet(song)
+
+The provider: the song’s first `score` annotation with notation Verovio reads, engraved.
+
+`None` when there is none, or when it cannot be engraved (the sheet is then drawn without it).
+
+* **Return type:**
+  [`ScoreSnippet`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.ScoreSnippet) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### songleaf.engrave.snippet_from_svg(svg, , start=0)
+
+A `ScoreSnippet` drawing a Verovio *svg*, sized in its staff spaces.
+
+* **Return type:**
+  [`ScoreSnippet`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.ScoreSnippet)
 
 
 # _autosummary/songleaf.export.html.md
@@ -846,7 +939,7 @@ The largest lyric font size at which `song` fits one page in `layout` (default: 
 `style`, if given, replaces the layout’s style. Returns `min_font_size`
 if even that does not fit (the song then needs more pages). `snippets`
 is the score-snippet provider of a `score` layout (default
-[`songleaf.snippets.abc_snippet()`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.abc_snippet)).
+[`songleaf.snippets.default_provider()`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.default_provider)’s).
 
 * **Return type:**
   [`float`](https://docs.python.org/3/builtins/functions.html#float)
@@ -927,7 +1020,7 @@ The lyric font size is the largest that fits the song on one page, times
 that runs onto a second page. It never goes past `max_font_size`.
 
 `snippets` provides a `score` layout’s snippet: `song -> ScoreSnippet | None`
-(default [`songleaf.snippets.abc_snippet()`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.abc_snippet)).
+(default [`songleaf.snippets.default_provider()`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.default_provider)’s).
 
 `output` is a path or a binary file object. Returns
 `{"path", "font_size", "pages", "rows"}`; `path` is `None` when
@@ -1012,6 +1105,7 @@ The keys of the stored songs.
 |--------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | [`datasets`](_autosummary/songleaf.datasets.html.md#module-songleaf.datasets)               | Where the `datasets` data kind lives: local files by default, S3 by configuration.                                                 |
 | [`diagrams`](_autosummary/songleaf.diagrams.html.md#module-songleaf.diagrams)               | Chord diagrams for the sheet: piano keys or guitar shapes (songleaf#13).                                                           |
+| [`engrave`](_autosummary/songleaf.engrave.html.md#module-songleaf.engrave)                 | Score snippets engraved by Verovio: the `score` extra (`pip install songleaf[score]`).                                             |
 | [`export`](_autosummary/songleaf.export.html.md#module-songleaf.export)                   | Export a song as ChordPro or as plain text (chords over lyrics), transposition applied.                                            |
 | [`harmony`](_autosummary/songleaf.harmony.html.md#module-songleaf.harmony)                 | What a chord does in its song's key, so that sheets can shade chords by function.                                                  |
 | [`importers`](_autosummary/songleaf.importers.html.md#module-songleaf.importers)             | Turn pasted text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song): a registry of format importers. |
@@ -2145,7 +2239,7 @@ The largest lyric font size at which `song` fits one page in `layout` (default: 
 `style`, if given, replaces the layout’s style. Returns `min_font_size`
 if even that does not fit (the song then needs more pages). `snippets`
 is the score-snippet provider of a `score` layout (default
-[`songleaf.snippets.abc_snippet()`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.abc_snippet)).
+[`songleaf.snippets.default_provider()`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.default_provider)’s).
 
 * **Return type:**
   [`float`](https://docs.python.org/3/builtins/functions.html#float)
@@ -2219,7 +2313,7 @@ The lyric font size is the largest that fits the song on one page, times
 that runs onto a second page. It never goes past `max_font_size`.
 
 `snippets` provides a `score` layout’s snippet: `song -> ScoreSnippet | None`
-(default [`songleaf.snippets.abc_snippet()`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.abc_snippet)).
+(default [`songleaf.snippets.default_provider()`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.default_provider)’s).
 
 `output` is a path or a binary file object. Returns
 `{"path", "font_size", "pages", "rows"}`; `path` is `None` when
@@ -2275,11 +2369,11 @@ sense of the melody or the rhythm. Three parts, each replaceable:
   > wins over the rule, so it is how a choice is overridden.
 - **What to draw**: a *snippet provider*, `song -> ScoreSnippet | None`, is
   injected into [`songleaf.render.render_sheet()`](_autosummary/songleaf.render.html.md#songleaf.render.render_sheet) (`snippets=`) and never
-  imported by it. The default, [`abc_snippet()`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.abc_snippet), draws the short ABC notation
-  recorded on the annotation with reportlab lines only: one voice, treble staff,
-  notes, rests, accidentals, bar lines and chord names, placed as on a treble staff
-  (no clef is drawn). Fuller engraving
-  (MusicXML, whole ABC tunes) belongs in a provider behind an optional extra.
+  imported by it. [`abc_snippet()`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.abc_snippet) draws the short ABC notation recorded on
+  the annotation with reportlab lines only: one voice, treble staff, notes,
+  rests, accidentals, bar lines and chord names (no clef is drawn). With the `score` extra,
+  [`songleaf.engrave.engraved_snippet()`](_autosummary/songleaf.engrave.html.md#songleaf.engrave.engraved_snippet) engraves ABC, MusicXML or MEI
+  > properly; [`default_provider()`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.default_provider) picks it when installed.
 - **Where it goes**: the `score` layout option makes the renderer place the
   snippet as a row above its line; the font fit counts its height, so the
   lyrics shrink to make room.
@@ -2298,19 +2392,21 @@ anything else (ties, slurs, spaces) are skipped.
 
 ### Module Attributes
 
-| [`UNIT_LENGTH`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.UNIT_LENGTH)        | The length of an unmarked ABC note, as a fraction of a whole note.   |
-|---------------------------------------------------------------------|----------------------------------------------------------------------|
-| [`MIN_LENGTH`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.MIN_LENGTH)         | The shortest and longest note lengths read, in whole notes.          |
-| [`MAX_LENGTH`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.MAX_LENGTH)         | The shortest and longest note lengths read, in whole notes.          |
-| [`MAX_NOTATION_CHARS`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.MAX_NOTATION_CHARS) | a snippet is a few bars.                                             |
-| [`INLINE_SOURCE`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.INLINE_SOURCE)      | What a provider-less recorded snippet is noted as.                   |
-| [`SnippetProvider`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.SnippetProvider)    | what the sheet draws for a song, or `None` for no snippet.           |
+| [`UNIT_LENGTH`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.UNIT_LENGTH)        | The length of an unmarked ABC note, as a fraction of a whole note.                              |
+|---------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| [`MIN_LENGTH`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.MIN_LENGTH)         | The shortest and longest note lengths read, in whole notes.                                     |
+| [`MAX_LENGTH`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.MAX_LENGTH)         | The shortest and longest note lengths read, in whole notes.                                     |
+| [`MAX_NOTATION_CHARS`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.MAX_NOTATION_CHARS) | a snippet is a few bars.                                                                        |
+| [`NOTATION_FORMATS`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.NOTATION_FORMATS)   | The notation formats a score annotation may hold inline (all but `abc` need the `score` extra). |
+| [`INLINE_SOURCE`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.INLINE_SOURCE)      | What a provider-less recorded snippet is noted as.                                              |
+| [`SnippetProvider`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.SnippetProvider)    | what the sheet draws for a song, or `None` for no snippet.                                      |
 
 ### Functions
 
 | [`abc_snippet`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.abc_snippet)(song)                                | The default provider: the ABC notation recorded on the song's `score` annotation, drawn.                                       |
 |---------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
 | [`choose_segment`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.choose_segment)(song)                             | The line a snippet goes with: the first line of the chorus, else the most repeated line, else the first.                       |
+| [`default_provider`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.default_provider)()                               | The provider a `score` sheet uses when none is injected.                                                                       |
 | [`first_snippet`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.first_snippet)(providers)                         | A provider asking each of *providers* in turn: the first snippet wins.                                                         |
 | [`layout_tune`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.layout_tune)(tune)                                | A [`ScoreSnippet`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.ScoreSnippet) drawing *tune* on one treble staff, with reportlab lines only. |
 | [`mark_segment`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.mark_segment)(song, notation, \*[, segment, ...]) | A copy of *song* whose one `score` annotation holds *notation* over *segment*.                                                 |
@@ -2351,6 +2447,10 @@ a snippet is a few bars.
 ### songleaf.snippets.MIN_LENGTH *= Fraction(1, 64)*
 
 The shortest and longest note lengths read, in whole notes.
+
+### songleaf.snippets.NOTATION_FORMATS *= ('abc', 'musicxml', 'mei')*
+
+The notation formats a score annotation may hold inline (all but `abc` need the `score` extra).
 
 ### *class* songleaf.snippets.Note(pitch, length, accidental='', chord='')
 
@@ -2410,6 +2510,17 @@ The line a snippet goes with: the first line of the chorus, else the most repeat
 
 * **Return type:**
   [`Segment`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.Segment) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### songleaf.snippets.default_provider()
+
+The provider a `score` sheet uses when none is injected.
+
+The engraved one ([`songleaf.engrave.engraved_snippet()`](_autosummary/songleaf.engrave.html.md#songleaf.engrave.engraved_snippet)) when the
+`score` extra is installed, falling back to [`abc_snippet()`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.abc_snippet); else
+[`abc_snippet()`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.abc_snippet) alone.
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song)], [`ScoreSnippet`](_autosummary/songleaf.snippets.html.md#songleaf.snippets.ScoreSnippet) | [`None`](https://docs.python.org/3/builtins/constants.html#None)]
 
 ### songleaf.snippets.first_snippet(providers)
 
@@ -2963,7 +3074,7 @@ than dicts uses [`songleaf.sources`](_autosummary/songleaf.sources.html.md#modul
 | [`media`](_autosummary/songleaf.tools.html.md#songleaf.tools.media)(query, \*[, youtube, spotify, pick, ...])   | Link the song's recording: a YouTube video id and/or a Spotify track id.                                   |
 | [`search`](_autosummary/songleaf.tools.html.md#songleaf.tools.search)([query, title, artist, lyrics, ...])       | Find songs with one query: in your lists' names, then titles, artists and lyrics.                          |
 | [`sheet`](_autosummary/songleaf.tools.html.md#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...])    | Make a one-page song sheet (PDF) for the best match of `query`.                                            |
-| [`snippet`](_autosummary/songleaf.tools.html.md#songleaf.tools.snippet)(query, notation, \*[, line, pick, ...])   | Put a score snippet over one line of a song; the `score` layout draws it on the sheet.                     |
+| [`snippet`](_autosummary/songleaf.tools.html.md#songleaf.tools.snippet)(query, notation, \*[, line, format, ...]) | Put a score snippet over one line of a song; the `score` layout draws it on the sheet.                     |
 | [`song`](_autosummary/songleaf.tools.html.md#songleaf.tools.song)(query, \*[, pick, refresh, ...])             | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.                   |
 | [`songbook`](_autosummary/songleaf.tools.html.md#songleaf.tools.songbook)(group, \*[, output, title, layout, ...]) | Render a list (group) of songs as one PDF: a table of contents, then every song at its fitted size.        |
 | [`songs`](_autosummary/songleaf.tools.html.md#songleaf.tools.songs)(\*[, store])                                | The keys of the stored songs.                                                                              |
@@ -3098,14 +3209,15 @@ more pages.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### songleaf.tools.snippet(query, notation, , line=0, pick=1, store=None, sources=None)
+### songleaf.tools.snippet(query, notation, , line=0, format='abc', pick=1, store=None, sources=None)
 
 Put a score snippet over one line of a song; the `score` layout draws it on the sheet.
 
 `notation` is a few bars of ABC (`"G2 AB c2 | d4"`; the unit is an eighth
 note). `line` is the 1-based lyric line it goes with; `0` lets the rule
 choose (the first line of the chorus, else the most repeated line, else the
-first). Returns `{"key", "start", "end", "rule"}`.
+first). `format` may also be `musicxml` or `mei` (drawn with the
+`score` extra only). Returns `{"key", "start", "end", "rule"}`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -3503,7 +3615,7 @@ True
 
 # About this build
 
-This documentation was built on **2026-10-20 15:26 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/a16f466acb7951875387a06584f28d1ca23b40d6"><code>a16f466</code></a> on branch <code>main</code>, for **songleaf 0.0.24** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 15:29 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/92e9ed55404f821aa7bfd10db18c66e2cfed2e62"><code>92e9ed5</code></a> on branch <code>main</code>, for **songleaf 0.0.25** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -3512,7 +3624,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/a16f466acb7951875387a06584f28d1ca23b40d6"><code>a16f466acb7951875387a06584f28d1ca23b40d6</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/92e9ed55404f821aa7bfd10db18c66e2cfed2e62"><code>92e9ed55404f821aa7bfd10db18c66e2cfed2e62</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -3523,9 +3635,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39448003745">39448003745</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39448464904">39448464904</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>a16f466acb7951875387a06584f28d1ca23b40d6</code> (in the history of the built commit) |
+| Event commit | <code>92e9ed55404f821aa7bfd10db18c66e2cfed2e62</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -3550,13 +3662,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.24/">0.0.24</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.25/">0.0.25</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout a16f466acb7951875387a06584f28d1ca23b40d6
+git checkout 92e9ed55404f821aa7bfd10db18c66e2cfed2e62
 pip install "epythet==0.2.21"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

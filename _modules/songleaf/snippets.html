@@ -205,6 +205,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.chordpro.html">songleaf.chordpro</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.datasets.html">songleaf.datasets</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.diagrams.html">songleaf.diagrams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.engrave.html">songleaf.engrave</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.export.html">songleaf.export</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.importers.html">songleaf.importers</a></li>
@@ -273,11 +274,11 @@
 <span class="sd">  wins over the rule, so it is how a choice is overridden.</span>
 <span class="sd">- **What to draw**: a *snippet provider*, ``song -&gt; ScoreSnippet | None``, is</span>
 <span class="sd">  injected into :func:`songleaf.render.render_sheet` (``snippets=``) and never</span>
-<span class="sd">  imported by it. The default, :func:`abc_snippet`, draws the short ABC notation</span>
-<span class="sd">  recorded on the annotation with reportlab lines only: one voice, treble staff,</span>
-<span class="sd">  notes, rests, accidentals, bar lines and chord names, placed as on a treble staff</span>
-<span class="sd">  (no clef is drawn). Fuller engraving</span>
-<span class="sd">  (MusicXML, whole ABC tunes) belongs in a provider behind an optional extra.</span>
+<span class="sd">  imported by it. :func:`abc_snippet` draws the short ABC notation recorded on</span>
+<span class="sd">  the annotation with reportlab lines only: one voice, treble staff, notes,</span>
+<span class="sd">  rests, accidentals, bar lines and chord names (no clef is drawn). With the ``score`` extra,</span>
+<span class="sd">  :func:`songleaf.engrave.engraved_snippet` engraves ABC, MusicXML or MEI</span>
+<span class="sd">  properly; :func:`default_provider` picks it when installed.</span>
 <span class="sd">- **Where it goes**: the ``score`` layout option makes the renderer place the</span>
 <span class="sd">  snippet as a row above its line; the font fit counts its height, so the</span>
 <span class="sd">  lyrics shrink to make room.</span>
@@ -309,6 +310,8 @@
 <span class="n">MIN_LENGTH</span><span class="p">,</span> <span class="n">MAX_LENGTH</span> <span class="o">=</span> <span class="n">Fraction</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">64</span><span class="p">),</span> <span class="n">Fraction</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 <span class="c1">#: Notations longer than this are refused: a snippet is a few bars.</span>
 <span class="n">MAX_NOTATION_CHARS</span> <span class="o">=</span> <span class="mi">400</span>
+<span class="c1">#: The notation formats a score annotation may hold inline (all but ``abc`` need the ``score`` extra).</span>
+<span class="n">NOTATION_FORMATS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"abc"</span><span class="p">,</span> <span class="s2">"musicxml"</span><span class="p">,</span> <span class="s2">"mei"</span><span class="p">)</span>
 <span class="c1">#: What a provider-less recorded snippet is noted as.</span>
 <span class="n">INLINE_SOURCE</span> <span class="o">=</span> <span class="s2">"inline"</span>
 
@@ -372,8 +375,14 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"A note length must be positive."</span><span class="p">)</span>
     <span class="n">length</span> <span class="o">=</span> <span class="n">UNIT_LENGTH</span> <span class="o">*</span> <span class="n">Fraction</span><span class="p">(</span><span class="n">numerator</span><span class="p">,</span> <span class="n">denominator</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">MIN_LENGTH</span> <span class="o">&lt;=</span> <span class="n">length</span> <span class="o">&lt;=</span> <span class="n">MAX_LENGTH</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"A note length must be between </span><span class="si">{</span><span class="n">MIN_LENGTH</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">MAX_LENGTH</span><span class="si">}</span><span class="s2"> whole notes."</span><span class="p">)</span>
-    <span class="n">plain</span> <span class="o">=</span> <span class="n">length</span><span class="o">.</span><span class="n">numerator</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">length</span><span class="o">.</span><span class="n">denominator</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">length</span><span class="o">.</span><span class="n">numerator</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"A note length must be between </span><span class="si">{</span><span class="n">MIN_LENGTH</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">MAX_LENGTH</span><span class="si">}</span><span class="s2"> whole notes."</span>
+        <span class="p">)</span>
+    <span class="n">plain</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">length</span><span class="o">.</span><span class="n">numerator</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="ow">or</span> <span class="n">length</span><span class="o">.</span><span class="n">denominator</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="ow">and</span> <span class="n">length</span><span class="o">.</span><span class="n">numerator</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="p">)</span>
     <span class="n">dotted</span> <span class="o">=</span> <span class="n">length</span><span class="o">.</span><span class="n">numerator</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">length</span><span class="o">.</span><span class="n">denominator</span> <span class="o">&gt;</span> <span class="mi">1</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">plain</span> <span class="ow">or</span> <span class="n">dotted</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"A length of </span><span class="si">{</span><span class="n">length</span><span class="si">}</span><span class="s2"> needs a tie: write it as two notes."</span><span class="p">)</span>
@@ -392,7 +401,9 @@
             <span class="sa">f</span><span class="s2">"A snippet is a few bars: at most </span><span class="si">{</span><span class="n">MAX_NOTATION_CHARS</span><span class="si">}</span><span class="s2"> characters."</span>
         <span class="p">)</span>
     <span class="n">events</span><span class="p">,</span> <span class="n">chord</span> <span class="o">=</span> <span class="p">[],</span> <span class="s2">""</span>
-    <span class="n">body</span> <span class="o">=</span> <span class="n">_SKIPPED_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="n">notation</span><span class="p">)</span>  <span class="c1"># header fields ("K:G") and decorations ("!fermata!")</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">_SKIPPED_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+        <span class="s2">""</span><span class="p">,</span> <span class="n">notation</span>
+    <span class="p">)</span>  <span class="c1"># header fields ("K:G") and decorations ("!fermata!")</span>
     <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">_TOKEN_RE</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">body</span><span class="p">):</span>
         <span class="n">group</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">"chord"</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -412,7 +423,9 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Bar</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s2">"bar"</span><span class="p">]))</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">Note</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">events</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No note in the notation: write notes as ABC, as in 'G2 AB c2'."</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"No note in the notation: write notes as ABC, as in 'G2 AB c2'."</span>
+        <span class="p">)</span>
     <span class="k">return</span> <span class="n">Tune</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">events</span><span class="p">))</span></div>
 
 
@@ -492,8 +505,12 @@
 <span class="sd">    *segment* defaults to :func:`choose_segment`'s. Earlier ``score``</span>
 <span class="sd">    annotations are replaced: the recorded one is what the sheet draws.</span>
 <span class="sd">    """</span>
+    <span class="k">if</span> <span class="nb">format</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NOTATION_FORMATS</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"format must be one of </span><span class="si">{</span><span class="n">NOTATION_FORMATS</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="nb">format</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="s2">"abc"</span><span class="p">:</span>
         <span class="n">parse_abc</span><span class="p">(</span><span class="n">notation</span><span class="p">)</span>  <span class="c1"># refuse what the default provider could not draw</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">notation</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"The notation is empty."</span><span class="p">)</span>
     <span class="n">segment</span> <span class="o">=</span> <span class="n">segment</span> <span class="ow">or</span> <span class="n">choose_segment</span><span class="p">(</span><span class="n">song</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">segment</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"The song has no lyric line to put a snippet over."</span><span class="p">)</span>
@@ -623,12 +640,16 @@
         <span class="n">canvas</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">to_x</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">to_x</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">at</span><span class="p">,</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">placed</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">Bar</span><span class="p">):</span>
-                <span class="n">canvas</span><span class="o">.</span><span class="n">setLineWidth</span><span class="p">((</span><span class="n">_LINE_WIDTH</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"|]"</span><span class="p">,</span> <span class="s2">"||"</span><span class="p">)</span> <span class="k">else</span> <span class="mf">1.5</span><span class="p">))</span> <span class="o">*</span> <span class="n">space</span><span class="p">)</span>
+                <span class="n">canvas</span><span class="o">.</span><span class="n">setLineWidth</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">_LINE_WIDTH</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"|]"</span><span class="p">,</span> <span class="s2">"||"</span><span class="p">)</span> <span class="k">else</span> <span class="mf">1.5</span><span class="p">))</span> <span class="o">*</span> <span class="n">space</span>
+                <span class="p">)</span>
                 <span class="n">canvas</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">to_x</span><span class="p">(</span><span class="n">at</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">to_x</span><span class="p">(</span><span class="n">at</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
                 <span class="k">if</span> <span class="s2">":"</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">kind</span><span class="p">:</span>
                     <span class="n">dot_x</span> <span class="o">=</span> <span class="n">at</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">":|"</span> <span class="k">else</span> <span class="n">at</span> <span class="o">+</span> <span class="mf">0.5</span>
                     <span class="k">for</span> <span class="n">dot_y</span> <span class="ow">in</span> <span class="p">(</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">):</span>
-                        <span class="n">canvas</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">to_x</span><span class="p">(</span><span class="n">dot_x</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="n">dot_y</span><span class="p">),</span> <span class="mf">0.18</span> <span class="o">*</span> <span class="n">space</span><span class="p">,</span> <span class="n">stroke</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                        <span class="n">canvas</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span>
+                            <span class="n">to_x</span><span class="p">(</span><span class="n">dot_x</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="n">dot_y</span><span class="p">),</span> <span class="mf">0.18</span> <span class="o">*</span> <span class="n">space</span><span class="p">,</span> <span class="n">stroke</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="mi">1</span>
+                        <span class="p">)</span>
                 <span class="k">continue</span>
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">chord</span><span class="p">:</span>
                 <span class="n">canvas</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">font</span><span class="p">,</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">space</span><span class="p">)</span>
@@ -640,12 +661,20 @@
 
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_draw_event</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Note</span><span class="p">,</span> <span class="n">at</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">to_x</span><span class="p">,</span> <span class="n">to_y</span><span class="p">,</span> <span class="n">space</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">font</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_draw_event</span><span class="p">(</span>
+    <span class="n">canvas</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Note</span><span class="p">,</span> <span class="n">at</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">to_x</span><span class="p">,</span> <span class="n">to_y</span><span class="p">,</span> <span class="n">space</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">font</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">filled</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">dotted</span> <span class="o">=</span> <span class="n">_shape</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">pitch</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># a rest: a block for long ones, a slanted stroke for short ones</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">pitch</span> <span class="ow">is</span> <span class="kc">None</span>
+    <span class="p">):</span>  <span class="c1"># a rest: a block for long ones, a slanted stroke for short ones</span>
         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">length</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">:</span>
-            <span class="n">y</span> <span class="o">=</span> <span class="mf">2.5</span> <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">length</span> <span class="o">&gt;=</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">2</span>  <span class="c1"># a whole rest hangs from a line, a half sits on one</span>
-            <span class="n">canvas</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">to_x</span><span class="p">(</span><span class="n">at</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">_HEAD_WIDTH</span> <span class="o">*</span> <span class="n">space</span><span class="p">,</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">space</span><span class="p">,</span> <span class="n">stroke</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="mf">2.5</span> <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">length</span> <span class="o">&gt;=</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">2</span>
+            <span class="p">)</span>  <span class="c1"># a whole rest hangs from a line, a half sits on one</span>
+            <span class="n">canvas</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span>
+                <span class="n">to_x</span><span class="p">(</span><span class="n">at</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">_HEAD_WIDTH</span> <span class="o">*</span> <span class="n">space</span><span class="p">,</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">space</span><span class="p">,</span> <span class="n">stroke</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="mi">1</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">canvas</span><span class="o">.</span><span class="n">setLineWidth</span><span class="p">(</span><span class="n">_STEM_WIDTH</span> <span class="o">*</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">space</span><span class="p">)</span>
             <span class="n">canvas</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">to_x</span><span class="p">(</span><span class="n">at</span> <span class="o">+</span> <span class="mf">0.3</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="n">to_x</span><span class="p">(</span><span class="n">at</span> <span class="o">+</span> <span class="mf">0.9</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="mf">1.2</span><span class="p">))</span>
@@ -654,17 +683,36 @@
     <span class="n">y</span> <span class="o">=</span> <span class="n">position</span> <span class="o">/</span> <span class="mi">2</span>
     <span class="n">canvas</span><span class="o">.</span><span class="n">setLineWidth</span><span class="p">(</span><span class="n">_LINE_WIDTH</span> <span class="o">*</span> <span class="n">space</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">ledger</span> <span class="ow">in</span> <span class="p">[</span><span class="o">*</span><span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">position</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="o">*</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">position</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)]:</span>
-        <span class="n">canvas</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">to_x</span><span class="p">(</span><span class="n">at</span> <span class="o">-</span> <span class="mf">0.3</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="n">ledger</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="n">to_x</span><span class="p">(</span><span class="n">at</span> <span class="o">+</span> <span class="n">_HEAD_WIDTH</span> <span class="o">+</span> <span class="mf">0.3</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="n">ledger</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">canvas</span><span class="o">.</span><span class="n">line</span><span class="p">(</span>
+            <span class="n">to_x</span><span class="p">(</span><span class="n">at</span> <span class="o">-</span> <span class="mf">0.3</span><span class="p">),</span>
+            <span class="n">to_y</span><span class="p">(</span><span class="n">ledger</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="n">to_x</span><span class="p">(</span><span class="n">at</span> <span class="o">+</span> <span class="n">_HEAD_WIDTH</span> <span class="o">+</span> <span class="mf">0.3</span><span class="p">),</span>
+            <span class="n">to_y</span><span class="p">(</span><span class="n">ledger</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+        <span class="p">)</span>
     <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">accidental</span><span class="p">:</span>
         <span class="n">canvas</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">font</span><span class="p">,</span> <span class="mf">1.8</span> <span class="o">*</span> <span class="n">space</span><span class="p">)</span>
-        <span class="n">canvas</span><span class="o">.</span><span class="n">drawString</span><span class="p">(</span><span class="n">to_x</span><span class="p">(</span><span class="n">at</span> <span class="o">-</span> <span class="n">_ACCIDENTAL_ADVANCE</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">),</span> <span class="n">_ACCIDENTAL_SIGNS</span><span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">accidental</span><span class="p">])</span>
+        <span class="n">canvas</span><span class="o">.</span><span class="n">drawString</span><span class="p">(</span>
+            <span class="n">to_x</span><span class="p">(</span><span class="n">at</span> <span class="o">-</span> <span class="n">_ACCIDENTAL_ADVANCE</span><span class="p">),</span>
+            <span class="n">to_y</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">),</span>
+            <span class="n">_ACCIDENTAL_SIGNS</span><span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">accidental</span><span class="p">],</span>
+        <span class="p">)</span>
     <span class="n">canvas</span><span class="o">.</span><span class="n">setLineWidth</span><span class="p">(</span><span class="n">_STEM_WIDTH</span> <span class="o">*</span> <span class="mf">1.4</span> <span class="o">*</span> <span class="n">space</span><span class="p">)</span>
     <span class="n">canvas</span><span class="o">.</span><span class="n">ellipse</span><span class="p">(</span>
-        <span class="n">to_x</span><span class="p">(</span><span class="n">at</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">_HEAD_HEIGHT</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="n">to_x</span><span class="p">(</span><span class="n">at</span> <span class="o">+</span> <span class="n">_HEAD_WIDTH</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">_HEAD_HEIGHT</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
-        <span class="n">stroke</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="mi">1</span> <span class="k">if</span> <span class="n">filled</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">to_x</span><span class="p">(</span><span class="n">at</span><span class="p">),</span>
+        <span class="n">to_y</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">_HEAD_HEIGHT</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+        <span class="n">to_x</span><span class="p">(</span><span class="n">at</span> <span class="o">+</span> <span class="n">_HEAD_WIDTH</span><span class="p">),</span>
+        <span class="n">to_y</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">_HEAD_HEIGHT</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+        <span class="n">stroke</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">fill</span><span class="o">=</span><span class="mi">1</span> <span class="k">if</span> <span class="n">filled</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">dotted</span><span class="p">:</span>
-        <span class="n">canvas</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">to_x</span><span class="p">(</span><span class="n">at</span> <span class="o">+</span> <span class="n">_HEAD_WIDTH</span> <span class="o">+</span> <span class="mf">0.45</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="p">(</span><span class="mf">0.25</span> <span class="k">if</span> <span class="n">position</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)),</span> <span class="mf">0.16</span> <span class="o">*</span> <span class="n">space</span><span class="p">,</span> <span class="n">stroke</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">canvas</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span>
+            <span class="n">to_x</span><span class="p">(</span><span class="n">at</span> <span class="o">+</span> <span class="n">_HEAD_WIDTH</span> <span class="o">+</span> <span class="mf">0.45</span><span class="p">),</span>
+            <span class="n">to_y</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="p">(</span><span class="mf">0.25</span> <span class="k">if</span> <span class="n">position</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)),</span>
+            <span class="mf">0.16</span> <span class="o">*</span> <span class="n">space</span><span class="p">,</span>
+            <span class="n">stroke</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">fill</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
     <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">length</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># a whole note has no stem</span>
         <span class="k">return</span>
     <span class="n">up</span> <span class="o">=</span> <span class="n">position</span> <span class="o">&lt;</span> <span class="mi">4</span>
@@ -674,7 +722,12 @@
     <span class="n">canvas</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">to_x</span><span class="p">(</span><span class="n">stem_x</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">to_x</span><span class="p">(</span><span class="n">stem_x</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="n">end</span><span class="p">))</span>
     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">flags</span><span class="p">):</span>
         <span class="n">tip</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="p">(</span><span class="n">k</span> <span class="o">*</span> <span class="mf">0.8</span> <span class="k">if</span> <span class="n">up</span> <span class="k">else</span> <span class="o">-</span><span class="n">k</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">)</span>
-        <span class="n">canvas</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">to_x</span><span class="p">(</span><span class="n">stem_x</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="n">tip</span><span class="p">),</span> <span class="n">to_x</span><span class="p">(</span><span class="n">stem_x</span> <span class="o">+</span> <span class="mf">0.9</span><span class="p">),</span> <span class="n">to_y</span><span class="p">(</span><span class="n">tip</span> <span class="o">-</span> <span class="p">(</span><span class="mf">1.4</span> <span class="k">if</span> <span class="n">up</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.4</span><span class="p">)))</span>
+        <span class="n">canvas</span><span class="o">.</span><span class="n">line</span><span class="p">(</span>
+            <span class="n">to_x</span><span class="p">(</span><span class="n">stem_x</span><span class="p">),</span>
+            <span class="n">to_y</span><span class="p">(</span><span class="n">tip</span><span class="p">),</span>
+            <span class="n">to_x</span><span class="p">(</span><span class="n">stem_x</span> <span class="o">+</span> <span class="mf">0.9</span><span class="p">),</span>
+            <span class="n">to_y</span><span class="p">(</span><span class="n">tip</span> <span class="o">-</span> <span class="p">(</span><span class="mf">1.4</span> <span class="k">if</span> <span class="n">up</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.4</span><span class="p">)),</span>
+        <span class="p">)</span>
 
 
 <div class="viewcode-block" id="abc_snippet">
@@ -709,6 +762,23 @@
 
     <span class="k">return</span> <span class="n">provider</span></div>
 
+
+
+<div class="viewcode-block" id="default_provider">
+<a class="viewcode-back" href="../../_autosummary/songleaf.snippets.html#songleaf.snippets.default_provider">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">default_provider</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">SnippetProvider</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The provider a ``score`` sheet uses when none is injected.</span>
+
+<span class="sd">    The engraved one (:func:`songleaf.engrave.engraved_snippet`) when the</span>
+<span class="sd">    ``score`` extra is installed, falling back to :func:`abc_snippet`; else</span>
+<span class="sd">    :func:`abc_snippet` alone.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf</span><span class="w"> </span><span class="kn">import</span> <span class="n">engrave</span>
+
+    <span class="k">if</span> <span class="n">engrave</span><span class="o">.</span><span class="n">available</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">first_snippet</span><span class="p">([</span><span class="n">engrave</span><span class="o">.</span><span class="n">engraved_snippet</span><span class="p">,</span> <span class="n">abc_snippet</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">abc_snippet</span></div>
+
 </pre></div>
         </article>
       </div>
@@ -737,7 +807,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=b4d262a5"></script>
+</div><script src="../../_static/documentation_options.js?v=1d9216c3"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

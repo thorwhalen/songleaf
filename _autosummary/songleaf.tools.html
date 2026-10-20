@@ -208,6 +208,7 @@
 <li class="toctree-l3"><a class="reference internal" href="songleaf.chordpro.html">songleaf.chordpro</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.datasets.html">songleaf.datasets</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.diagrams.html">songleaf.diagrams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="songleaf.engrave.html">songleaf.engrave</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.export.html">songleaf.export</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.importers.html">songleaf.importers</a></li>
@@ -318,7 +319,7 @@ than dicts uses <a class="reference internal" href="songleaf.sources.html#module
 <tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.tools.sheet" title="songleaf.tools.sheet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sheet</span></code></a>(query, *[, output, pick, refresh, ...])</p></td>
 <td><p>Make a one-page song sheet (PDF) for the best match of <code class="docutils literal notranslate"><span class="pre">query</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.tools.snippet" title="songleaf.tools.snippet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">snippet</span></code></a>(query, notation, *[, line, pick, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.tools.snippet" title="songleaf.tools.snippet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">snippet</span></code></a>(query, notation, *[, line, format, ...])</p></td>
 <td><p>Put a score snippet over one line of a song; the <code class="docutils literal notranslate"><span class="pre">score</span></code> layout draws it on the sheet.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.tools.song" title="songleaf.tools.song"><code class="xref py py-obj docutils literal notranslate"><span class="pre">song</span></code></a>(query, *[, pick, refresh, ...])</p></td>
@@ -500,12 +501,13 @@ more pages.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="songleaf.tools.snippet">
-<span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">snippet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notation</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">line</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pick</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/tools.html#snippet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.tools.snippet" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">snippet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notation</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">line</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'abc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pick</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/tools.html#snippet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.tools.snippet" title="Link to this definition">¶</a></dt>
 <dd><p>Put a score snippet over one line of a song; the <code class="docutils literal notranslate"><span class="pre">score</span></code> layout draws it on the sheet.</p>
 <p><code class="docutils literal notranslate"><span class="pre">notation</span></code> is a few bars of ABC (<code class="docutils literal notranslate"><span class="pre">&quot;G2</span> <span class="pre">AB</span> <span class="pre">c2</span> <span class="pre">|</span> <span class="pre">d4&quot;</span></code>; the unit is an eighth
 note). <code class="docutils literal notranslate"><span class="pre">line</span></code> is the 1-based lyric line it goes with; <code class="docutils literal notranslate"><span class="pre">0</span></code> lets the rule
 choose (the first line of the chorus, else the most repeated line, else the
-first). Returns <code class="docutils literal notranslate"><span class="pre">{&quot;key&quot;,</span> <span class="pre">&quot;start&quot;,</span> <span class="pre">&quot;end&quot;,</span> <span class="pre">&quot;rule&quot;}</span></code>.</p>
+first). <code class="docutils literal notranslate"><span class="pre">format</span></code> may also be <code class="docutils literal notranslate"><span class="pre">musicxml</span></code> or <code class="docutils literal notranslate"><span class="pre">mei</span></code> (drawn with the
+<code class="docutils literal notranslate"><span class="pre">score</span></code> extra only). Returns <code class="docutils literal notranslate"><span class="pre">{&quot;key&quot;,</span> <span class="pre">&quot;start&quot;,</span> <span class="pre">&quot;end&quot;,</span> <span class="pre">&quot;rule&quot;}</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -698,7 +700,7 @@ longer stored are left out. <code class="docutils literal notranslate"><span cla
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=b4d262a5"></script>
+</div><script src="../_static/documentation_options.js?v=1d9216c3"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

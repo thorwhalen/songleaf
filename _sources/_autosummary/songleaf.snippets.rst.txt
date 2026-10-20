@@ -12,6 +12,7 @@ songleaf.snippets
       MIN_LENGTH
       MAX_LENGTH
       MAX_NOTATION_CHARS
+      NOTATION_FORMATS
       INLINE_SOURCE
       SnippetProvider
    
@@ -21,6 +22,7 @@ songleaf.snippets
    
       abc_snippet
       choose_segment
+      default_provider
       first_snippet
       layout_tune
       mark_segment

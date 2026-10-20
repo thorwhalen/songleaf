@@ -202,7 +202,7 @@ The largest lyric font size at which `song` fits one page in `layout` (default: 
 `style`, if given, replaces the layout’s style. Returns `min_font_size`
 if even that does not fit (the song then needs more pages). `snippets`
 is the score-snippet provider of a `score` layout (default
-[`songleaf.snippets.abc_snippet()`](songleaf.snippets.html.md#songleaf.snippets.abc_snippet)).
+[`songleaf.snippets.default_provider()`](songleaf.snippets.html.md#songleaf.snippets.default_provider)’s).
 
 * **Return type:**
   [`float`](https://docs.python.org/3/builtins/functions.html#float)
@@ -276,7 +276,7 @@ The lyric font size is the largest that fits the song on one page, times
 that runs onto a second page. It never goes past `max_font_size`.
 
 `snippets` provides a `score` layout’s snippet: `song -> ScoreSnippet | None`
-(default [`songleaf.snippets.abc_snippet()`](songleaf.snippets.html.md#songleaf.snippets.abc_snippet)).
+(default [`songleaf.snippets.default_provider()`](songleaf.snippets.html.md#songleaf.snippets.default_provider)’s).
 
 `output` is a path or a binary file object. Returns
 `{"path", "font_size", "pages", "rows"}`; `path` is `None` when

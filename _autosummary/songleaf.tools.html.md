@@ -25,7 +25,7 @@ than dicts uses [`songleaf.sources`](songleaf.sources.html.md#module-songleaf.so
 | [`media`](#songleaf.tools.media)(query, \*[, youtube, spotify, pick, ...])   | Link the song's recording: a YouTube video id and/or a Spotify track id.                                   |
 | [`search`](#songleaf.tools.search)([query, title, artist, lyrics, ...])       | Find songs with one query: in your lists' names, then titles, artists and lyrics.                          |
 | [`sheet`](#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...])    | Make a one-page song sheet (PDF) for the best match of `query`.                                            |
-| [`snippet`](#songleaf.tools.snippet)(query, notation, \*[, line, pick, ...])   | Put a score snippet over one line of a song; the `score` layout draws it on the sheet.                     |
+| [`snippet`](#songleaf.tools.snippet)(query, notation, \*[, line, format, ...]) | Put a score snippet over one line of a song; the `score` layout draws it on the sheet.                     |
 | [`song`](#songleaf.tools.song)(query, \*[, pick, refresh, ...])             | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.                   |
 | [`songbook`](#songleaf.tools.songbook)(group, \*[, output, title, layout, ...]) | Render a list (group) of songs as one PDF: a table of contents, then every song at its fitted size.        |
 | [`songs`](#songleaf.tools.songs)(\*[, store])                                | The keys of the stored songs.                                                                              |
@@ -160,14 +160,15 @@ more pages.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### songleaf.tools.snippet(query, notation, , line=0, pick=1, store=None, sources=None)
+### songleaf.tools.snippet(query, notation, , line=0, format='abc', pick=1, store=None, sources=None)
 
 Put a score snippet over one line of a song; the `score` layout draws it on the sheet.
 
 `notation` is a few bars of ABC (`"G2 AB c2 | d4"`; the unit is an eighth
 note). `line` is the 1-based lyric line it goes with; `0` lets the rule
 choose (the first line of the chorus, else the most repeated line, else the
-first). Returns `{"key", "start", "end", "rule"}`.
+first). `format` may also be `musicxml` or `mei` (drawn with the
+`score` extra only). Returns `{"key", "start", "end", "rule"}`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

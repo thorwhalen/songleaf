@@ -12,11 +12,11 @@ sense of the melody or the rhythm. Three parts, each replaceable:
   > wins over the rule, so it is how a choice is overridden.
 - **What to draw**: a *snippet provider*, `song -> ScoreSnippet | None`, is
   injected into [`songleaf.render.render_sheet()`](songleaf.render.html.md#songleaf.render.render_sheet) (`snippets=`) and never
-  imported by it. The default, [`abc_snippet()`](#songleaf.snippets.abc_snippet), draws the short ABC notation
-  recorded on the annotation with reportlab lines only: one voice, treble staff,
-  notes, rests, accidentals, bar lines and chord names, placed as on a treble staff
-  (no clef is drawn). Fuller engraving
-  (MusicXML, whole ABC tunes) belongs in a provider behind an optional extra.
+  imported by it. [`abc_snippet()`](#songleaf.snippets.abc_snippet) draws the short ABC notation recorded on
+  the annotation with reportlab lines only: one voice, treble staff, notes,
+  rests, accidentals, bar lines and chord names (no clef is drawn). With the `score` extra,
+  [`songleaf.engrave.engraved_snippet()`](songleaf.engrave.html.md#songleaf.engrave.engraved_snippet) engraves ABC, MusicXML or MEI
+  > properly; [`default_provider()`](#songleaf.snippets.default_provider) picks it when installed.
 - **Where it goes**: the `score` layout option makes the renderer place the
   snippet as a row above its line; the font fit counts its height, so the
   lyrics shrink to make room.
@@ -35,19 +35,21 @@ anything else (ties, slurs, spaces) are skipped.
 
 ### Module Attributes
 
-| [`UNIT_LENGTH`](#songleaf.snippets.UNIT_LENGTH)        | The length of an unmarked ABC note, as a fraction of a whole note.   |
-|---------------------------------------------------------------------|----------------------------------------------------------------------|
-| [`MIN_LENGTH`](#songleaf.snippets.MIN_LENGTH)         | The shortest and longest note lengths read, in whole notes.          |
-| [`MAX_LENGTH`](#songleaf.snippets.MAX_LENGTH)         | The shortest and longest note lengths read, in whole notes.          |
-| [`MAX_NOTATION_CHARS`](#songleaf.snippets.MAX_NOTATION_CHARS) | a snippet is a few bars.                                             |
-| [`INLINE_SOURCE`](#songleaf.snippets.INLINE_SOURCE)      | What a provider-less recorded snippet is noted as.                   |
-| [`SnippetProvider`](#songleaf.snippets.SnippetProvider)    | what the sheet draws for a song, or `None` for no snippet.           |
+| [`UNIT_LENGTH`](#songleaf.snippets.UNIT_LENGTH)        | The length of an unmarked ABC note, as a fraction of a whole note.                              |
+|---------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| [`MIN_LENGTH`](#songleaf.snippets.MIN_LENGTH)         | The shortest and longest note lengths read, in whole notes.                                     |
+| [`MAX_LENGTH`](#songleaf.snippets.MAX_LENGTH)         | The shortest and longest note lengths read, in whole notes.                                     |
+| [`MAX_NOTATION_CHARS`](#songleaf.snippets.MAX_NOTATION_CHARS) | a snippet is a few bars.                                                                        |
+| [`NOTATION_FORMATS`](#songleaf.snippets.NOTATION_FORMATS)   | The notation formats a score annotation may hold inline (all but `abc` need the `score` extra). |
+| [`INLINE_SOURCE`](#songleaf.snippets.INLINE_SOURCE)      | What a provider-less recorded snippet is noted as.                                              |
+| [`SnippetProvider`](#songleaf.snippets.SnippetProvider)    | what the sheet draws for a song, or `None` for no snippet.                                      |
 
 ### Functions
 
 | [`abc_snippet`](#songleaf.snippets.abc_snippet)(song)                                | The default provider: the ABC notation recorded on the song's `score` annotation, drawn.                                       |
 |---------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
 | [`choose_segment`](#songleaf.snippets.choose_segment)(song)                             | The line a snippet goes with: the first line of the chorus, else the most repeated line, else the first.                       |
+| [`default_provider`](#songleaf.snippets.default_provider)()                               | The provider a `score` sheet uses when none is injected.                                                                       |
 | [`first_snippet`](#songleaf.snippets.first_snippet)(providers)                         | A provider asking each of *providers* in turn: the first snippet wins.                                                         |
 | [`layout_tune`](#songleaf.snippets.layout_tune)(tune)                                | A [`ScoreSnippet`](#songleaf.snippets.ScoreSnippet) drawing *tune* on one treble staff, with reportlab lines only. |
 | [`mark_segment`](#songleaf.snippets.mark_segment)(song, notation, \*[, segment, ...]) | A copy of *song* whose one `score` annotation holds *notation* over *segment*.                                                 |
@@ -88,6 +90,10 @@ a snippet is a few bars.
 ### songleaf.snippets.MIN_LENGTH *= Fraction(1, 64)*
 
 The shortest and longest note lengths read, in whole notes.
+
+### songleaf.snippets.NOTATION_FORMATS *= ('abc', 'musicxml', 'mei')*
+
+The notation formats a score annotation may hold inline (all but `abc` need the `score` extra).
 
 ### *class* songleaf.snippets.Note(pitch, length, accidental='', chord='')
 
@@ -147,6 +153,17 @@ The line a snippet goes with: the first line of the chorus, else the most repeat
 
 * **Return type:**
   [`Segment`](#songleaf.snippets.Segment) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### songleaf.snippets.default_provider()
+
+The provider a `score` sheet uses when none is injected.
+
+The engraved one ([`songleaf.engrave.engraved_snippet()`](songleaf.engrave.html.md#songleaf.engrave.engraved_snippet)) when the
+`score` extra is installed, falling back to [`abc_snippet()`](#songleaf.snippets.abc_snippet); else
+[`abc_snippet()`](#songleaf.snippets.abc_snippet) alone.
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`Song`](songleaf.model.html.md#songleaf.model.Song)], [`ScoreSnippet`](#songleaf.snippets.ScoreSnippet) | [`None`](https://docs.python.org/3/builtins/constants.html#None)]
 
 ### songleaf.snippets.first_snippet(providers)
 
