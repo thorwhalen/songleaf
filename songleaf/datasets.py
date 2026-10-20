@@ -16,12 +16,12 @@ root is never overridden by S3):
   ``~/.cache/songleaf/datasets``).
 """
 
-import fcntl
 import os
 import warnings
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
+from songleaf.library import file_lock
 from songleaf.store import DATA_DIR_ENVVAR, data_dir
 
 DATASETS_URI_ENVVAR = "SONGLEAF_DATASETS_URI"
@@ -126,8 +126,7 @@ def dataset_path(key: str, *, location: S3Location | None = None) -> str:
         raise
     if not (os.path.isfile(path) and os.path.getsize(path) == remote_size):
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path + ".lock", "w") as lock:  # one worker downloads, the rest wait
-            fcntl.flock(lock, fcntl.LOCK_EX)
+        with file_lock(path):  # one worker downloads, the rest wait
             if os.path.isfile(path) and os.path.getsize(path) == remote_size:
                 return path
             part = f"{path}.{os.getpid()}.part"  # moved into place when whole
