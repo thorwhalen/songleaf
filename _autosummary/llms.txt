@@ -6,6 +6,7 @@
 ## Pages in this subsection
 
 - [songleaf](songleaf.html.md): songleaf: dense, readable one-page song sheets from searchable sources.
+- [songleaf.chordpro](songleaf.chordpro.html.md): Parse ChordPro text into a &#96;Song&#96;.
 - [songleaf.datasets](songleaf.datasets.html.md): Where the &#96;datasets&#96; data kind lives: local files by default, S3 by configuration.
 - [songleaf.harmony](songleaf.harmony.html.md): What a chord does in its song’s key, so that sheets can shade chords by function.
 - [songleaf.kaggle_index](songleaf.kaggle_index.html.md): A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.

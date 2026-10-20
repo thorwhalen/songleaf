@@ -1,4 +1,4 @@
-> built 2026-10-20 06:56 UTC from 6927c67 (main) · songleaf 0.0.14. Details: build_info.json
+> built 2026-10-20 06:58 UTC from 357cef5 (main) · songleaf 0.0.15. Details: build_info.json
 
 # index.html.md
 
@@ -168,6 +168,53 @@ songleaf.sheet("paper boats", sources=[my_source], store={}, renderer=my_rendere
 ```
 
 <p class="epythet-aggregates">This documentation as a single file: <a href="songleaf.md">songleaf.md</a> (Markdown, for agents).</p>
+
+
+# _autosummary/songleaf.chordpro.html.md
+
+# songleaf.chordpro
+
+Parse ChordPro text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song).
+
+ChordPro puts chords inline, in square brackets, at the syllable they land on
+(`Paper [G]boats [D]drift`), and describes the song with `{directive: value}`
+lines.
+
+- `[X]` becomes a `chord` annotation at that character offset of the
+  bracket-free lyric line; a line of chords only becomes an empty text line
+  carrying its chords in order, as in [`songleaf.parse`](_autosummary/songleaf.parse.html.md#module-songleaf.parse).
+- `{title}`, `{artist}`, `{key}`, `{capo}`, `{tempo}` (and their short
+  forms) become metadata.
+- `{soc}`/`{eoc}` (and verse, bridge, tab-less variants) and `{c: label}`
+  comments become `section` annotations; a section with no lines of its own is
+  a *marker* (`{"marker": True}`), as in [`songleaf.parse`](_autosummary/songleaf.parse.html.md#module-songleaf.parse).
+- `# comments` and unknown directives are dropped.
+
+```pycon
+>>> song = parse_chordpro("{title: Paper Boats}\n{soc}\nPaper [G]boats [D]drift\n{eoc}")
+>>> song.text
+'Paper boats drift'
+>>> [(a.start, a.body["symbol"]) for a in song.of_kind("chord")]
+[(6, 'G'), (12, 'D')]
+>>> song.meta["title"], song.of_kind("section")[0].body["label"]
+('Paper Boats', 'Chorus')
+```
+
+### Functions
+
+| [`parse_chordpro`](_autosummary/songleaf.chordpro.html.md#songleaf.chordpro.parse_chordpro)(raw, \*[, meta, provenance])   | Parse ChordPro text into a `Song`.   |
+|------------------------------------------------------------------------------------------------|--------------------------------------|
+
+### songleaf.chordpro.parse_chordpro(raw, , meta=None, provenance=None)
+
+Parse ChordPro text into a `Song`.
+
+* **Parameters:**
+  * **raw** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str)) – The ChordPro text.
+  * **meta** ([`Mapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – Metadata to start from; directives in the text override it.
+  * **provenance** ([`Mapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – Where the text came from, stored as is.
+* **Return type:**
+  [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song)
 
 
 # _autosummary/songleaf.datasets.html.md
@@ -764,8 +811,9 @@ The keys of the stored songs.
 
 ### Modules
 
-| [`datasets`](_autosummary/songleaf.datasets.html.md#module-songleaf.datasets)         | Where the `datasets` data kind lives: local files by default, S3 by configuration.                              |
+| [`chordpro`](_autosummary/songleaf.chordpro.html.md#module-songleaf.chordpro)         | Parse ChordPro text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song).           |
 |--------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| [`datasets`](_autosummary/songleaf.datasets.html.md#module-songleaf.datasets)         | Where the `datasets` data kind lives: local files by default, S3 by configuration.                              |
 | [`harmony`](_autosummary/songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                               |
 | [`kaggle_index`](_autosummary/songleaf.kaggle_index.html.md#module-songleaf.kaggle_index) | A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.                     |
 | [`library`](_autosummary/songleaf.library.html.md#module-songleaf.library)           | The library's lists: which stored songs are in which lists, shared by everyone using it.                        |
@@ -2470,7 +2518,7 @@ True
 
 # About this build
 
-This documentation was built on **2026-10-20 06:56 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/6927c67b407d78d19617fc31add4b2981bc763a5"><code>6927c67</code></a> on branch <code>main</code>, for **songleaf 0.0.14** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 06:58 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/357cef5aaf8e311d1ddd680593223be1b7cceae2"><code>357cef5</code></a> on branch <code>main</code>, for **songleaf 0.0.15** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -2479,7 +2527,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/6927c67b407d78d19617fc31add4b2981bc763a5"><code>6927c67b407d78d19617fc31add4b2981bc763a5</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/357cef5aaf8e311d1ddd680593223be1b7cceae2"><code>357cef5aaf8e311d1ddd680593223be1b7cceae2</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -2490,9 +2538,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39383178054">39383178054</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39383361676">39383361676</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>6927c67b407d78d19617fc31add4b2981bc763a5</code> (in the history of the built commit) |
+| Event commit | <code>357cef5aaf8e311d1ddd680593223be1b7cceae2</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -2517,13 +2565,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.14/">0.0.14</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.15/">0.0.15</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 6927c67b407d78d19617fc31add4b2981bc763a5
+git checkout 357cef5aaf8e311d1ddd680593223be1b7cceae2
 pip install "epythet==0.2.18"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

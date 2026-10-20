@@ -202,6 +202,7 @@
   <ul>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../api.html">API reference</a><input aria-label="Toggle navigation of API reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../_autosummary/songleaf.html">songleaf</a><input aria-label="Toggle navigation of songleaf" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.chordpro.html">songleaf.chordpro</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.datasets.html">songleaf.datasets</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
@@ -675,6 +676,8 @@
 <span class="c1">#: Text files parsed as chords-over-lyrics charts (same format as the Kaggle</span>
 <span class="c1">#: corpus) -- what a chords/tabs site's own "download" or "export" gives you.</span>
 <span class="n">_TEXT_EXTS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">".txt"</span><span class="p">,</span> <span class="s2">".cho"</span><span class="p">,</span> <span class="s2">".chopro"</span><span class="p">,</span> <span class="s2">".crd"</span><span class="p">,</span> <span class="s2">".pro"</span><span class="p">})</span>
+<span class="c1">#: The text extensions that hold ChordPro rather than chords-over-lyrics.</span>
+<span class="n">_CHORDPRO_EXTS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">".cho"</span><span class="p">,</span> <span class="s2">".chopro"</span><span class="p">,</span> <span class="s2">".crd"</span><span class="p">,</span> <span class="s2">".pro"</span><span class="p">})</span>
 <span class="c1">#: Score/tab files with no lyrics to parse: attached as a bare score link.</span>
 <span class="n">_SCORE_EXTS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">".gp"</span><span class="p">:</span> <span class="s2">"guitarpro"</span><span class="p">,</span>
@@ -805,6 +808,7 @@
 <a class="viewcode-back" href="../../_autosummary/songleaf.sources.html#songleaf.LocalFolderSource.get">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">song_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Song</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""The song at this relative path, parsed if it's a chart, else score-linked."""</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.chordpro</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_chordpro</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_chords_over_lyrics</span>
 
         <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">song_id</span><span class="p">))</span>
@@ -820,8 +824,13 @@
             <span class="s2">"license"</span><span class="p">:</span> <span class="s2">"unknown"</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="n">ext</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">_TEXT_EXTS</span><span class="p">:</span>
+            <span class="n">parse</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">parse_chordpro</span>
+                <span class="k">if</span> <span class="n">ext</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">_CHORDPRO_EXTS</span>
+                <span class="k">else</span> <span class="n">parse_chords_over_lyrics</span>
+            <span class="p">)</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">parse_chords_over_lyrics</span><span class="p">(</span>
+                <span class="k">return</span> <span class="n">parse</span><span class="p">(</span>
                     <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span>
                     <span class="n">meta</span><span class="o">=</span><span class="p">{</span><span class="s2">"title"</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span> <span class="s2">"artist"</span><span class="p">:</span> <span class="n">artist</span><span class="p">},</span>
                     <span class="n">provenance</span><span class="o">=</span><span class="n">provenance</span><span class="p">,</span>
@@ -1000,7 +1009,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=832ae8cf"></script>
+</div><script src="../../_static/documentation_options.js?v=2a6a9ca9"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

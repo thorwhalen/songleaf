@@ -1,0 +1,12 @@
+songleaf.chordpro
+=================
+
+.. automodule:: songleaf.chordpro
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      parse_chordpro
+   

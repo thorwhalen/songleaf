@@ -375,8 +375,9 @@ The keys of the stored songs.
 
 ### Modules
 
-| [`datasets`](songleaf.datasets.html.md#module-songleaf.datasets)         | Where the `datasets` data kind lives: local files by default, S3 by configuration.                              |
+| [`chordpro`](songleaf.chordpro.html.md#module-songleaf.chordpro)         | Parse ChordPro text into a [`Song`](songleaf.model.html.md#songleaf.model.Song).           |
 |--------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| [`datasets`](songleaf.datasets.html.md#module-songleaf.datasets)         | Where the `datasets` data kind lives: local files by default, S3 by configuration.                              |
 | [`harmony`](songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                               |
 | [`kaggle_index`](songleaf.kaggle_index.html.md#module-songleaf.kaggle_index) | A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.                     |
 | [`library`](songleaf.library.html.md#module-songleaf.library)           | The library's lists: which stored songs are in which lists, shared by everyone using it.                        |

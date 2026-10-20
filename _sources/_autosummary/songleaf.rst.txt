@@ -41,6 +41,7 @@
    :toctree:
    :recursive:
 
+   chordpro
    datasets
    harmony
    kaggle_index
