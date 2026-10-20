@@ -20,6 +20,7 @@ from songleaf.render import (
     DenseStyle,
     InlineChords,
     SheetLayout,
+    _diagram_chords,
     _flow,
     _heading,
     _page_dimensions,
@@ -58,6 +59,7 @@ def flow_at(song, size, spec):
         height=HEIGHT,
         layout=layout,
         paint=paint,
+        diagram_chords=_diagram_chords(song, layout),
     )
 
 
