@@ -25,6 +25,9 @@
   const PRINT_SCALES = { min: 0.5, max: 2, step: 0.1 }; // PDF size, x the size that fills the page
   const GROUPS_WAIT_MS = 2500; // the library waits this long for the groups before drawing without them
   const PILL_IDLE_MS = 4000; // a paused auto-scroll pill folds back to ▶ after this
+  const FOLLOW_TICK_MS = 250; // how often a playing YouTube video is asked where it is
+  const FOLLOW_HOLD_MS = 6000; // after the reader scrolls, following waits this long
+  const MAX_LRC_BYTES = 100_000; // the server refuses longer LRCs (web.MAX_LRC_CHARS)
   const UNGROUPED = "\u0000ungrouped"; // the library filter "songs in no group" (`?ungrouped=1`)
   // The reader's defaults. The printed sheet's colours and chord size come from the server
   // (/layouts), and the PDF gets only what the viewer changed, so it keeps its own tuning.
@@ -1496,7 +1499,7 @@
     const builders = {
       key: (host) => { host.append(transposePanel(song, route)); },
       look: (host) => { host.append(lookSheet(route)); },
-      more: (host) => { host.append(morePanel(route, () => panels.open("groups", builders.groups))); },
+      more: (host) => { host.append(morePanel(route, () => panels.open("groups", builders.groups), song)); },
       groups: (host) => {
         const menu = openTagMenu(host, [route.song], { opener: groupsButton, onClose: () => { if (openPanel === "groups") panels.shut(); } });
         return () => { if (menu) menu.close(); };
@@ -1508,7 +1511,7 @@
     applyLook(look);
     const content = route.view === "print"
       ? printView(song, route, gen)
-      : h("div", { class: "read" }, readerView(song, table, look), scrollControls(route.song, look));
+      : h("div", { class: "read" }, playAlong(song), readerView(song, table, look), scrollControls(route.song, look));
     body.replaceChildren(toolbar, content);
     showSongGroups(route.song, groupsButton, { reload: !sameSong });
     if (reopen && builders[reopen] && (reopen !== "groups" || groups.space)) panels.open(reopen, builders[reopen]);
@@ -1624,7 +1627,7 @@
   }
 
   // The rest, behind ⋯: printing (rare on a phone) and the song's groups.
-  function morePanel(route, openGroups) {
+  function morePanel(route, openGroups, song) {
     const reading = route.view !== "print";
     const item = (text, hint, onclick) => h("button", { type: "button", class: "menu-item", onclick },
       h("span", {}, text), hint && h("small", {}, hint));
@@ -1632,7 +1635,160 @@
       reading
         ? item("Print or save as PDF", "One A4 page, the lyrics as large as fit", () => { openPanel = null; goSong(route, { view: "print" }); })
         : item("Back to reading", null, () => { openPanel = null; goSong(route, { view: "read" }); }),
-      groups.space && item("Lists…", "Put this song in a list, or take it out", openGroups));
+      groups.space && item("Lists…", "Put this song in a list, or take it out", openGroups),
+      reading && recordingForm(song, route));
+  }
+
+  // ----- play along (songleaf#30) ---------------------------------------------------------
+  // The song's recording (meta.media: a YouTube or Spotify id the server checked) plays in an
+  // embedded player, loaded only when the reader asks. While it plays, the line whose "time"
+  // annotation has come scrolls to the middle of the screen and is marked; a reader who
+  // scrolls by hand takes over for a few seconds.
+
+  let followHeldUntil = 0;
+  for (const type of ["touchstart", "wheel"]) {
+    window.addEventListener(type, (e) => {
+      if (!(e.target.closest && e.target.closest(".play-along"))) followHeldUntil = Date.now() + FOLLOW_HOLD_MS;
+    }, { passive: true });
+  }
+
+  function lineFollower(times) {
+    let current = null;
+    return (ms) => {
+      if (!times.length || Date.now() < followHeldUntil) return;
+      let i = -1;
+      while (i + 1 < times.length && times[i + 1].ms <= ms) i += 1;
+      const el = i >= 0 ? app.querySelector(`.reader [data-at="${times[i].at}"]`) : null;
+      if (!el || el === current) return;
+      if (current) current.classList.remove("now");
+      current = el;
+      el.classList.add("now");
+      autoScroll.stop(); // the recording sets the pace now
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    };
+  }
+
+  function playAlong(song) {
+    const media = (song.meta && song.meta.media) || {};
+    if (!media.youtube && !media.spotify) return null;
+    const times = (song.annotations || [])
+      .filter((a) => a.kind === "time" && a.body && Number.isFinite(a.body.ms))
+      .map((a) => ({ ms: a.body.ms, at: a.start }))
+      .sort((a, b) => a.ms - b.ms);
+    const follow = lineFollower(times);
+    const frame = h("div", { class: "player-frame", hidden: true });
+    const note = h("small", { class: "muted" }, times.length
+      ? "The song scrolls with the recording."
+      : "No timings yet: add them under ⋯ so the song scrolls with the recording.");
+    const buttons = [];
+    const start = (load) => async () => {
+      for (const b of buttons) b.hidden = true;
+      frame.hidden = false;
+      try { await load(frame, follow); } catch (error) { note.textContent = `The player could not load (${error.message}).`; }
+    };
+    if (media.youtube) buttons.push(h("button", { type: "button", class: "text", onclick: start((f, cb) => loadYouTube(f, media.youtube, cb)) }, "▶ Play along on YouTube"));
+    if (media.spotify) buttons.push(h("button", { type: "button", class: "text", onclick: start((f, cb) => loadSpotify(f, media.spotify, cb)) }, "▶ Play along on Spotify"));
+    return h("div", { class: "play-along" }, ...buttons, frame, note);
+  }
+
+  // Each service's player API is a script of its own, loaded once, the first time it is used.
+  const playerApis = {};
+  function playerApi(name, src, readyHook, resolveWith) {
+    if (!playerApis[name]) {
+      playerApis[name] = new Promise((resolve, reject) => {
+        const previous = window[readyHook];
+        window[readyHook] = (...args) => { if (typeof previous === "function") previous(...args); resolve(resolveWith(...args)); };
+        const script = h("script", { src, async: true });
+        script.addEventListener("error", () => { delete playerApis[name]; reject(new Error(`${name} could not be reached`)); });
+        document.head.append(script);
+      });
+    }
+    return playerApis[name];
+  }
+
+  async function loadYouTube(frame, id, follow) {
+    const YT = await playerApi("YouTube", "https://www.youtube.com/iframe_api", "onYouTubeIframeAPIReady", () => window.YT);
+    const target = h("div");
+    frame.classList.add("video");
+    frame.replaceChildren(target);
+    let timer = 0;
+    const player = new YT.Player(target, {
+      videoId: id, host: "https://www.youtube-nocookie.com", width: "100%", height: "100%",
+      playerVars: { playsinline: 1, rel: 0 },
+      events: {
+        onStateChange: (event) => {
+          clearInterval(timer);
+          if (event.data !== YT.PlayerState.PLAYING) return;
+          timer = setInterval(() => {
+            if (!frame.isConnected) { clearInterval(timer); player.destroy(); return; } // the song was left
+            follow(player.getCurrentTime() * 1000);
+          }, FOLLOW_TICK_MS);
+        },
+      },
+    });
+  }
+
+  async function loadSpotify(frame, id, follow) {
+    const api = await playerApi("Spotify", "https://open.spotify.com/embed/iframe-api/v1", "onSpotifyIframeApiReady", (iframeApi) => iframeApi);
+    const target = h("div");
+    frame.replaceChildren(target);
+    api.createController(target, { uri: `spotify:track:${id}`, width: "100%", height: 152 }, (controller) => {
+      controller.addListener("playback_update", (event) => {
+        if (!frame.isConnected) { controller.destroy(); return; }
+        if (event.data && !event.data.isPaused) follow(event.data.position);
+      });
+    });
+  }
+
+  // Under ⋯ in Read view: link the recording, and time the lines from an LRC file or LRCLIB.
+  // The server checks the ids and keeps only the LRC's times; the song is then redrawn.
+  function recordingForm(song, route) {
+    const media = (song.meta && song.meta.media) || {};
+    const status = h("p", { class: "muted", role: "status" });
+    const send = async (method, path, body, done) => {
+      status.textContent = "Saving…";
+      try {
+        const response = await fetch(CONFIG.api + path, {
+          method, credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: route.song, ...body }),
+        });
+        if (!response.ok) throw new Error(await errorText(response));
+        const info = await response.json();
+        songCache.delete(route.song);
+        status.textContent = done(info);
+        setTimeout(() => goSong(route, {}), 600); // redraw with the new player or timings
+      } catch (error) {
+        status.textContent = `Not saved: ${error.message}`;
+      }
+    };
+    const link = h("input", {
+      type: "url", inputmode: "url", autocomplete: "off", "aria-label": "YouTube or Spotify link",
+      placeholder: media.youtube || media.spotify ? "Another YouTube or Spotify link" : "A YouTube or Spotify link",
+    });
+    const saveLink = (e) => {
+      e.preventDefault();
+      const value = link.value.trim();
+      if (!value) return;
+      const service = /spotify/i.test(value) ? "spotify" : "youtube";
+      send("PUT", "/media", { [service]: value }, () => "Recording linked.");
+    };
+    const remove = (service) => () => send("PUT", "/media", { [service]: "-" }, () => "Recording removed.");
+    const file = h("input", { type: "file", accept: ".lrc,text/plain", "aria-label": "An LRC file" });
+    file.addEventListener("change", async () => {
+      const chosen = file.files && file.files[0];
+      if (!chosen) return;
+      if (chosen.size > MAX_LRC_BYTES) { status.textContent = "That file is too large for an LRC."; return; }
+      send("POST", "/sync", { lrc: await chosen.text() }, (info) => `${info.timed} of ${info.lines} lines timed.`);
+    });
+    const lrclib = () => send("POST", "/sync", { lrclib: true }, (info) => `${info.timed} of ${info.lines} lines timed (LRCLIB).`);
+    return h("div", { class: "recording" },
+      h("p", { class: "label" }, "Recording"),
+      h("form", { class: "inline-form", onsubmit: saveLink }, link, h("button", { type: "submit" }, "Link")),
+      media.youtube && h("button", { type: "button", class: "text", onclick: remove("youtube") }, "Remove the YouTube link"),
+      media.spotify && h("button", { type: "button", class: "text", onclick: remove("spotify") }, "Remove the Spotify link"),
+      h("p", { class: "label" }, "Timings, so the song scrolls with the recording"),
+      h("label", { class: "file" }, "From an LRC file ", file),
+      h("button", { type: "button", class: "text", onclick: lrclib }, "Find them on LRCLIB"),
+      status);
   }
 
   // Auto-scroll: a ▶ that floats over the song. While it runs (and for a moment after a tap)
@@ -1889,6 +2045,7 @@
       const label = labelsAt.get(start);
       if (label) pendingLabel = h("div", { class: `section-label ${family ? "fam-" + family : ""}` }, label);
       const el = draw(line, start, end, chordsAt);
+      if (el) el.dataset.at = String(start); // where play-along finds the line a time points at
       if (el && !el.classList.contains("blank")) {
         if (pendingLabel) { out.append(pendingLabel); pendingLabel = null; }
       }

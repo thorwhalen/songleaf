@@ -38,7 +38,33 @@ MEDIA_IDS: dict[str, re.Pattern] = {
     "youtube": re.compile(r"[A-Za-z0-9_-]{11}"),
     "spotify": re.compile(r"[A-Za-z0-9]{22}"),  # a track id
 }
+#: Where each service's id sits in a link to it (a watch, share, embed or track URL).
+MEDIA_LINKS: dict[str, re.Pattern] = {
+    "youtube": re.compile(
+        r"(?:youtu\.be/|[?&]v=|/embed/|/shorts/|/live/)([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])"
+    ),
+    "spotify": re.compile(r"(?:/track/|spotify:track:)([A-Za-z0-9]{22})(?![A-Za-z0-9])"),
+}
 DFLT_MIN_F1 = 0.5
+
+
+def media_id(service: str, text: str) -> str:
+    """The *service* id in *text*: an id, or a link to it (watch, share, embed or track URL).
+
+    >>> media_id("youtube", "https://youtu.be/dQw4w9WgXcQ?t=3")
+    'dQw4w9WgXcQ'
+    >>> media_id("spotify", "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC?si=x")
+    '4uLU6hMCjMI75M1A2tKUQC'
+    """
+    if service not in MEDIA_IDS:
+        raise ValueError(f"unknown media service {service!r}; known: {sorted(MEDIA_IDS)}")
+    text = text.strip()
+    if MEDIA_IDS[service].fullmatch(text):
+        return text
+    found = MEDIA_LINKS[service].search(text)
+    if not found:
+        raise ValueError(f"{text[:80]!r} is not a {service} id or link")
+    return found.group(1)
 
 
 def parse_lrc(text: str) -> list[tuple[int, str]]:

@@ -489,3 +489,13 @@ body .zg-tagmenu-apply[aria-disabled="false"] { background: var(--accent); borde
 .paste textarea { font-family: ui-monospace, monospace; width: 100%; box-sizing: border-box; }
 .bookmarklet-note { font-size: 0.9em; }
 .bookmarklet { font-weight: 600; padding: 2px 8px; border: 1px dashed currentColor; border-radius: 6px; text-decoration: none; }
+.play-along { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 12px; }
+.play-along small { flex-basis: 100%; }
+.player-frame { width: 100%; }
+.player-frame.video { aspect-ratio: 16 / 9; max-width: 640px; }
+.player-frame iframe { width: 100%; height: 100%; border: 0; border-radius: var(--radius); }
+.reader .line.now { background: rgba(255, 196, 0, 0.22); border-radius: 4px; }
+.recording { display: grid; gap: 6px; padding-top: 8px; border-top: 1px solid var(--line); }
+.recording .label { margin: 4px 0 0; font-weight: 600; }
+.inline-form { display: flex; gap: 6px; }
+.inline-form input { flex: 1; min-width: 0; }

@@ -551,16 +551,16 @@ def media(
     store=None,
     sources=None,
 ) -> dict:
-    """Link the song's recording: a YouTube video id and/or a Spotify track id.
+    """Link the song's recording: a YouTube video and/or a Spotify track, by id or link.
 
     An id given as ``""`` is left as it is; ``"-"`` removes it. Returns
     ``{"key", "media"}``.
     """
-    from songleaf.timing import with_media
+    from songleaf.timing import media_id, with_media
 
     key, found = _resolve(query, pick=pick, refresh=False, sources=sources, store=store)
     changes = {
-        service: (None if value == "-" else value)
+        service: (None if value == "-" else media_id(service, value))
         for service, value in (("youtube", youtube), ("spotify", spotify))
         if value
     }

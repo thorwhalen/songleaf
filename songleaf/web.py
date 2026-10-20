@@ -23,6 +23,11 @@ apps.thorwhalen.com). Its routes:
   in plain words (:data:`LAYOUT_CONTROLS`), and the default colours
 - ``GET /song?key=``: the song as JSON (``tools.song``): text, chords, sections, its
   key and a chord table for every key it can move to; the page draws it as text
+- ``PUT /media``: ``{"key", "youtube", "spotify"}`` links the song's recording (an id or a
+  link; ``""`` leaves one as it is, ``"-"`` removes it): ``tools.media``
+- ``POST /sync``: ``{"key", "lrc"}`` times the song's lines from an LRC's text, or
+  ``{"key", "lrclib": true}`` asks LRCLIB; only the times are kept (``tools.sync``). The page
+  plays the recording in Read view and scrolls with it
 - ``GET /song.cho?key=&transpose=``, ``GET /song.txt?key=&transpose=``: the song as a ChordPro
   or a chords-over-lyrics text download (``tools.export``)
 - ``GET /sheet?key=&...``: render the sheet; its title, artist, font size and pages
@@ -121,6 +126,8 @@ READER_LAYOUT: dict[str, dict[str, str]] = {
 _MAX_LIMIT = 50
 #: The fields of a ``POST /import`` body (``text`` first, the rest optional).
 _IMPORT_FIELDS = ("text", "title", "artist", "url", "key", "capo", "format")
+#: An LRC longer than this is refused (one is a few KB).
+MAX_LRC_CHARS = 100_000
 _MAX_QUERY_CHARS = 200  # a remembered line, not a pasted song
 _CLOCK_SLACK_SECONDS = (
     300  # an undo's ``at`` may be this far ahead of the server's clock
@@ -200,12 +207,14 @@ def mk_app(
     sheet_cache_size: int = 32,
     image_cache_size: int = 8,
     image_scale: float = 2.0,
+    get_json=None,
 ):
     """The FastAPI app. ``sources`` and ``store`` are the seams of :mod:`songleaf.tools`;
     ``library_root`` is where the groups are kept (default: the data root).
 
     ``image_scale`` is pixels per PDF point for ``/sheet.png`` (2: an A4 page is
-    1190 pixels wide, sharp on a phone).
+    1190 pixels wide, sharp on a phone). ``get_json`` is how ``POST /sync`` reaches
+    LRCLIB (``songleaf.timing.GetJson``; default: one HTTPS request).
     """
     from fastapi import Body, Depends, FastAPI, HTTPException, Query
     from starlette.concurrency import run_in_threadpool
@@ -285,6 +294,51 @@ def mk_app(
             raise HTTPException(400, f"{', '.join(_IMPORT_FIELDS)} must be strings")
         try:
             return tools.import_text(**fields, store=store)
+        except ValueError as error:
+            raise HTTPException(400, str(error)) from error
+
+    def store_now():
+        from songleaf.store import song_store
+
+        return song_store() if store is None else store
+
+    def stored_song(payload: dict) -> str:
+        key = payload.get("key")
+        if not isinstance(key, str) or not key:
+            raise HTTPException(400, "key must be a song key")
+        if key not in store_now():
+            raise SongNotFound(f"{key!r} is not among the stored songs")
+        return key
+
+    @app.put("/media")
+    def set_media(payload: dict = Body(...)) -> dict:
+        key = stored_song(payload)
+        ids = {name: payload.get(name, "") for name in ("youtube", "spotify")}
+        if not all(isinstance(v, str) and len(v) <= _MAX_QUERY_CHARS for v in ids.values()):
+            raise HTTPException(400, "youtube and spotify must be short strings")
+        try:
+            return tools.media(key, **ids, store=store_now(), sources=sources)
+        except ValueError as error:
+            raise HTTPException(400, str(error)) from error
+
+    @app.post("/sync")
+    async def sync(payload: dict = Body(...)) -> dict:
+        key = stored_song(payload)
+        lrc, lrclib = payload.get("lrc", ""), payload.get("lrclib", False)
+        if not isinstance(lrc, str) or not isinstance(lrclib, bool):
+            raise HTTPException(400, "lrc must be a string and lrclib true or false")
+        if len(lrc) > MAX_LRC_CHARS:
+            raise HTTPException(400, f"The LRC is too long (over {MAX_LRC_CHARS} characters)")
+        try:  # LRCLIB is a network call: off the event loop
+            return await run_in_threadpool(
+                tools.sync,
+                key,
+                lrc=lrc,
+                lrclib=lrclib,
+                store=store_now(),
+                sources=sources,
+                get_json=get_json,
+            )
         except ValueError as error:
             raise HTTPException(400, str(error)) from error
 
