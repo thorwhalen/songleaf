@@ -378,23 +378,24 @@ The keys of the stored songs.
 
 ### Modules
 
-| [`chordpro`](songleaf.chordpro.html.md#module-songleaf.chordpro)         | Parse ChordPro text into a [`Song`](songleaf.model.html.md#songleaf.model.Song).                              |
-|--------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
-| [`datasets`](songleaf.datasets.html.md#module-songleaf.datasets)         | Where the `datasets` data kind lives: local files by default, S3 by configuration.                                                 |
-| [`diagrams`](songleaf.diagrams.html.md#module-songleaf.diagrams)         | Chord diagrams for the sheet: piano keys or guitar shapes (songleaf#13).                                                           |
-| [`export`](songleaf.export.html.md#module-songleaf.export)             | Export a song as ChordPro or as plain text (chords over lyrics), transposition applied.                                            |
-| [`harmony`](songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                                                  |
-| [`importers`](songleaf.importers.html.md#module-songleaf.importers)       | Turn pasted text into a [`Song`](songleaf.model.html.md#songleaf.model.Song): a registry of format importers. |
-| [`kaggle_index`](songleaf.kaggle_index.html.md#module-songleaf.kaggle_index) | A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.                                        |
-| [`library`](songleaf.library.html.md#module-songleaf.library)           | The library's lists: which stored songs are in which lists, shared by everyone using it.                                           |
-| [`match`](songleaf.match.html.md#module-songleaf.match)               | Where a query matched: the words it shares with a field, as spans to highlight, and the lyric line.                                |
-| [`model`](songleaf.model.html.md#module-songleaf.model)               | The linked-artifact model: a song is lyrics text plus standoff annotations.                                                        |
-| [`packing`](songleaf.packing.html.md#module-songleaf.packing)           | Line packing: which consecutive lines of a paragraph share a row.                                                                  |
-| [`parse`](songleaf.parse.html.md#module-songleaf.parse)               | Parse chords-over-lyrics text into a [`Song`](songleaf.model.html.md#songleaf.model.Song).                    |
-| [`render`](songleaf.render.html.md#module-songleaf.render)             | Render a song onto one dense page, with the lyrics as large as will fit.                                                           |
-| [`songbook`](songleaf.songbook.html.md#module-songleaf.songbook)         | A songbook: several songs in one PDF, with a table of contents, page numbers and bookmarks.                                        |
-| [`sources`](songleaf.sources.html.md#module-songleaf.sources)           | Where songs are found: sources, and a search that composes them.                                                                   |
-| [`store`](songleaf.store.html.md#module-songleaf.store)               | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                                           |
-| [`timing`](songleaf.timing.html.md#module-songleaf.timing)             | Play-along: a song's media links and line timings (songleaf#30).                                                                   |
-| [`tools`](songleaf.tools.html.md#module-songleaf.tools)               | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.                                 |
-| [`viewed`](songleaf.viewed.html.md#module-songleaf.viewed)             | Each viewer's *Viewed* list: the songs they opened, the most recent first.                                                         |
+| [`chordpro`](songleaf.chordpro.html.md#module-songleaf.chordpro)               | Parse ChordPro text into a [`Song`](songleaf.model.html.md#songleaf.model.Song).                              |
+|--------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| [`datasets`](songleaf.datasets.html.md#module-songleaf.datasets)               | Where the `datasets` data kind lives: local files by default, S3 by configuration.                                                 |
+| [`diagrams`](songleaf.diagrams.html.md#module-songleaf.diagrams)               | Chord diagrams for the sheet: piano keys or guitar shapes (songleaf#13).                                                           |
+| [`export`](songleaf.export.html.md#module-songleaf.export)                   | Export a song as ChordPro or as plain text (chords over lyrics), transposition applied.                                            |
+| [`harmony`](songleaf.harmony.html.md#module-songleaf.harmony)                 | What a chord does in its song's key, so that sheets can shade chords by function.                                                  |
+| [`importers`](songleaf.importers.html.md#module-songleaf.importers)             | Turn pasted text into a [`Song`](songleaf.model.html.md#songleaf.model.Song): a registry of format importers. |
+| [`kaggle_index`](songleaf.kaggle_index.html.md#module-songleaf.kaggle_index)       | A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.                                        |
+| [`library`](songleaf.library.html.md#module-songleaf.library)                 | The library's lists: which stored songs are in which lists, shared by everyone using it.                                           |
+| [`match`](songleaf.match.html.md#module-songleaf.match)                     | Where a query matched: the words it shares with a field, as spans to highlight, and the lyric line.                                |
+| [`model`](songleaf.model.html.md#module-songleaf.model)                     | The linked-artifact model: a song is lyrics text plus standoff annotations.                                                        |
+| [`packing`](songleaf.packing.html.md#module-songleaf.packing)                 | Line packing: which consecutive lines of a paragraph share a row.                                                                  |
+| [`parse`](songleaf.parse.html.md#module-songleaf.parse)                     | Parse chords-over-lyrics text into a [`Song`](songleaf.model.html.md#songleaf.model.Song).                    |
+| [`render`](songleaf.render.html.md#module-songleaf.render)                   | Render a song onto one dense page, with the lyrics as large as will fit.                                                           |
+| [`songbook`](songleaf.songbook.html.md#module-songleaf.songbook)               | A songbook: several songs in one PDF, with a table of contents, page numbers and bookmarks.                                        |
+| [`sources`](songleaf.sources.html.md#module-songleaf.sources)                 | Where songs are found: sources, and a search that composes them.                                                                   |
+| [`store`](songleaf.store.html.md#module-songleaf.store)                     | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                                           |
+| [`timing`](songleaf.timing.html.md#module-songleaf.timing)                   | Play-along: a song's media links and line timings (songleaf#30).                                                                   |
+| [`tools`](songleaf.tools.html.md#module-songleaf.tools)                     | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.                                 |
+| [`ultimate_guitar`](songleaf.ultimate_guitar.html.md#module-songleaf.ultimate_guitar) | Ultimate Guitar: community chord charts the reader opened themselves (songleaf#28).                                                |
+| [`viewed`](songleaf.viewed.html.md#module-songleaf.viewed)                   | Each viewer's *Viewed* list: the songs they opened, the most recent first.                                                         |

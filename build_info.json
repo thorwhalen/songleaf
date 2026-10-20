@@ -1,32 +1,32 @@
 {
   "schema_version": 1,
-  "built_at": "2026-10-20T15:06:41Z",
+  "built_at": "2026-10-20T15:17:36Z",
   "package": {
     "name": "songleaf",
-    "version": "0.0.22",
+    "version": "0.0.23",
     "display_name": "songleaf",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "1f2d13e2af32d609b213530c69910859577b056d",
-    "short_commit": "1f2d13e",
+    "commit": "889f7ccad146c87a25e0bf5df2f4def1dc5b3653",
+    "short_commit": "889f7cc",
     "branch": "main",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/thorwhalen/songleaf",
-    "commit_url": "https://github.com/thorwhalen/songleaf/commit/1f2d13e2af32d609b213530c69910859577b056d",
+    "commit_url": "https://github.com/thorwhalen/songleaf/commit/889f7ccad146c87a25e0bf5df2f4def1dc5b3653",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "thorwhalen/songleaf",
-    "sha": "1f2d13e2af32d609b213530c69910859577b056d",
+    "sha": "889f7ccad146c87a25e0bf5df2f4def1dc5b3653",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "39445030729",
-    "run_url": "https://github.com/thorwhalen/songleaf/actions/runs/39445030729",
+    "run_id": "39446708835",
+    "run_url": "https://github.com/thorwhalen/songleaf/actions/runs/39446708835",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -55,21 +55,19 @@
     "docs_dir": "docsrc"
   },
   "site": {
-    "modules_documented": 20,
-    "objects_documented": 195
+    "modules_documented": 21,
+    "objects_documented": 215
   },
   "pypi": {
     "checked": true,
     "latest": "0.0.23",
-    "relation": "behind",
+    "relation": "same",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/songleaf && cd songleaf\ngit checkout 1f2d13e2af32d609b213530c69910859577b056d\npip install \"epythet==0.2.21\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/songleaf && cd songleaf\ngit checkout 889f7ccad146c87a25e0bf5df2f4def1dc5b3653\npip install \"epythet==0.2.21\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
-    "aligned": false,
-    "notes": [
-      "The documented version (0.0.22) is behind the latest release on PyPI (0.0.23): `pip install songleaf` gives newer code than these docs describe."
-    ]
+    "aligned": true,
+    "notes": []
   }
 }

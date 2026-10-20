@@ -24,6 +24,7 @@
 - [songleaf.store](songleaf.store.html.md): Where songs persist: a &#96;MutableMapping&#96; of songs, JSON files by default.
 - [songleaf.timing](songleaf.timing.html.md): Play-along: a song’s media links and line timings (songleaf#30).
 - [songleaf.tools](songleaf.tools.html.md): The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.
+- [songleaf.ultimate_guitar](songleaf.ultimate_guitar.html.md): Ultimate Guitar: community chord charts the reader opened themselves (songleaf#28).
 - [songleaf.viewed](songleaf.viewed.html.md): Each viewer’s &#42;Viewed&#42; list: the songs they opened, the most recent first.
 
 ## Optional

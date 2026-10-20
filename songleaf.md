@@ -1,4 +1,4 @@
-> built 2026-10-20 15:06 UTC from 1f2d13e (main) · songleaf 0.0.22. Details: build_info.json
+> built 2026-10-20 15:17 UTC from 889f7cc (main) · songleaf 0.0.23. Details: build_info.json
 
 # index.html.md
 
@@ -996,26 +996,27 @@ The keys of the stored songs.
 
 ### Modules
 
-| [`chordpro`](_autosummary/songleaf.chordpro.html.md#module-songleaf.chordpro)         | Parse ChordPro text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song).                              |
-|--------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
-| [`datasets`](_autosummary/songleaf.datasets.html.md#module-songleaf.datasets)         | Where the `datasets` data kind lives: local files by default, S3 by configuration.                                                 |
-| [`diagrams`](_autosummary/songleaf.diagrams.html.md#module-songleaf.diagrams)         | Chord diagrams for the sheet: piano keys or guitar shapes (songleaf#13).                                                           |
-| [`export`](_autosummary/songleaf.export.html.md#module-songleaf.export)             | Export a song as ChordPro or as plain text (chords over lyrics), transposition applied.                                            |
-| [`harmony`](_autosummary/songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                                                  |
-| [`importers`](_autosummary/songleaf.importers.html.md#module-songleaf.importers)       | Turn pasted text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song): a registry of format importers. |
-| [`kaggle_index`](_autosummary/songleaf.kaggle_index.html.md#module-songleaf.kaggle_index) | A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.                                        |
-| [`library`](_autosummary/songleaf.library.html.md#module-songleaf.library)           | The library's lists: which stored songs are in which lists, shared by everyone using it.                                           |
-| [`match`](_autosummary/songleaf.match.html.md#module-songleaf.match)               | Where a query matched: the words it shares with a field, as spans to highlight, and the lyric line.                                |
-| [`model`](_autosummary/songleaf.model.html.md#module-songleaf.model)               | The linked-artifact model: a song is lyrics text plus standoff annotations.                                                        |
-| [`packing`](_autosummary/songleaf.packing.html.md#module-songleaf.packing)           | Line packing: which consecutive lines of a paragraph share a row.                                                                  |
-| [`parse`](_autosummary/songleaf.parse.html.md#module-songleaf.parse)               | Parse chords-over-lyrics text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song).                    |
-| [`render`](_autosummary/songleaf.render.html.md#module-songleaf.render)             | Render a song onto one dense page, with the lyrics as large as will fit.                                                           |
-| [`songbook`](_autosummary/songleaf.songbook.html.md#module-songleaf.songbook)         | A songbook: several songs in one PDF, with a table of contents, page numbers and bookmarks.                                        |
-| [`sources`](_autosummary/songleaf.sources.html.md#module-songleaf.sources)           | Where songs are found: sources, and a search that composes them.                                                                   |
-| [`store`](_autosummary/songleaf.store.html.md#module-songleaf.store)               | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                                           |
-| [`timing`](_autosummary/songleaf.timing.html.md#module-songleaf.timing)             | Play-along: a song's media links and line timings (songleaf#30).                                                                   |
-| [`tools`](_autosummary/songleaf.tools.html.md#module-songleaf.tools)               | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.                                 |
-| [`viewed`](_autosummary/songleaf.viewed.html.md#module-songleaf.viewed)             | Each viewer's *Viewed* list: the songs they opened, the most recent first.                                                         |
+| [`chordpro`](_autosummary/songleaf.chordpro.html.md#module-songleaf.chordpro)               | Parse ChordPro text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song).                              |
+|--------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| [`datasets`](_autosummary/songleaf.datasets.html.md#module-songleaf.datasets)               | Where the `datasets` data kind lives: local files by default, S3 by configuration.                                                 |
+| [`diagrams`](_autosummary/songleaf.diagrams.html.md#module-songleaf.diagrams)               | Chord diagrams for the sheet: piano keys or guitar shapes (songleaf#13).                                                           |
+| [`export`](_autosummary/songleaf.export.html.md#module-songleaf.export)                   | Export a song as ChordPro or as plain text (chords over lyrics), transposition applied.                                            |
+| [`harmony`](_autosummary/songleaf.harmony.html.md#module-songleaf.harmony)                 | What a chord does in its song's key, so that sheets can shade chords by function.                                                  |
+| [`importers`](_autosummary/songleaf.importers.html.md#module-songleaf.importers)             | Turn pasted text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song): a registry of format importers. |
+| [`kaggle_index`](_autosummary/songleaf.kaggle_index.html.md#module-songleaf.kaggle_index)       | A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.                                        |
+| [`library`](_autosummary/songleaf.library.html.md#module-songleaf.library)                 | The library's lists: which stored songs are in which lists, shared by everyone using it.                                           |
+| [`match`](_autosummary/songleaf.match.html.md#module-songleaf.match)                     | Where a query matched: the words it shares with a field, as spans to highlight, and the lyric line.                                |
+| [`model`](_autosummary/songleaf.model.html.md#module-songleaf.model)                     | The linked-artifact model: a song is lyrics text plus standoff annotations.                                                        |
+| [`packing`](_autosummary/songleaf.packing.html.md#module-songleaf.packing)                 | Line packing: which consecutive lines of a paragraph share a row.                                                                  |
+| [`parse`](_autosummary/songleaf.parse.html.md#module-songleaf.parse)                     | Parse chords-over-lyrics text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song).                    |
+| [`render`](_autosummary/songleaf.render.html.md#module-songleaf.render)                   | Render a song onto one dense page, with the lyrics as large as will fit.                                                           |
+| [`songbook`](_autosummary/songleaf.songbook.html.md#module-songleaf.songbook)               | A songbook: several songs in one PDF, with a table of contents, page numbers and bookmarks.                                        |
+| [`sources`](_autosummary/songleaf.sources.html.md#module-songleaf.sources)                 | Where songs are found: sources, and a search that composes them.                                                                   |
+| [`store`](_autosummary/songleaf.store.html.md#module-songleaf.store)                     | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                                           |
+| [`timing`](_autosummary/songleaf.timing.html.md#module-songleaf.timing)                   | Play-along: a song's media links and line timings (songleaf#30).                                                                   |
+| [`tools`](_autosummary/songleaf.tools.html.md#module-songleaf.tools)                     | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.                                 |
+| [`ultimate_guitar`](_autosummary/songleaf.ultimate_guitar.html.md#module-songleaf.ultimate_guitar) | Ultimate Guitar: community chord charts the reader opened themselves (songleaf#28).                                                |
+| [`viewed`](_autosummary/songleaf.viewed.html.md#module-songleaf.viewed)                   | Each viewer's *Viewed* list: the songs they opened, the most recent first.                                                         |
 
 
 # _autosummary/songleaf.importers.html.md
@@ -1051,6 +1052,7 @@ songleaf never contacts the site the text came from.
 | [`PASTE_PROVENANCE`](_autosummary/songleaf.importers.html.md#songleaf.importers.PASTE_PROVENANCE)   | Provenance recorded for every pasted song (`url` is added when known).   |
 |---------------------------------------------------------------------|--------------------------------------------------------------------------|
 | [`KEY_HASH_CHARS`](_autosummary/songleaf.importers.html.md#songleaf.importers.KEY_HASH_CHARS)     | Characters of the text hashed into the `paste:<hash>` key.               |
+| [`MAX_META_CHARS`](_autosummary/songleaf.importers.html.md#songleaf.importers.MAX_META_CHARS)     | Characters a given `key` or `capo` may have at most (`"F#m"`, `"2"`).    |
 | [`MAX_PASTE_CHARS`](_autosummary/songleaf.importers.html.md#songleaf.importers.MAX_PASTE_CHARS)    | Pasted text longer than this is refused (a chord chart is a few KB).     |
 | [`IMPORTERS`](_autosummary/songleaf.importers.html.md#songleaf.importers.IMPORTERS)          | Tried in order; the last one accepts anything.                           |
 
@@ -1088,6 +1090,10 @@ One text format: how to recognise it and how to read it.
 
 Characters of the text hashed into the `paste:<hash>` key.
 
+### songleaf.importers.MAX_META_CHARS *= 20*
+
+Characters a given `key` or `capo` may have at most (`"F#m"`, `"2"`).
+
 ### songleaf.importers.MAX_PASTE_CHARS *= 200000*
 
 Pasted text longer than this is refused (a chord chart is a few KB).
@@ -1103,11 +1109,14 @@ The name of the first importer that recognises *text*.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### songleaf.importers.import_song(text, \*, title='', artist='', url='', format='', importers=(Importer(name='ultimate-guitar', detect=<function <lambda>>, parse=<function \_parse_ultimate_guitar>), Importer(name='chordpro', detect=<function \_is_chordpro>, parse=<function parse_chordpro>), Importer(name='opensong', detect=<function <lambda>>, parse=<function \_parse_opensong>), Importer(name='chords-over-lyrics', detect=<function <lambda>>, parse=<function parse_chords_over_lyrics>)))
+### songleaf.importers.import_song(text, \*, title='', artist='', url='', key='', capo='', format='', importers=(Importer(name='ultimate-guitar', detect=<function <lambda>>, parse=<function \_parse_ultimate_guitar>), Importer(name='chordpro', detect=<function \_is_chordpro>, parse=<function parse_chordpro>), Importer(name='opensong', detect=<function <lambda>>, parse=<function \_parse_opensong>), Importer(name='chords-over-lyrics', detect=<function <lambda>>, parse=<function parse_chords_over_lyrics>)))
 
 Parse pasted *text* with the first importer that recognises it (or *format*).
 
-`title`/`artist` given here win over those in the text.
+`title`/`artist`/`key`/`capo` given here win over those in the text.
+A `url` on ultimate-guitar.com is checked first (official and Pro pages are
+refused, see [`songleaf.ultimate_guitar`](_autosummary/songleaf.ultimate_guitar.html.md#module-songleaf.ultimate_guitar)), keys the song `ug:<id>`
+instead of `paste:<hash>`, and is noted as `provenance.site`.
 
 * **Return type:**
   [`Imported`](_autosummary/songleaf.importers.html.md#songleaf.importers.Imported)
@@ -2725,6 +2734,7 @@ than dicts uses [`songleaf.sources`](_autosummary/songleaf.sources.html.md#modul
 | [`forget`](_autosummary/songleaf.tools.html.md#songleaf.tools.forget)(key, \*[, store, library_root])            | Remove a song from the stored songs, from every list it was in, and from every Viewed list.                |
 | [`import_file`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_file)([path, title, artist, url, ...])      | Read pasted song text from a file (`-`: standard input) and store it; see `import_text`.                   |
 | [`import_text`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_text)(text, \*[, title, artist, url, ...])  | Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics. |
+| [`import_url`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_url)(url, \*[, refresh, store, source])     | Fetch one community Ultimate Guitar chord page and store its chart as `ug:<id>`.                           |
 | [`media`](_autosummary/songleaf.tools.html.md#songleaf.tools.media)(query, \*[, youtube, spotify, pick, ...])   | Link the song's recording: a YouTube video id and/or a Spotify track id.                                   |
 | [`search`](_autosummary/songleaf.tools.html.md#songleaf.tools.search)([query, title, artist, lyrics, ...])       | Find songs with one query: in your lists' names, then titles, artists and lyrics.                          |
 | [`sheet`](_autosummary/songleaf.tools.html.md#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...])    | Make a one-page song sheet (PDF) for the best match of `query`.                                            |
@@ -2736,7 +2746,7 @@ than dicts uses [`songleaf.sources`](_autosummary/songleaf.sources.html.md#modul
 | [`view`](_autosummary/songleaf.tools.html.md#songleaf.tools.view)(key, \*[, user, at, store, library_root])    | Put a stored song at the top of `user`'s Viewed list: they just opened it.                                 |
 | [`viewed`](_autosummary/songleaf.tools.html.md#songleaf.tools.viewed)(\*[, user, store, library_root])           | The songs `user` opened, the most recent first: `key`, `title`, `artist`, `viewed_at`.                     |
 
-### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function songbook>, <function song>, <function export>, <function songs>, <function import_file>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>, <function sync>, <function media>)*
+### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function songbook>, <function song>, <function export>, <function songs>, <function import_file>, <function import_url>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>, <function sync>, <function media>)*
 
 Every operation, in the order the CLI lists them.
 
@@ -2781,15 +2791,28 @@ Read pasted song text from a file (`-`: standard input) and store it; see `impor
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### songleaf.tools.import_text(text, , title='', artist='', url='', format='', store=None)
+### songleaf.tools.import_text(text, , title='', artist='', url='', key='', capo='', format='', store=None)
 
 Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics.
 
 The format is detected (`format` forces one of `ultimate-guitar`,
 `chordpro`, `opensong`, `chords-over-lyrics`). `url` is only
-recorded as provenance: songleaf never contacts it. The song is stored
-under `paste:<hash>` (the same text, the same key) and is then usable like
-any other: `sheet <key>`, `song <key>`.
+recorded as provenance: songleaf never contacts it (an official or Pro
+Ultimate Guitar URL is refused). The song is stored under `paste:<hash>`
+(the same text, the same key), or `ug:<id>` for an Ultimate Guitar URL,
+and is then usable like any other: `sheet <key>`, `song <key>`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.import_url(url, , refresh=False, store=None, source=None)
+
+Fetch one community Ultimate Guitar chord page and store its chart as `ug:<id>`.
+
+Local command line only, and off unless `SONGLEAF_UG_URL=1` is set: prefer
+pasting, or the bookmarklet run on the page you opened (see
+`songleaf.ultimate_guitar`). Official and Pro pages are refused. A chart
+already stored is not fetched again unless `refresh`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -2930,6 +2953,204 @@ longer stored are left out. `viewed_at` is in seconds since the epoch.
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
 
+# _autosummary/songleaf.ultimate_guitar.html.md
+
+# songleaf.ultimate_guitar
+
+Ultimate Guitar: community chord charts the reader opened themselves (songleaf#28).
+
+A community “Chords” or “Tabs” page on ultimate-guitar.com carries its chart in
+the page’s store (`.js-store`’s `data-content`, or `window.UGAPP.store`):
+`page.data.tab_view.wiki_tab.content`, in `[ch]`/`[tab]` markup, with the
+tab’s `song_name`, `artist_name`, `tonality_name` and the view’s `capo`.
+
+“Official” and “Pro” pages are refused: their content lives in UG’s own player,
+behind its subscription, and songleaf does not circumvent content protection
+(terms of service, section 6.2). [`refusal()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.refusal) says why, in words a reader
+understands; the bookmarklet (`data/web/bookmarklet.js`) applies the same rule
+in the browser, and [`songleaf.importers.import_song()`](_autosummary/songleaf.importers.html.md#songleaf.importers.import_song) applies it to every
+import that names a UG URL.
+
+Three routes, in the order songleaf prefers them (the terms are in
+`misc/docs/sources.md`):
+
+1. paste the chart into the page (no contact with UG at all);
+2. the bookmarklet, run in the reader’s own browser on a page they opened: it
+   reads the chart from that page and hands it to songleaf’s import form, where
+   the reader confirms it;
+3. [`UltimateGuitarURLSource`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource), which fetches one URL per call. It is for a
+   local command line only: off unless `SONGLEAF_UG_URL=1` is set, never in
+   [`songleaf.sources.default_sources()`](_autosummary/songleaf.sources.html.md#songleaf.sources.default_sources), never behind an HTTP route, and it
+   > never searches.
+
+All UG-derived songs carry `provenance.license = "personal"`.
+
+```pycon
+>>> refusal("https://tabs.ultimate-guitar.com/tab/invented/song-official-123")[:22]
+'This is an official or'
+>>> refusal("https://tabs.ultimate-guitar.com/tab/invented/song-chords-123")
+''
+>>> ug_key("https://tabs.ultimate-guitar.com/tab/invented/song-chords-123")
+'ug:123'
+```
+
+### Module Attributes
+
+| [`URL_SOURCE_ENVVAR`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.URL_SOURCE_ENVVAR)     | The environment variable that turns on [`UltimateGuitarURLSource`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource) (`"1"`).   |
+|------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
+| [`REFUSED_TYPES`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.REFUSED_TYPES)         | Tab types whose page has no text chart songleaf may read (UG's own player, or video).                                      |
+| [`USER_AGENT`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.USER_AGENT)            | What a request for a page says it is (UG scores bots; songleaf does not pretend to be a browser).                          |
+| [`FETCH_TIMEOUT_SECONDS`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.FETCH_TIMEOUT_SECONDS) | Seconds before a page fetch gives up.                                                                                      |
+| [`MAX_PAGE_BYTES`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.MAX_PAGE_BYTES)        | Bytes read from a page at most (a chart page is a few hundred KB).                                                         |
+
+### Functions
+
+| [`chart_from_html`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.chart_from_html)(page, \*[, url])   | The chart in a UG page's HTML (its `.js-store` element); see [`chart_from_store()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.chart_from_store).   |
+|-------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| [`chart_from_store`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.chart_from_store)(store, \*[, url]) | The chart in a UG page's store: `{"id", "text", "title", "artist", "key", "capo", "type", "url"}`.                                  |
+| [`fetch_page`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.fetch_page)(url)                    | The HTML at *url*: one honest request, no retries, no browser disguise.                                                             |
+| [`is_ultimate_guitar_url`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.is_ultimate_guitar_url)(url)        | Whether *url* is on ultimate-guitar.com (any subdomain).                                                                            |
+| [`refusal`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.refusal)([url, tab_type])           | Why songleaf will not read this UG page, or `""` when it may.                                                                       |
+| [`safe_page_url`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.safe_page_url)(url)                 | *url*, rebuilt from its parts, if it is a plain https URL on ultimate-guitar.com.                                                   |
+| [`tab_id`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.tab_id)(url)                        | The tab's numeric id from a UG URL (`.../song-chords-123` -> `"123"`), or `""`.                                                     |
+| [`ug_key`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.ug_key)(url)                        | The store key of a UG chart (`ug:<id>`), or `""` when *url* names none.                                                             |
+| [`url_source_enabled`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.url_source_enabled)()               | Whether this process may fetch UG pages (`SONGLEAF_UG_URL=1`).                                                                      |
+
+### Classes
+
+| [`UltimateGuitarURLSource`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource)(\*[, fetch, enabled])   | One UG chord page, by URL: local command line only, off by default.   |
+|--------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------|
+
+### Exceptions
+
+| [`RefusedPage`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.RefusedPage)   | A UG page songleaf will not read (official or Pro content, or no text chart).   |
+|----------------------------------------------------------------|---------------------------------------------------------------------------------|
+
+### songleaf.ultimate_guitar.FETCH_TIMEOUT_SECONDS *= 20*
+
+Seconds before a page fetch gives up.
+
+### songleaf.ultimate_guitar.MAX_PAGE_BYTES *= 5000000*
+
+Bytes read from a page at most (a chart page is a few hundred KB).
+
+### songleaf.ultimate_guitar.REFUSED_TYPES *= frozenset({'official', 'power', 'pro', 'video'})*
+
+Tab types whose page has no text chart songleaf may read (UG’s own player, or video).
+
+### *exception* songleaf.ultimate_guitar.RefusedPage
+
+Bases: [`ValueError`](https://docs.python.org/3/builtins/exceptions.html#ValueError)
+
+A UG page songleaf will not read (official or Pro content, or no text chart).
+
+### songleaf.ultimate_guitar.URL_SOURCE_ENVVAR *= 'SONGLEAF_UG_URL'*
+
+The environment variable that turns on [`UltimateGuitarURLSource`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource) (`"1"`).
+
+### songleaf.ultimate_guitar.USER_AGENT *= 'songleaf (personal, one page per request)'*
+
+What a request for a page says it is (UG scores bots; songleaf does not pretend to be a browser).
+
+### *class* songleaf.ultimate_guitar.UltimateGuitarURLSource(\*, fetch=<function fetch_page>, enabled=None)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+One UG chord page, by URL: local command line only, off by default.
+
+It never searches ([`search()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource.search) returns nothing) and is never among
+[`songleaf.sources.default_sources()`](_autosummary/songleaf.sources.html.md#songleaf.sources.default_sources). [`get()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource.get) fetches the one page
+it is given, refuses official and Pro pages, and returns the chart as a
+[`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song) keyed `ug:<id>` (see [`ug_key()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.ug_key)).
+
+* **Parameters:**
+  * **fetch** ([`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)], [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]) – `url -> html`; the default makes one plain HTTPS request.
+  * **enabled** ([`bool`](https://docs.python.org/3/builtins/functions.html#bool) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – Whether fetching is allowed; defaults to `SONGLEAF_UG_URL=1`.
+
+#### get(url)
+
+The chart at *url* as a song (raises [`RefusedPage`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.RefusedPage), or `ValueError` when off).
+
+#### search(\*args, \*\*kwargs)
+
+Nothing: this source reads the one page it is given and never searches UG.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)
+
+### songleaf.ultimate_guitar.chart_from_html(page, , url='')
+
+The chart in a UG page’s HTML (its `.js-store` element); see [`chart_from_store()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.chart_from_store).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.ultimate_guitar.chart_from_store(store, , url='')
+
+The chart in a UG page’s store: `{"id", "text", "title", "artist", "key", "capo", "type", "url"}`.
+
+Raises [`RefusedPage`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.RefusedPage) for an official or Pro page, or one with no text chart.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.ultimate_guitar.fetch_page(url)
+
+The HTML at *url*: one honest request, no retries, no browser disguise.
+
+Only https ultimate-guitar.com URLs are fetched, and a redirect anywhere else is refused.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### songleaf.ultimate_guitar.is_ultimate_guitar_url(url)
+
+Whether *url* is on ultimate-guitar.com (any subdomain).
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+### songleaf.ultimate_guitar.refusal(url='', , tab_type='')
+
+Why songleaf will not read this UG page, or `""` when it may.
+
+Only URLs on ultimate-guitar.com are judged; any other URL gets `""`.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### songleaf.ultimate_guitar.safe_page_url(url)
+
+*url*, rebuilt from its parts, if it is a plain https URL on ultimate-guitar.com.
+
+Raises `ValueError` otherwise: another scheme or host, user info, backslashes,
+whitespace or control characters (where URL parsers disagree).
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### songleaf.ultimate_guitar.tab_id(url)
+
+The tab’s numeric id from a UG URL (`.../song-chords-123` -> `"123"`), or `""`.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### songleaf.ultimate_guitar.ug_key(url)
+
+The store key of a UG chart (`ug:<id>`), or `""` when *url* names none.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### songleaf.ultimate_guitar.url_source_enabled()
+
+Whether this process may fetch UG pages (`SONGLEAF_UG_URL=1`).
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+
 # _autosummary/songleaf.viewed.html.md
 
 # songleaf.viewed
@@ -3044,18 +3265,16 @@ True
 
 # About this build
 
-This documentation was built on **2026-10-20 15:06 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/1f2d13e2af32d609b213530c69910859577b056d"><code>1f2d13e</code></a> on branch <code>main</code>, for **songleaf 0.0.22** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 15:17 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/889f7ccad146c87a25e0bf5df2f4def1dc5b3653"><code>889f7cc</code></a> on branch <code>main</code>, for **songleaf 0.0.23** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.22) is behind the latest release on PyPI (0.0.23): `pip install songleaf` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/1f2d13e2af32d609b213530c69910859577b056d"><code>1f2d13e2af32d609b213530c69910859577b056d</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/889f7ccad146c87a25e0bf5df2f4def1dc5b3653"><code>889f7ccad146c87a25e0bf5df2f4def1dc5b3653</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -3066,9 +3285,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39445030729">39445030729</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39446708835">39446708835</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>1f2d13e2af32d609b213530c69910859577b056d</code> (in the history of the built commit) |
+| Event commit | <code>889f7ccad146c87a25e0bf5df2f4def1dc5b3653</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -3093,13 +3312,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.23/">0.0.23</a>, newer than the documented version (0.0.22).
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.23/">0.0.23</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 1f2d13e2af32d609b213530c69910859577b056d
+git checkout 889f7ccad146c87a25e0bf5df2f4def1dc5b3653
 pip install "epythet==0.2.21"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

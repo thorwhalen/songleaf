@@ -21,6 +21,7 @@ than dicts uses [`songleaf.sources`](songleaf.sources.html.md#module-songleaf.so
 | [`forget`](#songleaf.tools.forget)(key, \*[, store, library_root])            | Remove a song from the stored songs, from every list it was in, and from every Viewed list.                |
 | [`import_file`](#songleaf.tools.import_file)([path, title, artist, url, ...])      | Read pasted song text from a file (`-`: standard input) and store it; see `import_text`.                   |
 | [`import_text`](#songleaf.tools.import_text)(text, \*[, title, artist, url, ...])  | Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics. |
+| [`import_url`](#songleaf.tools.import_url)(url, \*[, refresh, store, source])     | Fetch one community Ultimate Guitar chord page and store its chart as `ug:<id>`.                           |
 | [`media`](#songleaf.tools.media)(query, \*[, youtube, spotify, pick, ...])   | Link the song's recording: a YouTube video id and/or a Spotify track id.                                   |
 | [`search`](#songleaf.tools.search)([query, title, artist, lyrics, ...])       | Find songs with one query: in your lists' names, then titles, artists and lyrics.                          |
 | [`sheet`](#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...])    | Make a one-page song sheet (PDF) for the best match of `query`.                                            |
@@ -32,7 +33,7 @@ than dicts uses [`songleaf.sources`](songleaf.sources.html.md#module-songleaf.so
 | [`view`](#songleaf.tools.view)(key, \*[, user, at, store, library_root])    | Put a stored song at the top of `user`'s Viewed list: they just opened it.                                 |
 | [`viewed`](#songleaf.tools.viewed)(\*[, user, store, library_root])           | The songs `user` opened, the most recent first: `key`, `title`, `artist`, `viewed_at`.                     |
 
-### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function songbook>, <function song>, <function export>, <function songs>, <function import_file>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>, <function sync>, <function media>)*
+### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function songbook>, <function song>, <function export>, <function songs>, <function import_file>, <function import_url>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>, <function sync>, <function media>)*
 
 Every operation, in the order the CLI lists them.
 
@@ -77,15 +78,28 @@ Read pasted song text from a file (`-`: standard input) and store it; see `impor
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### songleaf.tools.import_text(text, , title='', artist='', url='', format='', store=None)
+### songleaf.tools.import_text(text, , title='', artist='', url='', key='', capo='', format='', store=None)
 
 Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics.
 
 The format is detected (`format` forces one of `ultimate-guitar`,
 `chordpro`, `opensong`, `chords-over-lyrics`). `url` is only
-recorded as provenance: songleaf never contacts it. The song is stored
-under `paste:<hash>` (the same text, the same key) and is then usable like
-any other: `sheet <key>`, `song <key>`.
+recorded as provenance: songleaf never contacts it (an official or Pro
+Ultimate Guitar URL is refused). The song is stored under `paste:<hash>`
+(the same text, the same key), or `ug:<id>` for an Ultimate Guitar URL,
+and is then usable like any other: `sheet <key>`, `song <key>`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.import_url(url, , refresh=False, store=None, source=None)
+
+Fetch one community Ultimate Guitar chord page and store its chart as `ug:<id>`.
+
+Local command line only, and off unless `SONGLEAF_UG_URL=1` is set: prefer
+pasting, or the bookmarklet run on the page you opened (see
+`songleaf.ultimate_guitar`). Official and Pro pages are refused. A chart
+already stored is not fetched again unless `refresh`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

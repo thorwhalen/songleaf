@@ -220,6 +220,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.timing.html">songleaf.timing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.tools.html">songleaf.tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.ultimate_guitar.html">songleaf.ultimate_guitar</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.viewed.html">songleaf.viewed</a></li>
 </ul>
 </li>
@@ -649,6 +650,8 @@
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">artist</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">capo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="nb">format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
@@ -656,24 +659,35 @@
 
 <span class="sd">    The format is detected (``format`` forces one of ``ultimate-guitar``,</span>
 <span class="sd">    ``chordpro``, ``opensong``, ``chords-over-lyrics``). ``url`` is only</span>
-<span class="sd">    recorded as provenance: songleaf never contacts it. The song is stored</span>
-<span class="sd">    under ``paste:&lt;hash&gt;`` (the same text, the same key) and is then usable like</span>
-<span class="sd">    any other: ``sheet &lt;key&gt;``, ``song &lt;key&gt;``.</span>
+<span class="sd">    recorded as provenance: songleaf never contacts it (an official or Pro</span>
+<span class="sd">    Ultimate Guitar URL is refused). The song is stored under ``paste:&lt;hash&gt;``</span>
+<span class="sd">    (the same text, the same key), or ``ug:&lt;id&gt;`` for an Ultimate Guitar URL,</span>
+<span class="sd">    and is then usable like any other: ``sheet &lt;key&gt;``, ``song &lt;key&gt;``.</span>
 <span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.importers</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_song</span>
 
-    <span class="n">imported</span> <span class="o">=</span> <span class="n">import_song</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">artist</span><span class="o">=</span><span class="n">artist</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">)</span>
-    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
-    <span class="n">store</span><span class="p">[</span><span class="n">imported</span><span class="o">.</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">imported</span><span class="o">.</span><span class="n">song</span>
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">"key"</span><span class="p">:</span> <span class="n">imported</span><span class="o">.</span><span class="n">key</span><span class="p">,</span>
-        <span class="s2">"format"</span><span class="p">:</span> <span class="n">imported</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
-        <span class="s2">"title"</span><span class="p">:</span> <span class="n">imported</span><span class="o">.</span><span class="n">song</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
-        <span class="s2">"artist"</span><span class="p">:</span> <span class="n">imported</span><span class="o">.</span><span class="n">song</span><span class="o">.</span><span class="n">artist</span><span class="p">,</span>
-        <span class="s2">"lines"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">imported</span><span class="o">.</span><span class="n">song</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)),</span>
-        <span class="s2">"chords"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">imported</span><span class="o">.</span><span class="n">song</span><span class="o">.</span><span class="n">of_kind</span><span class="p">(</span><span class="s2">"chord"</span><span class="p">)),</span>
-    <span class="p">}</span></div>
+    <span class="n">imported</span> <span class="o">=</span> <span class="n">import_song</span><span class="p">(</span>
+        <span class="n">text</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">artist</span><span class="o">=</span><span class="n">artist</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">capo</span><span class="o">=</span><span class="n">capo</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">_stored</span><span class="p">(</span><span class="n">imported</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">imported</span><span class="o">.</span><span class="n">song</span><span class="p">,</span> <span class="n">imported</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">)</span></div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_stored</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">song</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">store</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
+    <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">song</span>
+    <span class="k">return</span> <span class="n">_summary</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">song</span><span class="p">,</span> <span class="nb">format</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_summary</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">song</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"key"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span>
+        <span class="s2">"format"</span><span class="p">:</span> <span class="nb">format</span><span class="p">,</span>
+        <span class="s2">"title"</span><span class="p">:</span> <span class="n">song</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+        <span class="s2">"artist"</span><span class="p">:</span> <span class="n">song</span><span class="o">.</span><span class="n">artist</span><span class="p">,</span>
+        <span class="s2">"lines"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">song</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)),</span>
+        <span class="s2">"chords"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">song</span><span class="o">.</span><span class="n">of_kind</span><span class="p">(</span><span class="s2">"chord"</span><span class="p">)),</span>
+    <span class="p">}</span>
 
 
 <div class="viewcode-block" id="import_file">
@@ -702,6 +716,31 @@
 
 
 <span class="n">import_file</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="s2">"import"</span>  <span class="c1"># the CLI command is ``songleaf import``</span>
+
+
+<div class="viewcode-block" id="import_url">
+<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.import_url">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">import_url</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">refresh</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Fetch one community Ultimate Guitar chord page and store its chart as ``ug:&lt;id&gt;``.</span>
+
+<span class="sd">    Local command line only, and off unless ``SONGLEAF_UG_URL=1`` is set: prefer</span>
+<span class="sd">    pasting, or the bookmarklet run on the page you opened (see</span>
+<span class="sd">    ``songleaf.ultimate_guitar``). Official and Pro pages are refused. A chart</span>
+<span class="sd">    already stored is not fetched again unless ``refresh``.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.ultimate_guitar</span><span class="w"> </span><span class="kn">import</span> <span class="n">UltimateGuitarURLSource</span><span class="p">,</span> <span class="n">ug_key</span>
+
+    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">ug_key</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Not an Ultimate Guitar tab URL (no tab id): </span><span class="si">{</span><span class="n">url</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">refresh</span> <span class="ow">and</span> <span class="n">_is_stored</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="n">song</span> <span class="o">=</span> <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">_summary</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">song</span><span class="p">,</span> <span class="s2">"ultimate-guitar"</span><span class="p">),</span> <span class="s2">"cached"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">UltimateGuitarURLSource</span><span class="p">()</span> <span class="k">if</span> <span class="n">source</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">source</span>
+    <span class="n">song</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">_stored</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">song</span><span class="p">,</span> <span class="s2">"ultimate-guitar"</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">),</span> <span class="s2">"cached"</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span></div>
+
 
 
 <div class="viewcode-block" id="forget">
@@ -909,6 +948,7 @@
     <span class="n">export</span><span class="p">,</span>
     <span class="n">songs</span><span class="p">,</span>
     <span class="n">import_file</span><span class="p">,</span>
+    <span class="n">import_url</span><span class="p">,</span>
     <span class="n">viewed</span><span class="p">,</span>
     <span class="n">view</span><span class="p">,</span>
     <span class="n">unview</span><span class="p">,</span>
@@ -945,7 +985,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=f5b15773"></script>
+</div><script src="../../_static/documentation_options.js?v=5cf12315"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

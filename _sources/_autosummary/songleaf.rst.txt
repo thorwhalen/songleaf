@@ -59,5 +59,6 @@
    store
    timing
    tools
+   ultimate_guitar
    viewed
    web

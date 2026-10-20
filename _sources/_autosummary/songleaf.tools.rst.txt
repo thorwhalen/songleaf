@@ -19,6 +19,7 @@ songleaf.tools
       forget
       import_file
       import_text
+      import_url
       media
       search
       sheet

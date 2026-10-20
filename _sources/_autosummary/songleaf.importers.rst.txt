@@ -10,6 +10,7 @@ songleaf.importers
    
       PASTE_PROVENANCE
       KEY_HASH_CHARS
+      MAX_META_CHARS
       MAX_PASTE_CHARS
       IMPORTERS
    

@@ -29,6 +29,7 @@ songleaf never contacts the site the text came from.
 | [`PASTE_PROVENANCE`](#songleaf.importers.PASTE_PROVENANCE)   | Provenance recorded for every pasted song (`url` is added when known).   |
 |---------------------------------------------------------------------|--------------------------------------------------------------------------|
 | [`KEY_HASH_CHARS`](#songleaf.importers.KEY_HASH_CHARS)     | Characters of the text hashed into the `paste:<hash>` key.               |
+| [`MAX_META_CHARS`](#songleaf.importers.MAX_META_CHARS)     | Characters a given `key` or `capo` may have at most (`"F#m"`, `"2"`).    |
 | [`MAX_PASTE_CHARS`](#songleaf.importers.MAX_PASTE_CHARS)    | Pasted text longer than this is refused (a chord chart is a few KB).     |
 | [`IMPORTERS`](#songleaf.importers.IMPORTERS)          | Tried in order; the last one accepts anything.                           |
 
@@ -66,6 +67,10 @@ One text format: how to recognise it and how to read it.
 
 Characters of the text hashed into the `paste:<hash>` key.
 
+### songleaf.importers.MAX_META_CHARS *= 20*
+
+Characters a given `key` or `capo` may have at most (`"F#m"`, `"2"`).
+
 ### songleaf.importers.MAX_PASTE_CHARS *= 200000*
 
 Pasted text longer than this is refused (a chord chart is a few KB).
@@ -81,11 +86,14 @@ The name of the first importer that recognises *text*.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### songleaf.importers.import_song(text, \*, title='', artist='', url='', format='', importers=(Importer(name='ultimate-guitar', detect=<function <lambda>>, parse=<function \_parse_ultimate_guitar>), Importer(name='chordpro', detect=<function \_is_chordpro>, parse=<function parse_chordpro>), Importer(name='opensong', detect=<function <lambda>>, parse=<function \_parse_opensong>), Importer(name='chords-over-lyrics', detect=<function <lambda>>, parse=<function parse_chords_over_lyrics>)))
+### songleaf.importers.import_song(text, \*, title='', artist='', url='', key='', capo='', format='', importers=(Importer(name='ultimate-guitar', detect=<function <lambda>>, parse=<function \_parse_ultimate_guitar>), Importer(name='chordpro', detect=<function \_is_chordpro>, parse=<function parse_chordpro>), Importer(name='opensong', detect=<function <lambda>>, parse=<function \_parse_opensong>), Importer(name='chords-over-lyrics', detect=<function <lambda>>, parse=<function parse_chords_over_lyrics>)))
 
 Parse pasted *text* with the first importer that recognises it (or *format*).
 
-`title`/`artist` given here win over those in the text.
+`title`/`artist`/`key`/`capo` given here win over those in the text.
+A `url` on ultimate-guitar.com is checked first (official and Pro pages are
+refused, see [`songleaf.ultimate_guitar`](songleaf.ultimate_guitar.html.md#module-songleaf.ultimate_guitar)), keys the song `ug:<id>`
+instead of `paste:<hash>`, and is noted as `provenance.site`.
 
 * **Return type:**
   [`Imported`](#songleaf.importers.Imported)

@@ -2,18 +2,16 @@
 
 # About this build
 
-This documentation was built on **2026-10-20 15:06 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/1f2d13e2af32d609b213530c69910859577b056d"><code>1f2d13e</code></a> on branch <code>main</code>, for **songleaf 0.0.22** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 15:17 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/889f7ccad146c87a25e0bf5df2f4def1dc5b3653"><code>889f7cc</code></a> on branch <code>main</code>, for **songleaf 0.0.23** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.22) is behind the latest release on PyPI (0.0.23): `pip install songleaf` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/1f2d13e2af32d609b213530c69910859577b056d"><code>1f2d13e2af32d609b213530c69910859577b056d</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/889f7ccad146c87a25e0bf5df2f4def1dc5b3653"><code>889f7ccad146c87a25e0bf5df2f4def1dc5b3653</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -24,9 +22,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39445030729">39445030729</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39446708835">39446708835</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>1f2d13e2af32d609b213530c69910859577b056d</code> (in the history of the built commit) |
+| Event commit | <code>889f7ccad146c87a25e0bf5df2f4def1dc5b3653</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -51,13 +49,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.23/">0.0.23</a>, newer than the documented version (0.0.22).
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.23/">0.0.23</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 1f2d13e2af32d609b213530c69910859577b056d
+git checkout 889f7ccad146c87a25e0bf5df2f4def1dc5b3653
 pip install "epythet==0.2.21"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

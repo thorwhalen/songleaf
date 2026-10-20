@@ -220,6 +220,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.store.html">songleaf.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.timing.html">songleaf.timing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.tools.html">songleaf.tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.ultimate_guitar.html">songleaf.ultimate_guitar</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.viewed.html">songleaf.viewed</a></li>
 </ul>
 </li>
@@ -298,6 +299,9 @@
 
 <span class="c1">#: Characters of the text hashed into the ``paste:&lt;hash&gt;`` key.</span>
 <span class="n">KEY_HASH_CHARS</span> <span class="o">=</span> <span class="mi">12</span>
+
+<span class="c1">#: Characters a given ``key`` or ``capo`` may have at most (``"F#m"``, ``"2"``).</span>
+<span class="n">MAX_META_CHARS</span> <span class="o">=</span> <span class="mi">20</span>
 
 <span class="c1">#: Pasted text longer than this is refused (a chord chart is a few KB).</span>
 <span class="n">MAX_PASTE_CHARS</span> <span class="o">=</span> <span class="mi">200_000</span>
@@ -427,25 +431,41 @@
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">artist</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">capo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="nb">format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">importers</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Importer</span><span class="p">]</span> <span class="o">=</span> <span class="n">IMPORTERS</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Imported</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Parse pasted *text* with the first importer that recognises it (or *format*).</span>
 
-<span class="sd">    ``title``/``artist`` given here win over those in the text.</span>
+<span class="sd">    ``title``/``artist``/``key``/``capo`` given here win over those in the text.</span>
+<span class="sd">    A ``url`` on ultimate-guitar.com is checked first (official and Pro pages are</span>
+<span class="sd">    refused, see :mod:`songleaf.ultimate_guitar`), keys the song ``ug:&lt;id&gt;``</span>
+<span class="sd">    instead of ``paste:&lt;hash&gt;``, and is noted as ``provenance.site``.</span>
 <span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf</span><span class="w"> </span><span class="kn">import</span> <span class="n">ultimate_guitar</span> <span class="k">as</span> <span class="n">_ug</span>
+
     <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Nothing to import: the text is empty."</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">MAX_PASTE_CHARS</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"The text is too long (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="n">MAX_PASTE_CHARS</span><span class="si">}</span><span class="s2"> characters)."</span>
         <span class="p">)</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">"key"</span><span class="p">,</span> <span class="n">key</span><span class="p">),</span> <span class="p">(</span><span class="s2">"capo"</span><span class="p">,</span> <span class="n">capo</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">MAX_META_CHARS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> is too long (over </span><span class="si">{</span><span class="n">MAX_META_CHARS</span><span class="si">}</span><span class="s2"> characters)."</span><span class="p">)</span>
+    <span class="n">why</span> <span class="o">=</span> <span class="n">_ug</span><span class="o">.</span><span class="n">refusal</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">why</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">why</span><span class="p">)</span>
     <span class="n">importer</span> <span class="o">=</span> <span class="n">_choose</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">importers</span><span class="p">,</span> <span class="nb">format</span><span class="p">)</span>
     <span class="n">provenance</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">PASTE_PROVENANCE</span><span class="p">,</span> <span class="o">**</span><span class="p">({</span><span class="s2">"url"</span><span class="p">:</span> <span class="n">url</span><span class="p">}</span> <span class="k">if</span> <span class="n">url</span> <span class="k">else</span> <span class="p">{})}</span>
+    <span class="k">if</span> <span class="n">url</span> <span class="ow">and</span> <span class="n">_ug</span><span class="o">.</span><span class="n">is_ultimate_guitar_url</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+        <span class="n">provenance</span><span class="p">[</span><span class="s2">"site"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"ultimate-guitar"</span>
     <span class="n">song</span> <span class="o">=</span> <span class="n">importer</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">provenance</span><span class="o">=</span><span class="n">provenance</span><span class="p">)</span>
-    <span class="n">song</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">"title"</span><span class="p">,</span> <span class="n">title</span><span class="p">),</span> <span class="p">(</span><span class="s2">"artist"</span><span class="p">,</span> <span class="n">artist</span><span class="p">))</span> <span class="k">if</span> <span class="n">v</span><span class="p">})</span>
+    <span class="n">given</span> <span class="o">=</span> <span class="p">((</span><span class="s2">"title"</span><span class="p">,</span> <span class="n">title</span><span class="p">),</span> <span class="p">(</span><span class="s2">"artist"</span><span class="p">,</span> <span class="n">artist</span><span class="p">),</span> <span class="p">(</span><span class="s2">"key"</span><span class="p">,</span> <span class="n">key</span><span class="p">),</span> <span class="p">(</span><span class="s2">"capo"</span><span class="p">,</span> <span class="n">capo</span><span class="p">))</span>
+    <span class="n">song</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">given</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">and</span> <span class="n">v</span><span class="o">.</span><span class="n">strip</span><span class="p">()})</span>
     <span class="n">song</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"title"</span><span class="p">,</span> <span class="s2">"Pasted song"</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">Imported</span><span class="p">(</span><span class="n">paste_key</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="n">importer</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">song</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">Imported</span><span class="p">(</span><span class="n">_ug</span><span class="o">.</span><span class="n">ug_key</span><span class="p">(</span><span class="n">url</span><span class="p">)</span> <span class="ow">or</span> <span class="n">paste_key</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="n">importer</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">song</span><span class="p">)</span></div>
 
 
 
@@ -479,7 +499,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=f5b15773"></script>
+</div><script src="../../_static/documentation_options.js?v=5cf12315"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

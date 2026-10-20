@@ -1,0 +1,42 @@
+songleaf.ultimate\_guitar
+=========================
+
+.. automodule:: songleaf.ultimate_guitar
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      URL_SOURCE_ENVVAR
+      REFUSED_TYPES
+      USER_AGENT
+      FETCH_TIMEOUT_SECONDS
+      MAX_PAGE_BYTES
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      chart_from_html
+      chart_from_store
+      fetch_page
+      is_ultimate_guitar_url
+      refusal
+      safe_page_url
+      tab_id
+      ug_key
+      url_source_enabled
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      UltimateGuitarURLSource
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      RefusedPage
+   
