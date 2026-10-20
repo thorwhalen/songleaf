@@ -880,6 +880,9 @@ class SheetLayout:
             any packer with the signature of :func:`songleaf.packing.pack_greedy`.
         columns: Columns per page.
         shading: Shade sections, repeated lines and chord functions.
+        diagrams: ``"piano"`` or ``"guitar"`` draws the song's chords as a strip
+            of diagrams at the foot of the first page (:mod:`songleaf.diagrams`);
+            the lyrics shrink to make room. ``None``: no diagrams.
         style: Typography and colours.
     """
 
@@ -887,9 +890,16 @@ class SheetLayout:
     packing: str | Callable = "greedy"
     columns: int = 1
     shading: bool = False
+    diagrams: str | None = None
     style: DenseStyle = field(default_factory=DenseStyle)
 
     def __post_init__(self):  # a bad layout fails here, not mid-render
+        from songleaf.diagrams import DIAGRAM_KINDS
+
+        if self.diagrams is not None and self.diagrams not in DIAGRAM_KINDS:
+            raise ValueError(
+                f"diagrams must be one of {DIAGRAM_KINDS} or None, got {self.diagrams!r}"
+            )
         columns = self.columns
         if isinstance(columns, bool) or not isinstance(columns, int) or columns < 1:
             raise ValueError(f"columns must be a positive integer, got {columns!r}")
@@ -939,6 +949,8 @@ LAYOUT_OPTIONS: dict[str, dict] = {
     "packed": {"packing": "structured"},
     "two-column": {"columns": 2},
     "shaded": {"shading": True},
+    "piano": {"diagrams": "piano"},
+    "guitar": {"diagrams": "guitar"},
 }
 _OPTION_ALIASES = {
     "2col": "two-column",
@@ -1006,6 +1018,7 @@ class _Flow:
     overflow: bool  # some row is taller than its frame
     column_width: float
     heading_block: float  # the height the heading takes from the first page's columns
+    diagram_block: float = 0.0  # the height of the chord-diagram strip on the first page
 
 
 def _flow_rows(rows, size: float, style: DenseStyle, capacities) -> tuple[list, bool]:
@@ -1029,25 +1042,49 @@ def _flow_rows(rows, size: float, style: DenseStyle, capacities) -> tuple[list, 
 
 
 def _flow(
-    pieces, heading: str, size: float, *, width, height, layout: SheetLayout, paint
+    pieces,
+    heading: str,
+    size: float,
+    *,
+    width,
+    height,
+    layout: SheetLayout,
+    paint,
+    diagram_chords: tuple = (),
 ) -> _Flow:
     style, columns = layout.style, layout.columns
     options = {"chords": layout.placement, "packer": layout.packer, "paint": paint}
+    strip = 0.0
+    if layout.diagrams and diagram_chords:
+        from songleaf.diagrams import strip_height
+
+        strip = strip_height(len(diagram_chords), layout.diagrams, size, width)
     if columns == 1:  # the heading is the first row of the only column
         rows = _layout(pieces, size, width, style, heading, **options)
-        frames, overflow = _flow_rows(rows, size, style, itertools.repeat(height))
-        return _Flow(None, frames, overflow, width, 0.0)
+        capacities = itertools.chain([height - strip], itertools.repeat(height))
+        frames, overflow = _flow_rows(rows, size, style, capacities)
+        return _Flow(None, frames, overflow or strip > height, width, 0.0, strip)
     column_width = (width - style.column_gap * size * (columns - 1)) / columns
     head = _heading_row(heading, size, width, style) if heading else None
     block = head.top + head.bottom + style.row_gap * size if head else 0.0
-    if column_width <= 0 or block > height:
-        return _Flow(head, [[]] * (columns + 1), True, max(column_width, 0.0), block)
+    if column_width <= 0 or block + strip > height:
+        return _Flow(
+            head, [[]] * (columns + 1), True, max(column_width, 0.0), block, strip
+        )
     rows = _layout(pieces, size, column_width, style, **options)
     capacities = itertools.chain(
-        itertools.repeat(height - block, columns), itertools.repeat(height)
+        itertools.repeat(height - block - strip, columns), itertools.repeat(height)
     )
     frames, overflow = _flow_rows(rows, size, style, capacities)
-    return _Flow(head, frames, overflow, column_width, block)
+    return _Flow(head, frames, overflow, column_width, block, strip)
+
+
+def _diagram_chords(song: Song, layout: SheetLayout) -> tuple:
+    if not layout.diagrams:
+        return ()
+    from songleaf.diagrams import song_chords
+
+    return tuple(song_chords(song))
 
 
 def fit_font_size(
@@ -1077,6 +1114,7 @@ def fit_font_size(
         )
     pieces, heading = _pieces(song), _heading(song)
     paint = _paint(song, layout.style, layout.shading)
+    diagram_chords = _diagram_chords(song, layout)
 
     def fits(size):
         flow = _flow(
@@ -1087,6 +1125,7 @@ def fit_font_size(
             height=height,
             layout=layout,
             paint=paint,
+            diagram_chords=diagram_chords,
         )
         return len(flow.frames) <= layout.columns and not flow.overflow
 
@@ -1172,6 +1211,7 @@ def render_sheet(
     size = min(size * scale, max_font_size)
     heading = _heading(song)
     paint = _paint(song, style, layout.shading)
+    diagram_chords = _diagram_chords(song, layout)
     flow = _flow(
         _pieces(song),
         heading,
@@ -1180,6 +1220,7 @@ def render_sheet(
         height=height,
         layout=layout,
         paint=paint,
+        diagram_chords=diagram_chords,
     )
 
     target = os.fspath(output) if isinstance(output, (str, os.PathLike)) else output
@@ -1195,6 +1236,19 @@ def render_sheet(
             canvas.showPage()
         if index == 0 and flow.heading:
             _draw_items(canvas, flow.heading, margin, top - flow.heading.top, style)
+        if index == 0 and flow.diagram_block:
+            from songleaf.diagrams import draw_strip
+
+            draw_strip(
+                canvas,
+                diagram_chords,
+                layout.diagrams,
+                left=margin,
+                bottom=margin,
+                width=width,
+                size=size,
+                font=usable_font(style.chord_font),
+            )
         frame_top = top - (flow.heading_block if page == 0 else 0.0)
         left = margin + column * (flow.column_width + column_gap)
         baselines, y = [], frame_top
