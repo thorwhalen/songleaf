@@ -307,7 +307,9 @@
     <span class="s2">"youtube"</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
         <span class="sa">r</span><span class="s2">"(?:youtu\.be/|[?&amp;]v=|/embed/|/shorts/|/live/)([A-Za-z0-9_-]</span><span class="si">{11}</span><span class="s2">)(?![A-Za-z0-9_-])"</span>
     <span class="p">),</span>
-    <span class="s2">"spotify"</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(?:/track/|spotify:track:)([A-Za-z0-9]</span><span class="si">{22}</span><span class="s2">)(?![A-Za-z0-9])"</span><span class="p">),</span>
+    <span class="s2">"spotify"</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+        <span class="sa">r</span><span class="s2">"(?:/track/|spotify:track:)([A-Za-z0-9]</span><span class="si">{22}</span><span class="s2">)(?![A-Za-z0-9])"</span>
+    <span class="p">),</span>
 <span class="p">}</span>
 <span class="n">DFLT_MIN_F1</span> <span class="o">=</span> <span class="mf">0.5</span>
 
@@ -323,7 +325,9 @@
 <span class="sd">    '4uLU6hMCjMI75M1A2tKUQC'</span>
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="n">service</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">MEDIA_IDS</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"unknown media service </span><span class="si">{</span><span class="n">service</span><span class="si">!r}</span><span class="s2">; known: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">MEDIA_IDS</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"unknown media service </span><span class="si">{</span><span class="n">service</span><span class="si">!r}</span><span class="s2">; known: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">MEDIA_IDS</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
     <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">MEDIA_IDS</span><span class="p">[</span><span class="n">service</span><span class="p">]</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">text</span>
@@ -524,7 +528,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=3d238c28"></script>
+</div><script src="../../_static/documentation_options.js?v=9463f84e"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

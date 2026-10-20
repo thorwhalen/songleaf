@@ -290,6 +290,13 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">cached_property</span><span class="p">,</span> <span class="n">lru_cache</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">scoreseek.sources.local</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">EXPORT_FORMATS</span><span class="p">,</span>
+    <span class="n">SCORE_FORMATS</span><span class="p">,</span>
+    <span class="n">scan_folder</span><span class="p">,</span>
+    <span class="n">title_and_artist</span><span class="p">,</span>
+<span class="p">)</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Song</span><span class="p">,</span> <span class="n">score_link</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataset_path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">data_dir</span>
@@ -686,26 +693,14 @@
 <span class="n">_TEXT_EXTS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">".txt"</span><span class="p">,</span> <span class="s2">".cho"</span><span class="p">,</span> <span class="s2">".chopro"</span><span class="p">,</span> <span class="s2">".crd"</span><span class="p">,</span> <span class="s2">".pro"</span><span class="p">})</span>
 <span class="c1">#: The text extensions that hold ChordPro rather than chords-over-lyrics.</span>
 <span class="n">_CHORDPRO_EXTS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">".cho"</span><span class="p">,</span> <span class="s2">".chopro"</span><span class="p">,</span> <span class="s2">".crd"</span><span class="p">,</span> <span class="s2">".pro"</span><span class="p">})</span>
-<span class="c1">#: Score/tab files with no lyrics to parse: attached as a bare score link.</span>
-<span class="n">_SCORE_EXTS</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">".gp"</span><span class="p">:</span> <span class="s2">"guitarpro"</span><span class="p">,</span>
-    <span class="s2">".gpx"</span><span class="p">:</span> <span class="s2">"guitarpro"</span><span class="p">,</span>
-    <span class="s2">".gp3"</span><span class="p">:</span> <span class="s2">"guitarpro"</span><span class="p">,</span>
-    <span class="s2">".gp4"</span><span class="p">:</span> <span class="s2">"guitarpro"</span><span class="p">,</span>
-    <span class="s2">".gp5"</span><span class="p">:</span> <span class="s2">"guitarpro"</span><span class="p">,</span>
-    <span class="s2">".musicxml"</span><span class="p">:</span> <span class="s2">"musicxml"</span><span class="p">,</span>
-    <span class="s2">".mxl"</span><span class="p">:</span> <span class="s2">"musicxml"</span><span class="p">,</span>
-    <span class="s2">".mscz"</span><span class="p">:</span> <span class="s2">"musescore"</span><span class="p">,</span>
-    <span class="s2">".mid"</span><span class="p">:</span> <span class="s2">"midi"</span><span class="p">,</span>
-    <span class="s2">".midi"</span><span class="p">:</span> <span class="s2">"midi"</span><span class="p">,</span>
-    <span class="s2">".pdf"</span><span class="p">:</span> <span class="s2">"pdf"</span><span class="p">,</span>
+<span class="c1">#: Score/tab files with no lyrics to parse: attached as a bare score link. Labels</span>
+<span class="c1">#: come from scoreseek's format tables (scoreseek#7).</span>
+<span class="n">_SCORE_FORMATS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="o">**</span><span class="n">EXPORT_FORMATS</span><span class="p">,</span>
+    <span class="o">**</span><span class="p">{</span><span class="n">ext</span><span class="p">:</span> <span class="n">SCORE_FORMATS</span><span class="p">[</span><span class="n">ext</span><span class="p">]</span> <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">".musicxml"</span><span class="p">,</span> <span class="s2">".mxl"</span><span class="p">,</span> <span class="s2">".mid"</span><span class="p">,</span> <span class="s2">".midi"</span><span class="p">)},</span>
 <span class="p">}</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_title_and_artist</span><span class="p">(</span><span class="n">stem</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""``"Artist - Title"`` splits; anything else is a bare title."""</span>
-    <span class="n">artist</span><span class="p">,</span> <span class="n">sep</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="n">stem</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">" - "</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">artist</span><span class="p">)</span> <span class="k">if</span> <span class="n">sep</span> <span class="k">else</span> <span class="p">(</span><span class="n">stem</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+<span class="c1">#: Every file LocalFolderSource indexes: those plus the text charts it parses.</span>
+<span class="n">_FOLDER_FORMATS</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">_SCORE_FORMATS</span><span class="p">,</span> <span class="o">**</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">_TEXT_EXTS</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">)}</span>
 
 
 <div class="viewcode-block" id="LocalFolderSource">
@@ -753,27 +748,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="k">if</span> <span class="n">root</span> <span class="k">else</span> <span class="n">data_dir</span><span class="p">(</span><span class="s2">"imports"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_entries</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
-        <span class="n">entries</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">dirpath</span><span class="p">,</span> <span class="n">_dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
-                <span class="n">stem</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
-                <span class="n">fmt</span> <span class="o">=</span> <span class="n">_SCORE_EXTS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ext</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
-                <span class="n">is_text</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">_TEXT_EXTS</span>
-                <span class="k">if</span> <span class="n">fmt</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_text</span><span class="p">:</span>
-                    <span class="k">continue</span>
-                <span class="n">title</span><span class="p">,</span> <span class="n">artist</span> <span class="o">=</span> <span class="n">_title_and_artist</span><span class="p">(</span><span class="n">stem</span><span class="p">)</span>
-                <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirpath</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
-                <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="p">{</span>
-                        <span class="s2">"id"</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">),</span>
-                        <span class="s2">"path"</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span>
-                        <span class="s2">"title"</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
-                        <span class="s2">"artist"</span><span class="p">:</span> <span class="n">artist</span><span class="p">,</span>
-                        <span class="s2">"format"</span><span class="p">:</span> <span class="n">fmt</span> <span class="ow">or</span> <span class="s2">"text"</span><span class="p">,</span>
-                        <span class="s2">"is_text"</span><span class="p">:</span> <span class="n">is_text</span><span class="p">,</span>
-                    <span class="p">}</span>
-                <span class="p">)</span>
-        <span class="k">return</span> <span class="n">entries</span>
+<span class="w">        </span><span class="sd">"""The indexed files, through scoreseek's folder scan (scoreseek#7)."""</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">{</span><span class="o">**</span><span class="n">entry</span><span class="p">,</span> <span class="s2">"is_text"</span><span class="p">:</span> <span class="n">entry</span><span class="p">[</span><span class="s2">"ext"</span><span class="p">]</span> <span class="ow">in</span> <span class="n">_TEXT_EXTS</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">scan_folder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="n">_FOLDER_FORMATS</span><span class="p">)</span>
+        <span class="p">]</span>
 
 <div class="viewcode-block" id="LocalFolderSource.search">
 <a class="viewcode-back" href="../../_autosummary/songleaf.sources.html#songleaf.LocalFolderSource.search">[docs]</a>
@@ -824,7 +803,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">inside</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">)):</span>  <span class="c1"># an id never leaves the folder</span>
             <span class="k">raise</span> <span class="n">SongNotFound</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No file at </span><span class="si">{</span><span class="n">song_id</span><span class="si">!r}</span><span class="s2"> under </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">stem</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">song_id</span><span class="p">))</span>
-        <span class="n">title</span><span class="p">,</span> <span class="n">artist</span> <span class="o">=</span> <span class="n">_title_and_artist</span><span class="p">(</span><span class="n">stem</span><span class="p">)</span>
+        <span class="n">title</span><span class="p">,</span> <span class="n">artist</span> <span class="o">=</span> <span class="n">title_and_artist</span><span class="p">(</span><span class="n">stem</span><span class="p">)</span>
         <span class="n">provenance</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">"source"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
             <span class="s2">"id"</span><span class="p">:</span> <span class="n">song_id</span><span class="p">,</span>
@@ -843,7 +822,7 @@
                     <span class="n">meta</span><span class="o">=</span><span class="p">{</span><span class="s2">"title"</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span> <span class="s2">"artist"</span><span class="p">:</span> <span class="n">artist</span><span class="p">},</span>
                     <span class="n">provenance</span><span class="o">=</span><span class="n">provenance</span><span class="p">,</span>
                 <span class="p">)</span>
-        <span class="n">fmt</span> <span class="o">=</span> <span class="n">_SCORE_EXTS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ext</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="s2">""</span><span class="p">)</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="n">_SCORE_FORMATS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ext</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="s2">""</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Song</span><span class="p">(</span>
             <span class="n">text</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
             <span class="n">annotations</span><span class="o">=</span><span class="p">[</span>
@@ -1017,7 +996,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=3d238c28"></script>
+</div><script src="../../_static/documentation_options.js?v=9463f84e"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
