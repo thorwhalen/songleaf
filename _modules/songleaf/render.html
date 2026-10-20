@@ -215,6 +215,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.parse.html">songleaf.parse</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.render.html">songleaf.render</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.snippets.html">songleaf.snippets</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.songbook.html">songleaf.songbook</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.store.html">songleaf.store</a></li>
@@ -397,7 +398,10 @@
     <span class="n">band_pad</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.12</span>  <span class="c1"># how far a section band reaches past its column's sides</span>
     <span class="n">repeat_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"#4d4d4d"</span>
     <span class="n">tonic_chord_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"#1c4a91"</span>
-    <span class="n">outside_chord_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"#c0602a"</span></div>
+    <span class="n">outside_chord_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"#c0602a"</span>
+    <span class="c1"># score="score": a snippet's staff space, per unit of lyric size (narrowed to fit the column)</span>
+    <span class="n">staff_space</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.4</span>
+    <span class="n">snippet_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"#333333"</span></div>
 
 
 
@@ -543,6 +547,7 @@
     <span class="n">bottom</span><span class="p">:</span> <span class="nb">float</span>  <span class="c1"># extent below the baseline</span>
     <span class="n">gap_before</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="n">shade</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>  <span class="c1"># background colour of the row's band, if any</span>
+    <span class="n">figure</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (ScoreSnippet, staff space): a snippet row has no items</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_words</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -1115,9 +1120,11 @@
     <span class="n">chords</span><span class="p">:</span> <span class="n">ChordPlacement</span> <span class="o">=</span> <span class="n">_OVER</span><span class="p">,</span>
     <span class="n">packer</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">pack_greedy</span><span class="p">,</span>
     <span class="n">paint</span><span class="p">:</span> <span class="n">_Paint</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">snippet</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">_Row</span><span class="p">]:</span>
     <span class="n">paint</span> <span class="o">=</span> <span class="n">paint</span> <span class="ow">or</span> <span class="n">_Paint</span><span class="p">(</span><span class="n">style</span><span class="p">)</span>
     <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span><span class="n">_heading_row</span><span class="p">(</span><span class="n">heading</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">style</span><span class="p">)]</span> <span class="k">if</span> <span class="n">heading</span> <span class="k">else</span> <span class="p">[]</span>
+    <span class="n">pending</span> <span class="o">=</span> <span class="n">snippet</span>  <span class="c1"># (ScoreSnippet, line): placed above the row holding that line</span>
     <span class="n">parts</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">part</span> <span class="k">for</span> <span class="n">whole</span> <span class="ow">in</span> <span class="n">pieces</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">_wrap</span><span class="p">(</span><span class="n">whole</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">style</span><span class="p">,</span> <span class="n">chords</span><span class="p">)</span>
     <span class="p">)</span>
@@ -1134,10 +1141,21 @@
         <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="ow">in</span> <span class="n">packing</span><span class="p">:</span>
             <span class="n">new</span> <span class="o">=</span> <span class="n">start</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">run</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">new_paragraph</span>
             <span class="n">gap</span> <span class="o">=</span> <span class="n">style</span><span class="o">.</span><span class="n">paragraph_gap</span> <span class="o">*</span> <span class="n">size</span> <span class="k">if</span> <span class="n">rows</span> <span class="ow">and</span> <span class="n">new</span> <span class="k">else</span> <span class="mf">0.0</span>
+            <span class="k">if</span> <span class="n">pending</span> <span class="ow">and</span> <span class="n">run</span><span class="p">[</span><span class="n">stop</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">line</span> <span class="o">&gt;=</span> <span class="n">pending</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_snippet_row</span><span class="p">(</span><span class="n">pending</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">size</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">style</span><span class="p">,</span> <span class="nb">bool</span><span class="p">(</span><span class="n">rows</span><span class="p">)))</span>
+                <span class="n">pending</span><span class="p">,</span> <span class="n">gap</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="mf">0.0</span>
             <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">_row</span><span class="p">(</span><span class="n">run</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">],</span> <span class="n">size</span><span class="p">,</span> <span class="n">style</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="n">chords</span><span class="o">=</span><span class="n">chords</span><span class="p">,</span> <span class="n">paint</span><span class="o">=</span><span class="n">paint</span><span class="p">)</span>
             <span class="p">)</span>
+    <span class="k">if</span> <span class="n">pending</span><span class="p">:</span>  <span class="c1"># its line is past the last row: at the end</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_snippet_row</span><span class="p">(</span><span class="n">pending</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">size</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">style</span><span class="p">,</span> <span class="nb">bool</span><span class="p">(</span><span class="n">rows</span><span class="p">)))</span>
     <span class="k">return</span> <span class="n">rows</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_snippet_row</span><span class="p">(</span><span class="n">snippet</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">style</span><span class="p">:</span> <span class="n">DenseStyle</span><span class="p">,</span> <span class="n">after</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Row</span><span class="p">:</span>
+    <span class="n">space</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">style</span><span class="o">.</span><span class="n">staff_space</span> <span class="o">*</span> <span class="n">size</span><span class="p">,</span> <span class="n">width</span> <span class="o">/</span> <span class="n">snippet</span><span class="o">.</span><span class="n">width</span><span class="p">)</span>
+    <span class="n">gap</span> <span class="o">=</span> <span class="n">style</span><span class="o">.</span><span class="n">paragraph_gap</span> <span class="o">*</span> <span class="n">size</span> <span class="k">if</span> <span class="n">after</span> <span class="k">else</span> <span class="mf">0.0</span>
+    <span class="k">return</span> <span class="n">_Row</span><span class="p">([],</span> <span class="n">snippet</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="n">space</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="p">(</span><span class="n">snippet</span><span class="p">,</span> <span class="n">space</span><span class="p">))</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_height</span><span class="p">(</span><span class="n">rows</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">_Row</span><span class="p">],</span> <span class="n">size</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">style</span><span class="p">:</span> <span class="n">DenseStyle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
@@ -1177,6 +1195,9 @@
 <span class="sd">        diagrams: ``"piano"`` or ``"guitar"`` draws the song's chords as a strip</span>
 <span class="sd">            of diagrams at the foot of the first page (:mod:`songleaf.diagrams`);</span>
 <span class="sd">            the lyrics shrink to make room. ``None``: no diagrams.</span>
+<span class="sd">        score: Draw the song's score snippet, if its provider has one, above</span>
+<span class="sd">            the line it belongs to (:mod:`songleaf.snippets`); the lyrics shrink</span>
+<span class="sd">            to make room.</span>
 <span class="sd">        style: Typography and colours.</span>
 <span class="sd">    """</span>
 
@@ -1186,6 +1207,7 @@
     <span class="n">shading</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">diagrams</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">style</span><span class="p">:</span> <span class="n">DenseStyle</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">DenseStyle</span><span class="p">)</span>
+    <span class="n">score</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># a bad layout fails here, not mid-render</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.diagrams</span><span class="w"> </span><span class="kn">import</span> <span class="n">DIAGRAM_KINDS</span>
@@ -1199,6 +1221,8 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"columns must be a positive integer, got </span><span class="si">{</span><span class="n">columns</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shading</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"shading must be True or False, got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">shading</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"score must be True or False, got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">methods</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"extent"</span><span class="p">,</span> <span class="s2">"fitting_length"</span><span class="p">,</span> <span class="s2">"items"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">placement</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -1246,6 +1270,7 @@
     <span class="s2">"shaded"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"shading"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
     <span class="s2">"piano"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"diagrams"</span><span class="p">:</span> <span class="s2">"piano"</span><span class="p">},</span>
     <span class="s2">"guitar"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"diagrams"</span><span class="p">:</span> <span class="s2">"guitar"</span><span class="p">},</span>
+    <span class="s2">"score"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"score"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
 <span class="p">}</span>
 <span class="n">_OPTION_ALIASES</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"2col"</span><span class="p">:</span> <span class="s2">"two-column"</span><span class="p">,</span>
@@ -1328,11 +1353,17 @@
     <span class="n">frames</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="n">used</span><span class="p">,</span> <span class="n">overflow</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="kc">False</span>
     <span class="n">capacities</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">capacities</span><span class="p">)</span>
     <span class="n">capacity</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">capacities</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rows</span><span class="p">):</span>
         <span class="n">need</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">top</span> <span class="o">+</span> <span class="n">row</span><span class="o">.</span><span class="n">bottom</span>
         <span class="k">if</span> <span class="n">current</span><span class="p">:</span>
             <span class="n">need</span> <span class="o">+=</span> <span class="n">row</span><span class="o">.</span><span class="n">gap_before</span> <span class="o">+</span> <span class="n">style</span><span class="o">.</span><span class="n">row_gap</span> <span class="o">*</span> <span class="n">size</span>
-        <span class="k">if</span> <span class="n">current</span> <span class="ow">and</span> <span class="n">used</span> <span class="o">+</span> <span class="n">need</span> <span class="o">&gt;</span> <span class="n">capacity</span> <span class="o">+</span> <span class="n">_EPSILON</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">figure</span> <span class="ow">and</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">):</span>  <span class="c1"># a snippet stays with the line under it</span>
+            <span class="n">after</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">keep</span> <span class="o">=</span> <span class="n">need</span> <span class="o">+</span> <span class="n">after</span><span class="o">.</span><span class="n">gap_before</span> <span class="o">+</span> <span class="n">style</span><span class="o">.</span><span class="n">row_gap</span> <span class="o">*</span> <span class="n">size</span> <span class="o">+</span> <span class="n">after</span><span class="o">.</span><span class="n">top</span> <span class="o">+</span> <span class="n">after</span><span class="o">.</span><span class="n">bottom</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">keep</span> <span class="o">=</span> <span class="n">need</span>
+        <span class="k">if</span> <span class="n">current</span> <span class="ow">and</span> <span class="n">used</span> <span class="o">+</span> <span class="n">keep</span> <span class="o">&gt;</span> <span class="n">capacity</span> <span class="o">+</span> <span class="n">_EPSILON</span><span class="p">:</span>
             <span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
             <span class="n">current</span><span class="p">,</span> <span class="n">used</span><span class="p">,</span> <span class="n">capacity</span> <span class="o">=</span> <span class="p">[],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="nb">next</span><span class="p">(</span><span class="n">capacities</span><span class="p">)</span>
             <span class="n">need</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">top</span> <span class="o">+</span> <span class="n">row</span><span class="o">.</span><span class="n">bottom</span>
@@ -1354,9 +1385,15 @@
     <span class="n">layout</span><span class="p">:</span> <span class="n">SheetLayout</span><span class="p">,</span>
     <span class="n">paint</span><span class="p">,</span>
     <span class="n">diagram_chords</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="n">snippet</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Flow</span><span class="p">:</span>
     <span class="n">style</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">layout</span><span class="o">.</span><span class="n">style</span><span class="p">,</span> <span class="n">layout</span><span class="o">.</span><span class="n">columns</span>
-    <span class="n">options</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"chords"</span><span class="p">:</span> <span class="n">layout</span><span class="o">.</span><span class="n">placement</span><span class="p">,</span> <span class="s2">"packer"</span><span class="p">:</span> <span class="n">layout</span><span class="o">.</span><span class="n">packer</span><span class="p">,</span> <span class="s2">"paint"</span><span class="p">:</span> <span class="n">paint</span><span class="p">}</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"chords"</span><span class="p">:</span> <span class="n">layout</span><span class="o">.</span><span class="n">placement</span><span class="p">,</span>
+        <span class="s2">"packer"</span><span class="p">:</span> <span class="n">layout</span><span class="o">.</span><span class="n">packer</span><span class="p">,</span>
+        <span class="s2">"paint"</span><span class="p">:</span> <span class="n">paint</span><span class="p">,</span>
+        <span class="s2">"snippet"</span><span class="p">:</span> <span class="n">snippet</span><span class="p">,</span>
+    <span class="p">}</span>
     <span class="n">strip</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="k">if</span> <span class="n">layout</span><span class="o">.</span><span class="n">diagrams</span> <span class="ow">and</span> <span class="n">diagram_chords</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.diagrams</span><span class="w"> </span><span class="kn">import</span> <span class="n">strip_height</span>
@@ -1390,6 +1427,19 @@
     <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">song_chords</span><span class="p">(</span><span class="n">song</span><span class="p">))</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_snippet</span><span class="p">(</span><span class="n">song</span><span class="p">:</span> <span class="n">Song</span><span class="p">,</span> <span class="n">layout</span><span class="p">:</span> <span class="n">SheetLayout</span><span class="p">,</span> <span class="n">provider</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``(ScoreSnippet, line index)`` when the layout draws snippets and the provider has one."""</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">layout</span><span class="o">.</span><span class="n">score</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">provider</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.snippets</span><span class="w"> </span><span class="kn">import</span> <span class="n">abc_snippet</span> <span class="k">as</span> <span class="n">provider</span>
+    <span class="n">found</span> <span class="o">=</span> <span class="n">provider</span><span class="p">(</span><span class="n">song</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">found</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">width</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">found</span><span class="o">.</span><span class="n">height</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">song</span><span class="o">.</span><span class="n">lines</span><span class="p">()</span> <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">end</span> <span class="o">&lt;</span> <span class="n">found</span><span class="o">.</span><span class="n">start</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">found</span><span class="p">,</span> <span class="n">line</span>
+
+
 <div class="viewcode-block" id="fit_font_size">
 <a class="viewcode-back" href="../../_autosummary/songleaf.render.html#songleaf.fit_font_size">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">fit_font_size</span><span class="p">(</span>
@@ -1402,11 +1452,14 @@
     <span class="n">min_font_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">6.0</span><span class="p">,</span>
     <span class="n">max_font_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">72.0</span><span class="p">,</span>
     <span class="n">precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
+    <span class="n">snippets</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""The largest lyric font size at which ``song`` fits one page in ``layout`` (default: v1's).</span>
 
 <span class="sd">    ``style``, if given, replaces the layout's style. Returns ``min_font_size``</span>
-<span class="sd">    if even that does not fit (the song then needs more pages).</span>
+<span class="sd">    if even that does not fit (the song then needs more pages). ``snippets``</span>
+<span class="sd">    is the score-snippet provider of a ``score`` layout (default</span>
+<span class="sd">    :func:`songleaf.snippets.abc_snippet`).</span>
 <span class="sd">    """</span>
     <span class="n">layout</span> <span class="o">=</span> <span class="n">_as_layout</span><span class="p">(</span><span class="n">layout</span><span class="p">,</span> <span class="n">style</span><span class="p">)</span>
     <span class="n">page_width</span><span class="p">,</span> <span class="n">page_height</span> <span class="o">=</span> <span class="n">_page_dimensions</span><span class="p">(</span><span class="n">page_size</span><span class="p">)</span>
@@ -1420,6 +1473,7 @@
     <span class="n">pieces</span><span class="p">,</span> <span class="n">heading</span> <span class="o">=</span> <span class="n">_pieces</span><span class="p">(</span><span class="n">song</span><span class="p">),</span> <span class="n">_heading</span><span class="p">(</span><span class="n">song</span><span class="p">)</span>
     <span class="n">paint</span> <span class="o">=</span> <span class="n">_paint</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">layout</span><span class="o">.</span><span class="n">style</span><span class="p">,</span> <span class="n">layout</span><span class="o">.</span><span class="n">shading</span><span class="p">)</span>
     <span class="n">diagram_chords</span> <span class="o">=</span> <span class="n">_diagram_chords</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">layout</span><span class="p">)</span>
+    <span class="n">snippet</span> <span class="o">=</span> <span class="n">_snippet</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">layout</span><span class="p">,</span> <span class="n">snippets</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">fits</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
         <span class="n">flow</span> <span class="o">=</span> <span class="n">_flow</span><span class="p">(</span>
@@ -1431,6 +1485,7 @@
             <span class="n">layout</span><span class="o">=</span><span class="n">layout</span><span class="p">,</span>
             <span class="n">paint</span><span class="o">=</span><span class="n">paint</span><span class="p">,</span>
             <span class="n">diagram_chords</span><span class="o">=</span><span class="n">diagram_chords</span><span class="p">,</span>
+            <span class="n">snippet</span><span class="o">=</span><span class="n">snippet</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">flow</span><span class="o">.</span><span class="n">frames</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">layout</span><span class="o">.</span><span class="n">columns</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">flow</span><span class="o">.</span><span class="n">overflow</span>
 
@@ -1488,12 +1543,16 @@
     <span class="n">min_font_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">6.0</span><span class="p">,</span>
     <span class="n">max_font_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">72.0</span><span class="p">,</span>
     <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">snippets</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Render ``song`` in ``layout`` (a :class:`SheetLayout` or a spec) as a PDF to ``output``.</span>
 
 <span class="sd">    The lyric font size is the largest that fits the song on one page, times</span>
 <span class="sd">    ``scale``: ``1`` fills the page, ``0.8`` leaves room, ``1.2`` is larger type</span>
 <span class="sd">    that runs onto a second page. It never goes past ``max_font_size``.</span>
+
+<span class="sd">    ``snippets`` provides a ``score`` layout's snippet: ``song -&gt; ScoreSnippet | None``</span>
+<span class="sd">    (default :func:`songleaf.snippets.abc_snippet`).</span>
 
 <span class="sd">    ``output`` is a path or a binary file object. Returns</span>
 <span class="sd">    ``{"path", "font_size", "pages", "rows"}``; ``path`` is ``None`` when</span>
@@ -1513,6 +1572,7 @@
         <span class="n">layout</span><span class="o">=</span><span class="n">layout</span><span class="p">,</span>
         <span class="n">min_font_size</span><span class="o">=</span><span class="n">min_font_size</span><span class="p">,</span>
         <span class="n">max_font_size</span><span class="o">=</span><span class="n">max_font_size</span><span class="p">,</span>
+        <span class="n">snippets</span><span class="o">=</span><span class="n">snippets</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">scale</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># also refuses NaN</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"scale must be positive, got </span><span class="si">{</span><span class="n">scale</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
@@ -1520,6 +1580,7 @@
     <span class="n">heading</span> <span class="o">=</span> <span class="n">_heading</span><span class="p">(</span><span class="n">song</span><span class="p">)</span>
     <span class="n">paint</span> <span class="o">=</span> <span class="n">_paint</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">style</span><span class="p">,</span> <span class="n">layout</span><span class="o">.</span><span class="n">shading</span><span class="p">)</span>
     <span class="n">diagram_chords</span> <span class="o">=</span> <span class="n">_diagram_chords</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">layout</span><span class="p">)</span>
+    <span class="n">snippet</span> <span class="o">=</span> <span class="n">_snippet</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">layout</span><span class="p">,</span> <span class="n">snippets</span><span class="p">)</span>
     <span class="n">flow</span> <span class="o">=</span> <span class="n">_flow</span><span class="p">(</span>
         <span class="n">_pieces</span><span class="p">(</span><span class="n">song</span><span class="p">),</span>
         <span class="n">heading</span><span class="p">,</span>
@@ -1529,6 +1590,7 @@
         <span class="n">layout</span><span class="o">=</span><span class="n">layout</span><span class="p">,</span>
         <span class="n">paint</span><span class="o">=</span><span class="n">paint</span><span class="p">,</span>
         <span class="n">diagram_chords</span><span class="o">=</span><span class="n">diagram_chords</span><span class="p">,</span>
+        <span class="n">snippet</span><span class="o">=</span><span class="n">snippet</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">target</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">fspath</span><span class="p">(</span><span class="n">output</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">))</span> <span class="k">else</span> <span class="n">output</span>
@@ -1579,6 +1641,16 @@
                 <span class="p">)</span>
         <span class="k">for</span> <span class="n">row</span><span class="p">,</span> <span class="n">baseline</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">baselines</span><span class="p">):</span>
             <span class="n">_draw_items</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">baseline</span><span class="p">,</span> <span class="n">style</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">figure</span><span class="p">:</span>
+                <span class="n">figure</span><span class="p">,</span> <span class="n">space</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">figure</span>
+                <span class="n">figure</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span>
+                    <span class="n">canvas</span><span class="p">,</span>
+                    <span class="n">left</span><span class="p">,</span>
+                    <span class="n">baseline</span> <span class="o">-</span> <span class="n">row</span><span class="o">.</span><span class="n">bottom</span><span class="p">,</span>
+                    <span class="n">space</span><span class="p">,</span>
+                    <span class="n">color</span><span class="o">=</span><span class="n">style</span><span class="o">.</span><span class="n">snippet_color</span><span class="p">,</span>
+                    <span class="n">font</span><span class="o">=</span><span class="n">usable_font</span><span class="p">(</span><span class="n">style</span><span class="o">.</span><span class="n">chord_font</span><span class="p">),</span>
+                <span class="p">)</span>
         <span class="n">bottom</span> <span class="o">=</span> <span class="n">y</span> <span class="o">+</span> <span class="n">row_gap</span>
         <span class="k">if</span> <span class="n">column</span> <span class="ow">and</span> <span class="n">rows</span> <span class="ow">and</span> <span class="n">style</span><span class="o">.</span><span class="n">column_rule_color</span><span class="p">:</span>
             <span class="n">rule_x</span> <span class="o">=</span> <span class="n">left</span> <span class="o">-</span> <span class="n">column_gap</span> <span class="o">/</span> <span class="mi">2</span>
@@ -1693,7 +1765,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=5cf12315"></script>
+</div><script src="../../_static/documentation_options.js?v=b4d262a5"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

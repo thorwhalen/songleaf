@@ -63,7 +63,7 @@ The JSON-ready form.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### *class* songleaf.DenseStyle(lyric_font='DejaVuSans', chord_font='DejaVuSans-Bold', label_font='DejaVuSans-Bold', title_font='DejaVuSans-Bold', lyric_color='#000000', chord_color='#3b73c4', label_color='#8c8c8c', separator_color='#a6a6a6', title_color='#595959', chord_scale=0.62, label_scale=0.5, title_scale=0.6, chord_rise=0.56, chord_halo='', chord_halo_width=0.16, ascent=0.72, descent=0.21, row_gap=0.06, paragraph_gap=0.3, separator=' / ', chord_gap=0.3, bare_chord_gap=0.9, label_gap=0.4, inline_chord_scale=0.7, inline_chord_rise=0.2, inline_chord_pad=0.15, before_marker='‹', column_gap=0.8, column_rule_color='#d9d9d9', chorus_shade='#f3efe4', bridge_shade='#e8eef6', band_pad=0.12, repeat_color='#4d4d4d', tonic_chord_color='#1c4a91', outside_chord_color='#c0602a')
+### *class* songleaf.DenseStyle(lyric_font='DejaVuSans', chord_font='DejaVuSans-Bold', label_font='DejaVuSans-Bold', title_font='DejaVuSans-Bold', lyric_color='#000000', chord_color='#3b73c4', label_color='#8c8c8c', separator_color='#a6a6a6', title_color='#595959', chord_scale=0.62, label_scale=0.5, title_scale=0.6, chord_rise=0.56, chord_halo='', chord_halo_width=0.16, ascent=0.72, descent=0.21, row_gap=0.06, paragraph_gap=0.3, separator=' / ', chord_gap=0.3, bare_chord_gap=0.9, label_gap=0.4, inline_chord_scale=0.7, inline_chord_rise=0.2, inline_chord_pad=0.15, before_marker='‹', column_gap=0.8, column_rule_color='#d9d9d9', chorus_shade='#f3efe4', bridge_shade='#e8eef6', band_pad=0.12, repeat_color='#4d4d4d', tonic_chord_color='#1c4a91', outside_chord_color='#c0602a', staff_space=0.4, snippet_color='#333333')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -144,7 +144,7 @@ Lyrics hold every word of the query, rank by popularity, and carry
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](songleaf.sources.html.md#songleaf.sources.Hit)]]
 
-### *class* songleaf.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, diagrams=None, style=DenseStyle())
+### *class* songleaf.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, diagrams=None, style=DenseStyle(), score=False)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -161,6 +161,9 @@ One way to lay a song out on a page.
   * **diagrams** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – `"piano"` or `"guitar"` draws the song’s chords as a strip
     of diagrams at the foot of the first page ([`songleaf.diagrams`](songleaf.diagrams.html.md#module-songleaf.diagrams));
     the lyrics shrink to make room. `None`: no diagrams.
+  * **score** ([`bool`](https://docs.python.org/3/builtins/functions.html#bool)) – Draw the song’s score snippet, if its provider has one, above
+    the line it belongs to ([`songleaf.snippets`](songleaf.snippets.html.md#module-songleaf.snippets)); the lyrics shrink
+    to make room.
   * **style** ([`DenseStyle`](songleaf.render.html.md#songleaf.render.DenseStyle)) – Typography and colours.
 
 #### *property* packer *: [Callable](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)*
@@ -218,12 +221,14 @@ A chord landing on the syllable that starts at offset `at`.
 * **Return type:**
   [`Annotation`](songleaf.model.html.md#songleaf.model.Annotation)
 
-### songleaf.fit_font_size(song, , page_size='A4', margin=14.0, style=None, layout=None, min_font_size=6.0, max_font_size=72.0, precision=0.05)
+### songleaf.fit_font_size(song, , page_size='A4', margin=14.0, style=None, layout=None, min_font_size=6.0, max_font_size=72.0, precision=0.05, snippets=None)
 
 The largest lyric font size at which `song` fits one page in `layout` (default: v1’s).
 
 `style`, if given, replaces the layout’s style. Returns `min_font_size`
-if even that does not fit (the song then needs more pages).
+if even that does not fit (the song then needs more pages). `snippets`
+is the score-snippet provider of a `score` layout (default
+[`songleaf.snippets.abc_snippet()`](songleaf.snippets.html.md#songleaf.snippets.abc_snippet)).
 
 * **Return type:**
   [`float`](https://docs.python.org/3/builtins/functions.html#float)
@@ -295,13 +300,16 @@ The same as [`render_sheet()`](#songleaf.render_sheet) with `layout="dense"`. Re
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### songleaf.render_sheet(song, output, , layout='dense', page_size='A4', margin=14.0, min_font_size=6.0, max_font_size=72.0, scale=1.0)
+### songleaf.render_sheet(song, output, , layout='dense', page_size='A4', margin=14.0, min_font_size=6.0, max_font_size=72.0, scale=1.0, snippets=None)
 
 Render `song` in `layout` (a [`SheetLayout`](#songleaf.SheetLayout) or a spec) as a PDF to `output`.
 
 The lyric font size is the largest that fits the song on one page, times
 `scale`: `1` fills the page, `0.8` leaves room, `1.2` is larger type
 that runs onto a second page. It never goes past `max_font_size`.
+
+`snippets` provides a `score` layout’s snippet: `song -> ScoreSnippet | None`
+(default [`songleaf.snippets.abc_snippet()`](songleaf.snippets.html.md#songleaf.snippets.abc_snippet)).
 
 `output` is a path or a binary file object. Returns
 `{"path", "font_size", "pages", "rows"}`; `path` is `None` when
@@ -310,9 +318,13 @@ that runs onto a second page. It never goes past `max_font_size`.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### songleaf.score_link(start, end, , source, id, url='', format='')
+### songleaf.score_link(start, end, , source, id, url='', format='', notation='', rule='')
 
 A link from `[start, end)` to a score snippet held by a source.
+
+`notation` holds a short snippet inline (`format` says in what, such as
+`"abc"`); `rule` names the rule that chose the stretch (`"chosen"`
+when picked by hand). Both are left out of the body when empty.
 
 * **Return type:**
   [`Annotation`](songleaf.model.html.md#songleaf.model.Annotation)
@@ -392,6 +404,7 @@ The keys of the stored songs.
 | [`packing`](songleaf.packing.html.md#module-songleaf.packing)                 | Line packing: which consecutive lines of a paragraph share a row.                                                                  |
 | [`parse`](songleaf.parse.html.md#module-songleaf.parse)                     | Parse chords-over-lyrics text into a [`Song`](songleaf.model.html.md#songleaf.model.Song).                    |
 | [`render`](songleaf.render.html.md#module-songleaf.render)                   | Render a song onto one dense page, with the lyrics as large as will fit.                                                           |
+| [`snippets`](songleaf.snippets.html.md#module-songleaf.snippets)               | Score snippets on the sheet (songleaf#12): which stretch of a song, and a small staff for it.                                      |
 | [`songbook`](songleaf.songbook.html.md#module-songleaf.songbook)               | A songbook: several songs in one PDF, with a table of contents, page numbers and bookmarks.                                        |
 | [`sources`](songleaf.sources.html.md#module-songleaf.sources)                 | Where songs are found: sources, and a search that composes them.                                                                   |
 | [`store`](songleaf.store.html.md#module-songleaf.store)                     | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                                           |

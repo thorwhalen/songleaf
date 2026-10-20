@@ -54,6 +54,7 @@
    packing
    parse
    render
+   snippets
    songbook
    sources
    store

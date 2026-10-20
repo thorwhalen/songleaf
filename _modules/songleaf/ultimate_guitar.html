@@ -215,6 +215,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.parse.html">songleaf.parse</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.render.html">songleaf.render</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.snippets.html">songleaf.snippets</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.songbook.html">songleaf.songbook</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.store.html">songleaf.store</a></li>
@@ -482,7 +483,9 @@
             <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">redirect_request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="n">newurl</span><span class="p">)</span>
 
     <span class="n">request</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">safe_page_url</span><span class="p">(</span><span class="n">url</span><span class="p">),</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s2">"User-Agent"</span><span class="p">:</span> <span class="n">USER_AGENT</span><span class="p">})</span>
-    <span class="k">with</span> <span class="n">build_opener</span><span class="p">(</span><span class="n">_StayOnUG</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">FETCH_TIMEOUT_SECONDS</span><span class="p">)</span> <span class="k">as</span> <span class="n">response</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">build_opener</span><span class="p">(</span><span class="n">_StayOnUG</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">(</span>
+        <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">FETCH_TIMEOUT_SECONDS</span>
+    <span class="p">)</span> <span class="k">as</span> <span class="n">response</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">MAX_PAGE_BYTES</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">,</span> <span class="s2">"replace"</span><span class="p">)</span></div>
 
 
@@ -584,7 +587,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=5cf12315"></script>
+</div><script src="../../_static/documentation_options.js?v=b4d262a5"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

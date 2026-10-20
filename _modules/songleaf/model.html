@@ -215,6 +215,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.parse.html">songleaf.parse</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.render.html">songleaf.render</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.snippets.html">songleaf.snippets</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.songbook.html">songleaf.songbook</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.store.html">songleaf.store</a></li>
@@ -355,10 +356,24 @@
 <div class="viewcode-block" id="score_link">
 <a class="viewcode-back" href="../../_autosummary/songleaf.model.html#songleaf.score_link">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">score_link</span><span class="p">(</span>
-    <span class="n">start</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">end</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">start</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">end</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="nb">format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">notation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">rule</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Annotation</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""A link from ``[start, end)`` to a score snippet held by a source."""</span>
+<span class="w">    </span><span class="sd">"""A link from ``[start, end)`` to a score snippet held by a source.</span>
+
+<span class="sd">    ``notation`` holds a short snippet inline (``format`` says in what, such as</span>
+<span class="sd">    ``"abc"``); ``rule`` names the rule that chose the stretch (``"chosen"``</span>
+<span class="sd">    when picked by hand). Both are left out of the body when empty.</span>
+<span class="sd">    """</span>
     <span class="n">body</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"source"</span><span class="p">:</span> <span class="n">source</span><span class="p">,</span> <span class="s2">"id"</span><span class="p">:</span> <span class="nb">id</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">:</span> <span class="n">url</span><span class="p">,</span> <span class="s2">"format"</span><span class="p">:</span> <span class="nb">format</span><span class="p">}</span>
+    <span class="n">body</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">"notation"</span><span class="p">,</span> <span class="n">notation</span><span class="p">),</span> <span class="p">(</span><span class="s2">"rule"</span><span class="p">,</span> <span class="n">rule</span><span class="p">))</span> <span class="k">if</span> <span class="n">v</span><span class="p">})</span>
     <span class="k">return</span> <span class="n">Annotation</span><span class="p">(</span><span class="s2">"score"</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">body</span><span class="p">)</span></div>
 
 
@@ -480,7 +495,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=5cf12315"></script>
+</div><script src="../../_static/documentation_options.js?v=b4d262a5"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

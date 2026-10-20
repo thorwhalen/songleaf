@@ -23,6 +23,7 @@ songleaf.tools
       media
       search
       sheet
+      snippet
       song
       songbook
       songs

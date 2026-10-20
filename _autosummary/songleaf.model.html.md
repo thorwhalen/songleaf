@@ -124,9 +124,13 @@ A chord landing on the syllable that starts at offset `at`.
 * **Return type:**
   [`Annotation`](#songleaf.model.Annotation)
 
-### songleaf.model.score_link(start, end, , source, id, url='', format='')
+### songleaf.model.score_link(start, end, , source, id, url='', format='', notation='', rule='')
 
 A link from `[start, end)` to a score snippet held by a source.
+
+`notation` holds a short snippet inline (`format` says in what, such as
+`"abc"`); `rule` names the rule that chose the stretch (`"chosen"`
+when picked by hand). Both are left out of the body when empty.
 
 * **Return type:**
   [`Annotation`](#songleaf.model.Annotation)

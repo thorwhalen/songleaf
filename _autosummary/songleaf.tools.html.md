@@ -25,6 +25,7 @@ than dicts uses [`songleaf.sources`](songleaf.sources.html.md#module-songleaf.so
 | [`media`](#songleaf.tools.media)(query, \*[, youtube, spotify, pick, ...])   | Link the song's recording: a YouTube video id and/or a Spotify track id.                                   |
 | [`search`](#songleaf.tools.search)([query, title, artist, lyrics, ...])       | Find songs with one query: in your lists' names, then titles, artists and lyrics.                          |
 | [`sheet`](#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...])    | Make a one-page song sheet (PDF) for the best match of `query`.                                            |
+| [`snippet`](#songleaf.tools.snippet)(query, notation, \*[, line, pick, ...])   | Put a score snippet over one line of a song; the `score` layout draws it on the sheet.                     |
 | [`song`](#songleaf.tools.song)(query, \*[, pick, refresh, ...])             | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.                   |
 | [`songbook`](#songleaf.tools.songbook)(group, \*[, output, title, layout, ...]) | Render a list (group) of songs as one PDF: a table of contents, then every song at its fitted size.        |
 | [`songs`](#songleaf.tools.songs)(\*[, store])                                | The keys of the stored songs.                                                                              |
@@ -33,7 +34,7 @@ than dicts uses [`songleaf.sources`](songleaf.sources.html.md#module-songleaf.so
 | [`view`](#songleaf.tools.view)(key, \*[, user, at, store, library_root])    | Put a stored song at the top of `user`'s Viewed list: they just opened it.                                 |
 | [`viewed`](#songleaf.tools.viewed)(\*[, user, store, library_root])           | The songs `user` opened, the most recent first: `key`, `title`, `artist`, `viewed_at`.                     |
 
-### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function songbook>, <function song>, <function export>, <function songs>, <function import_file>, <function import_url>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>, <function sync>, <function media>)*
+### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function songbook>, <function song>, <function export>, <function songs>, <function import_file>, <function import_url>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>, <function sync>, <function media>, <function snippet>)*
 
 Every operation, in the order the CLI lists them.
 
@@ -155,6 +156,18 @@ itself, so it does not go with `layout` or `scale`.
 key); the stored song keeps its chords. `scale` multiplies the font size
 that fills the page: `0.8` for smaller type, `1.2` for larger type over
 more pages.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.snippet(query, notation, , line=0, pick=1, store=None, sources=None)
+
+Put a score snippet over one line of a song; the `score` layout draws it on the sheet.
+
+`notation` is a few bars of ABC (`"G2 AB c2 | d4"`; the unit is an eighth
+note). `line` is the 1-based lyric line it goes with; `0` lets the rule
+choose (the first line of the chorus, else the most repeated line, else the
+first). Returns `{"key", "start", "end", "rule"}`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

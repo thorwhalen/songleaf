@@ -1,0 +1,40 @@
+songleaf.snippets
+=================
+
+.. automodule:: songleaf.snippets
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      UNIT_LENGTH
+      MIN_LENGTH
+      MAX_LENGTH
+      MAX_NOTATION_CHARS
+      INLINE_SOURCE
+      SnippetProvider
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      abc_snippet
+      choose_segment
+      first_snippet
+      layout_tune
+      mark_segment
+      parse_abc
+      recorded_snippet
+      segment_at_line
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Bar
+      Note
+      ScoreSnippet
+      Segment
+      Tune
+   

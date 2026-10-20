@@ -218,6 +218,7 @@
 <li class="toctree-l3"><a class="reference internal" href="songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.parse.html">songleaf.parse</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.render.html">songleaf.render</a></li>
+<li class="toctree-l3"><a class="reference internal" href="songleaf.snippets.html">songleaf.snippets</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.songbook.html">songleaf.songbook</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.sources.html">songleaf.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.store.html">songleaf.store</a></li>
@@ -452,8 +453,11 @@ the text they were aligned from.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="songleaf.model.score_link">
-<span class="sig-prename descclassname"><span class="pre">songleaf.model.</span></span><span class="sig-name descname"><span class="pre">score_link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/model.html#score_link"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.model.score_link" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">songleaf.model.</span></span><span class="sig-name descname"><span class="pre">score_link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rule</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/model.html#score_link"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.model.score_link" title="Link to this definition">¶</a></dt>
 <dd><p>A link from <code class="docutils literal notranslate"><span class="pre">[start,</span> <span class="pre">end)</span></code> to a score snippet held by a source.</p>
+<p><code class="docutils literal notranslate"><span class="pre">notation</span></code> holds a short snippet inline (<code class="docutils literal notranslate"><span class="pre">format</span></code> says in what, such as
+<code class="docutils literal notranslate"><span class="pre">&quot;abc&quot;</span></code>); <code class="docutils literal notranslate"><span class="pre">rule</span></code> names the rule that chose the stretch (<code class="docutils literal notranslate"><span class="pre">&quot;chosen&quot;</span></code>
+when picked by hand). Both are left out of the body when empty.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#songleaf.model.Annotation" title="songleaf.model.Annotation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Annotation</span></code></a></span></p>
@@ -553,7 +557,7 @@ the text they were aligned from.</p></li>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=5cf12315"></script>
+</div><script src="../_static/documentation_options.js?v=b4d262a5"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
