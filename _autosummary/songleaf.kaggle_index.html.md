@@ -18,6 +18,10 @@ decomposed accents, where the DataFrame source’s regular expression does the
 opposite. Rebuilding the index while a server runs is safe: a process that
 notices the file changed reloads it.
 
+The file format, its writing and its raw reads belong to `sung.chords_index`
+(stdlib only, so reading the index never imports pandas); this module adds where
+songleaf keeps the file and the ranking shared with the DataFrame source.
+
 ```pycon
 >>> import pandas as pd, tempfile, os
 >>> corpus = pd.DataFrame({
@@ -97,9 +101,8 @@ Lyrics hold every word of the query, rank by popularity, and carry
 Write the index of the Kaggle corpus (`loader`: as for `KaggleChordsSource`).
 
 Loading the corpus takes the memory the index exists to avoid, so run this
-once, apart from any server (`songleaf build-index`). The file is written
-beside the target and moved into place when complete, so a reader never
-sees half an index.
+once, apart from any server (`songleaf build-index`). The index format and
+its writing are `sung.chords_index`’s; this picks the corpus and the path.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

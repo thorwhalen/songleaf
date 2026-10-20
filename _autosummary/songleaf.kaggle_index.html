@@ -287,6 +287,9 @@ words: FTS5’s tokenizer treats <code class="docutils literal notranslate"><spa
 decomposed accents, where the DataFrame source’s regular expression does the
 opposite. Rebuilding the index while a server runs is safe: a process that
 notices the file changed reloads it.</p>
+<p>The file format, its writing and its raw reads belong to <code class="docutils literal notranslate"><span class="pre">sung.chords_index</span></code>
+(stdlib only, so reading the index never imports pandas); this module adds where
+songleaf keeps the file and the ranking shared with the DataFrame source.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span><span class="o">,</span><span class="w"> </span><span class="nn">tempfile</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">corpus</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
 <span class="gp">... </span>    <span class="s2">"Unnamed: 0"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">"artist_name"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"The Band"</span><span class="p">,</span> <span class="s2">"Other"</span><span class="p">],</span>
@@ -396,9 +399,8 @@ Lyrics hold every word of the query, rank by popularity, and carry
 <span class="sig-prename descclassname"><span class="pre">songleaf.kaggle_index.</span></span><span class="sig-name descname"><span class="pre">build_kaggle_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/kaggle_index.html#build_kaggle_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.kaggle_index.build_kaggle_index" title="Link to this definition">¶</a></dt>
 <dd><p>Write the index of the Kaggle corpus (<code class="docutils literal notranslate"><span class="pre">loader</span></code>: as for <code class="docutils literal notranslate"><span class="pre">KaggleChordsSource</span></code>).</p>
 <p>Loading the corpus takes the memory the index exists to avoid, so run this
-once, apart from any server (<code class="docutils literal notranslate"><span class="pre">songleaf</span> <span class="pre">build-index</span></code>). The file is written
-beside the target and moved into place when complete, so a reader never
-sees half an index.</p>
+once, apart from any server (<code class="docutils literal notranslate"><span class="pre">songleaf</span> <span class="pre">build-index</span></code>). The index format and
+its writing are <code class="docutils literal notranslate"><span class="pre">sung.chords_index</span></code>’s; this picks the corpus and the path.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -493,7 +495,7 @@ download of the index (fetched on first use), a real file for SQLite.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=36140909"></script>
+</div><script src="../_static/documentation_options.js?v=9f547d6f"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

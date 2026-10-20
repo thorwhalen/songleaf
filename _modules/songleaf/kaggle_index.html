@@ -280,6 +280,10 @@
 <span class="sd">opposite. Rebuilding the index while a server runs is safe: a process that</span>
 <span class="sd">notices the file changed reloads it.</span>
 
+<span class="sd">The file format, its writing and its raw reads belong to ``sung.chords_index``</span>
+<span class="sd">(stdlib only, so reading the index never imports pandas); this module adds where</span>
+<span class="sd">songleaf keeps the file and the ranking shared with the DataFrame source.</span>
+
 <span class="sd">&gt;&gt;&gt; import pandas as pd, tempfile, os</span>
 <span class="sd">&gt;&gt;&gt; corpus = pd.DataFrame({</span>
 <span class="sd">...     "Unnamed: 0": [1, 2], "artist_name": ["The Band", "Other"],</span>
@@ -296,13 +300,10 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">zlib</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">closing</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">cached_property</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">sung</span><span class="w"> </span><span class="kn">import</span> <span class="n">chords_index</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.sources</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">KAGGLE_CHORDS_ZIP</span><span class="p">,</span>
@@ -314,22 +315,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">data_dir</span>
 
 <span class="c1">#: The index's file name, beside the corpus zip under ``datasets/``.</span>
-<span class="n">KAGGLE_INDEX_NAME</span> <span class="o">=</span> <span class="s2">"chords-and-lyrics.sqlite"</span>
-<span class="n">_SCHEMA</span> <span class="o">=</span> <span class="s2">"""</span>
-<span class="s2">CREATE TABLE songs (</span>
-<span class="s2">    row INTEGER PRIMARY KEY,</span>
-<span class="s2">    id TEXT NOT NULL,</span>
-<span class="s2">    title TEXT NOT NULL,</span>
-<span class="s2">    artist TEXT NOT NULL,</span>
-<span class="s2">    lang TEXT NOT NULL,</span>
-<span class="s2">    popularity REAL NOT NULL,</span>
-<span class="s2">    chart BLOB NOT NULL</span>
-<span class="s2">);</span>
-<span class="s2">CREATE VIRTUAL TABLE chart_words USING fts5(</span>
-<span class="s2">    chart, content='', tokenize='unicode61 remove_diacritics 0'</span>
-<span class="s2">);</span>
-<span class="s2">CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);</span>
-<span class="s2">"""</span>
+<span class="n">KAGGLE_INDEX_NAME</span> <span class="o">=</span> <span class="n">chords_index</span><span class="o">.</span><span class="n">INDEX_NAME</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_index_key</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -366,86 +352,16 @@
 <span class="w">    </span><span class="sd">"""Write the index of the Kaggle corpus (``loader``: as for ``KaggleChordsSource``).</span>
 
 <span class="sd">    Loading the corpus takes the memory the index exists to avoid, so run this</span>
-<span class="sd">    once, apart from any server (``songleaf build-index``). The file is written</span>
-<span class="sd">    beside the target and moved into place when complete, so a reader never</span>
-<span class="sd">    sees half an index.</span>
+<span class="sd">    once, apart from any server (``songleaf build-index``). The index format and</span>
+<span class="sd">    its writing are ``sung.chords_index``'s; this picks the corpus and the path.</span>
 <span class="sd">    """</span>
-    <span class="n">path</span> <span class="o">=</span> <span class="n">path</span> <span class="ow">or</span> <span class="n">_local_index_path</span><span class="p">()</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">started</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
     <span class="n">df</span> <span class="o">=</span> <span class="p">(</span><span class="n">loader</span> <span class="ow">or</span> <span class="n">_load_kaggle_corpus</span><span class="p">)()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">columns</span> <span class="o">=</span> <span class="n">KaggleChordsSource</span><span class="o">.</span><span class="n">columns</span>
-    <span class="n">building</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()</span><span class="si">}</span><span class="s2">.building"</span>  <span class="c1"># one per process: concurrent builds never mix</span>
-    <span class="p">)</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">_write_index</span><span class="p">(</span><span class="n">building</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
-        <span class="n">os</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">building</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
-    <span class="k">finally</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">building</span><span class="p">):</span>  <span class="c1"># a failed build leaves nothing behind</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">building</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">"path"</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span>
-        <span class="s2">"songs"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span>
-        <span class="s2">"megabytes"</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1e6</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-        <span class="s2">"seconds"</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">started</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-    <span class="p">}</span></div>
+    <span class="k">return</span> <span class="n">chords_index</span><span class="o">.</span><span class="n">build_chords_index</span><span class="p">(</span>
+        <span class="n">path</span> <span class="ow">or</span> <span class="n">_local_index_path</span><span class="p">(),</span>
+        <span class="n">rows</span><span class="o">=</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">KaggleChordsSource</span><span class="o">.</span><span class="n">columns</span><span class="p">)),</span>
+        <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+    <span class="p">)</span></div>
 
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_write_index</span><span class="p">(</span><span class="n">building</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">building</span><span class="p">):</span>
-        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">building</span><span class="p">)</span>
-    <span class="k">with</span> <span class="n">closing</span><span class="p">(</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">building</span><span class="p">))</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-        <span class="n">conn</span><span class="o">.</span><span class="n">executescript</span><span class="p">(</span><span class="n">_SCHEMA</span><span class="p">)</span>
-        <span class="n">rows</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">))</span>
-        <span class="n">batch</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">row</span><span class="p">,</span> <span class="p">(</span><span class="n">song_id</span><span class="p">,</span> <span class="n">artist</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">chart</span><span class="p">,</span> <span class="n">lang</span><span class="p">,</span> <span class="n">popularity</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rows</span><span class="p">):</span>
-            <span class="n">chart</span> <span class="o">=</span> <span class="n">chart</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chart</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="s2">""</span>
-            <span class="n">batch</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="p">(</span>
-                    <span class="n">row</span><span class="p">,</span>
-                    <span class="nb">str</span><span class="p">(</span><span class="n">song_id</span><span class="p">),</span>
-                    <span class="n">_text_or_empty</span><span class="p">(</span><span class="n">title</span><span class="p">),</span>
-                    <span class="n">_text_or_empty</span><span class="p">(</span><span class="n">artist</span><span class="p">),</span>
-                    <span class="nb">str</span><span class="p">(</span><span class="n">lang</span><span class="p">),</span>
-                    <span class="n">_number_or_zero</span><span class="p">(</span><span class="n">popularity</span><span class="p">),</span>
-                    <span class="n">chart</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">batch_size</span><span class="p">:</span>
-                <span class="n">_insert</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
-                <span class="n">batch</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">_insert</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
-        <span class="n">conn</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span>
-            <span class="s2">"INSERT INTO meta VALUES (?, ?)"</span><span class="p">,</span>
-            <span class="p">[(</span><span class="s2">"songs"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))),</span> <span class="p">(</span><span class="s2">"built_at"</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S"</span><span class="p">))],</span>
-        <span class="p">)</span>
-        <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"INSERT INTO chart_words(chart_words) VALUES ('optimize')"</span><span class="p">)</span>
-        <span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_text_or_empty</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">return</span> <span class="s2">""</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">value</span> <span class="o">!=</span> <span class="n">value</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>  <span class="c1"># NaN != NaN</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_number_or_zero</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">number</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-    <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
-        <span class="k">return</span> <span class="mf">0.0</span>
-    <span class="k">return</span> <span class="mf">0.0</span> <span class="k">if</span> <span class="n">number</span> <span class="o">!=</span> <span class="n">number</span> <span class="k">else</span> <span class="n">number</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_insert</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="n">conn</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span>
-        <span class="s2">"INSERT INTO songs VALUES (?, ?, ?, ?, ?, ?, ?)"</span><span class="p">,</span>
-        <span class="p">[(</span><span class="o">*</span><span class="n">fields</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">)))</span> <span class="k">for</span> <span class="n">fields</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">],</span>
-    <span class="p">)</span>
-    <span class="n">conn</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span>
-        <span class="s2">"INSERT INTO chart_words(rowid, chart) VALUES (?, ?)"</span><span class="p">,</span>
-        <span class="p">[(</span><span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">fields</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">],</span>
-    <span class="p">)</span>
 
 
 <div class="viewcode-block" id="KaggleChordsIndex">
@@ -469,14 +385,15 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_no_dataframe</span><span class="p">():</span>
         <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">"KaggleChordsIndex never loads the corpus DataFrame"</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">read</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""``read(path, *args)`` from ``sung.chords_index``; no file is a ``SourceUnavailable``."""</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SourceUnavailable</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">"No search index at </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">: run `songleaf build-index` "</span>
                 <span class="s2">"where the corpus zip is"</span>
-            <span class="p">)</span>
-        <span class="c1"># read-only, one connection per call: safe across threads</span>
-        <span class="k">return</span> <span class="n">closing</span><span class="p">(</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">as_uri</span><span class="p">()</span><span class="si">}</span><span class="s2">?mode=ro"</span><span class="p">,</span> <span class="n">uri</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
 
     <span class="n">_CACHED</span> <span class="o">=</span> <span class="p">(</span>
         <span class="s2">"_ids"</span><span class="p">,</span>
@@ -491,11 +408,7 @@
     <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">stat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
-        <span class="k">return</span> <span class="n">stat</span><span class="o">.</span><span class="n">st_mtime_ns</span><span class="p">,</span> <span class="n">stat</span><span class="o">.</span><span class="n">st_size</span>
+        <span class="k">return</span> <span class="n">chords_index</span><span class="o">.</span><span class="n">index_version</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_reload_if_rebuilt</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Drop what was read from an index file that has since been rebuilt."""</span>
@@ -533,13 +446,7 @@
             <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_columns_lock</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_columns_loaded</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_loaded_version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_version</span><span class="p">()</span>
-                    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-                        <span class="n">rows</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-                            <span class="s2">"SELECT id, title, artist, lang, popularity "</span>
-                            <span class="s2">"FROM songs ORDER BY row"</span>
-                        <span class="p">)</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
-                    <span class="n">names</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"ids"</span><span class="p">,</span> <span class="s2">"titles"</span><span class="p">,</span> <span class="s2">"artists"</span><span class="p">,</span> <span class="s2">"langs"</span><span class="p">,</span> <span class="s2">"popularity"</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_columns_loaded</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">rows</span><span class="p">))))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_columns_loaded</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read</span><span class="p">(</span><span class="n">chords_index</span><span class="o">.</span><span class="n">read_columns</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_columns_loaded</span>
 
     <span class="nd">@cached_property</span>
@@ -568,19 +475,11 @@
         <span class="n">tokens</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">default_process</span><span class="p">(</span><span class="n">words</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">tokens</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">{}</span>
-        <span class="n">match</span> <span class="o">=</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">'"</span><span class="si">{}</span><span class="s1">"'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'"'</span><span class="p">,</span> <span class="s1">'""'</span><span class="p">))</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">)</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-            <span class="n">rows</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-                <span class="s2">"SELECT rowid FROM chart_words WHERE chart_words MATCH ?"</span><span class="p">,</span> <span class="p">(</span><span class="n">match</span><span class="p">,)</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
-        <span class="k">return</span> <span class="p">{</span><span class="n">row</span><span class="p">:</span> <span class="mf">100.0</span> <span class="k">for</span> <span class="p">(</span><span class="n">row</span><span class="p">,)</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">}</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read</span><span class="p">(</span><span class="n">chords_index</span><span class="o">.</span><span class="n">rows_with_words</span><span class="p">,</span> <span class="n">tokens</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-            <span class="n">found</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-                <span class="s2">"SELECT chart FROM songs WHERE row = ?"</span><span class="p">,</span> <span class="p">(</span><span class="n">row</span><span class="p">,)</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">zlib</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">found</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">if</span> <span class="n">found</span> <span class="k">else</span> <span class="s2">""</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read</span><span class="p">(</span><span class="n">chords_index</span><span class="o">.</span><span class="n">read_chart</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span></div>
 
 </pre></div>
         </article>
@@ -610,7 +509,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=36140909"></script>
+</div><script src="../../_static/documentation_options.js?v=9f547d6f"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

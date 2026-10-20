@@ -1,4 +1,4 @@
-> built 2026-10-20 19:19 UTC from 3036c63 (main) · songleaf 0.0.28. Details: build_info.json
+> built 2026-10-20 19:46 UTC from 7d7ca22 (main) · songleaf 0.0.29. Details: build_info.json
 
 # index.html.md
 
@@ -1258,6 +1258,10 @@ decomposed accents, where the DataFrame source’s regular expression does the
 opposite. Rebuilding the index while a server runs is safe: a process that
 notices the file changed reloads it.
 
+The file format, its writing and its raw reads belong to `sung.chords_index`
+(stdlib only, so reading the index never imports pandas); this module adds where
+songleaf keeps the file and the ranking shared with the DataFrame source.
+
 ```pycon
 >>> import pandas as pd, tempfile, os
 >>> corpus = pd.DataFrame({
@@ -1337,9 +1341,8 @@ Lyrics hold every word of the query, rank by popularity, and carry
 Write the index of the Kaggle corpus (`loader`: as for `KaggleChordsSource`).
 
 Loading the corpus takes the memory the index exists to avoid, so run this
-once, apart from any server (`songleaf build-index`). The file is written
-beside the target and moved into place when complete, so a reader never
-sees half an index.
+once, apart from any server (`songleaf build-index`). The index format and
+its writing are `sung.chords_index`’s; this picks the corpus and the path.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -3635,18 +3638,16 @@ True
 
 # About this build
 
-This documentation was built on **2026-10-20 19:19 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/3036c636d7d8ef48d2dc82067e6b98f209afd995"><code>3036c63</code></a> on branch <code>main</code>, for **songleaf 0.0.28** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 19:46 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/7d7ca22103a0c6e275e4d87a752ed999d81237ac"><code>7d7ca22</code></a> on branch <code>main</code>, for **songleaf 0.0.29** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.28) is behind the latest release on PyPI (0.0.29): `pip install songleaf` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/3036c636d7d8ef48d2dc82067e6b98f209afd995"><code>3036c636d7d8ef48d2dc82067e6b98f209afd995</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/7d7ca22103a0c6e275e4d87a752ed999d81237ac"><code>7d7ca22103a0c6e275e4d87a752ed999d81237ac</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -3657,9 +3658,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39482174724">39482174724</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39485971471">39485971471</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>3036c636d7d8ef48d2dc82067e6b98f209afd995</code> (in the history of the built commit) |
+| Event commit | <code>7d7ca22103a0c6e275e4d87a752ed999d81237ac</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -3684,13 +3685,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.29/">0.0.29</a>, newer than the documented version (0.0.28).
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.29/">0.0.29</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 3036c636d7d8ef48d2dc82067e6b98f209afd995
+git checkout 7d7ca22103a0c6e275e4d87a752ed999d81237ac
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

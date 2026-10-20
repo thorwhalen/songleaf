@@ -31,7 +31,7 @@
 - [songleaf.ultimate_guitar](_autosummary/songleaf.ultimate_guitar.html.md): Ultimate Guitar: community chord charts the reader opened themselves (songleaf#28).
 - [songleaf.viewed](_autosummary/songleaf.viewed.html.md): Each viewer’s &#42;Viewed&#42; list: the songs they opened, the most recent first.
 - [For AI agents](ai-agents.html.md): &#96;songleaf&#96; ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-20 19:19 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-20 19:46 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
 
 ## Optional
 
