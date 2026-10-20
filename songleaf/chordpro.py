@@ -30,7 +30,9 @@ from collections.abc import Mapping
 
 from songleaf.model import Annotation, Song, chord, section
 
-_DIRECTIVE_RE = re.compile(r"^\s*\{\s*(?P<name>[\w-]+)\s*(?::\s*(?P<value>.*?))?\s*\}\s*$")
+_DIRECTIVE_RE = re.compile(
+    r"^\s*\{\s*(?P<name>[\w-]+)\s*(?::\s*(?P<value>.*?))?\s*\}\s*$"
+)
 _CHORD_RE = re.compile(r"\[([^\[\]]*)\]")
 
 _META_NAMES = {
