@@ -332,3 +332,18 @@ def test_the_reader_settings_map_onto_real_layout_options(client):
     assert set(mapping) == {"chordMode", "columns", "shade"}
     for by_value in mapping.values():
         assert set(by_value.values()) <= set(LAYOUT_OPTIONS) - {"dense"}
+
+
+def test_import_stores_a_pasted_song_and_it_can_be_read(client):
+    text = "{title: Paper Boats}\nPaper [G]boats on a [D]stream\n"
+    info = client.post("/import", json={"text": text, "artist": "The Invented Band"}).json()
+    assert info["key"].startswith("paste:") and info["format"] == "chordpro"
+    song = client.get("/song", params={"key": info["key"]}).json()
+    assert song["chords"] == ["G", "D"]
+    assert song["provenance"]["source"] == "paste"
+    assert song["artist"] == "The Invented Band"
+
+
+def test_import_refuses_empty_text_and_non_strings(client):
+    assert client.post("/import", json={"text": "  "}).status_code == 400
+    assert client.post("/import", json={"text": 3}).status_code == 400
