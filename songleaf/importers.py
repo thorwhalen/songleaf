@@ -177,7 +177,9 @@ def import_song(
         )
     for name, value in (("key", key), ("capo", capo)):
         if len(value) > MAX_META_CHARS:
-            raise ValueError(f"The {name} is too long (over {MAX_META_CHARS} characters).")
+            raise ValueError(
+                f"The {name} is too long (over {MAX_META_CHARS} characters)."
+            )
     why = _ug.refusal(url)
     if why:
         raise ValueError(why)

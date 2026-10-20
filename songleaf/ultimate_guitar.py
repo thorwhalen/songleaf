@@ -194,7 +194,9 @@ def fetch_page(url: str) -> str:
             return super().redirect_request(req, fp, code, msg, headers, newurl)
 
     request = Request(safe_page_url(url), headers={"User-Agent": USER_AGENT})
-    with build_opener(_StayOnUG).open(request, timeout=FETCH_TIMEOUT_SECONDS) as response:
+    with build_opener(_StayOnUG).open(
+        request, timeout=FETCH_TIMEOUT_SECONDS
+    ) as response:
         return response.read(MAX_PAGE_BYTES).decode("utf-8", "replace")
 
 
