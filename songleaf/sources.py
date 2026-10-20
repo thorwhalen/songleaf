@@ -393,6 +393,8 @@ class KaggleChordsSource:
 #: Text files parsed as chords-over-lyrics charts (same format as the Kaggle
 #: corpus) -- what a chords/tabs site's own "download" or "export" gives you.
 _TEXT_EXTS = frozenset({".txt", ".cho", ".chopro", ".crd", ".pro"})
+#: The text extensions that hold ChordPro rather than chords-over-lyrics.
+_CHORDPRO_EXTS = frozenset({".cho", ".chopro", ".crd", ".pro"})
 #: Score/tab files with no lyrics to parse: attached as a bare score link.
 _SCORE_EXTS = {
     ".gp": "guitarpro",
@@ -516,6 +518,7 @@ class LocalFolderSource:
 
     def get(self, song_id: str) -> Song:
         """The song at this relative path, parsed if it's a chart, else score-linked."""
+        from songleaf.chordpro import parse_chordpro
         from songleaf.parse import parse_chords_over_lyrics
 
         path = os.path.realpath(os.path.join(self.root, song_id))
@@ -531,8 +534,13 @@ class LocalFolderSource:
             "license": "unknown",
         }
         if ext.lower() in _TEXT_EXTS:
+            parse = (
+                parse_chordpro
+                if ext.lower() in _CHORDPRO_EXTS
+                else parse_chords_over_lyrics
+            )
             with open(path, encoding="utf-8", errors="ignore") as file:
-                return parse_chords_over_lyrics(
+                return parse(
                     file.read(),
                     meta={"title": title, "artist": artist},
                     provenance=provenance,
