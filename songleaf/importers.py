@@ -45,7 +45,13 @@ _UG_RE = re.compile(r"\[/?(?:ch|tab)\]", re.IGNORECASE)
 _DIRECTIVE_RE = re.compile(r"^\s*\{\s*[\w-]+\s*(?::.*)?\}\s*$", re.MULTILINE)
 _INLINE_CHORD_RE = re.compile(r"\w[^\n\[\]]*\[([^\[\]\s]+)\]|^\[([^\[\]\s]+)\]\S", re.M)
 _OPENSONG_CHORD_LINE_RE = re.compile(r"^\.", re.MULTILINE)
-_OPENSONG_TAGS = {"V": "Verse", "C": "Chorus", "B": "Bridge", "P": "Pre-chorus", "T": "Tag"}
+_OPENSONG_TAGS = {
+    "V": "Verse",
+    "C": "Chorus",
+    "B": "Bridge",
+    "P": "Pre-chorus",
+    "T": "Tag",
+}
 _OPENSONG_TAG_RE = re.compile(r"^\[([VCBPT])(\d*)\]\s*$", re.MULTILINE)
 
 
@@ -93,16 +99,16 @@ def _parse_opensong(text, *, meta=None, provenance=None) -> Song:
 
 #: Tried in order; the last one accepts anything.
 IMPORTERS: tuple[Importer, ...] = (
-    Importer("ultimate-guitar", lambda t: bool(_UG_RE.search(t)), _parse_ultimate_guitar),
+    Importer(
+        "ultimate-guitar", lambda t: bool(_UG_RE.search(t)), _parse_ultimate_guitar
+    ),
     Importer("chordpro", _is_chordpro, _chordpro.parse_chordpro),
     Importer(
         "opensong",
         lambda t: bool(_OPENSONG_CHORD_LINE_RE.search(t)),
         _parse_opensong,
     ),
-    Importer(
-        "chords-over-lyrics", lambda t: True, _parse.parse_chords_over_lyrics
-    ),
+    Importer("chords-over-lyrics", lambda t: True, _parse.parse_chords_over_lyrics),
 )
 
 
@@ -156,7 +162,9 @@ def import_song(
     if not text.strip():
         raise ValueError("Nothing to import: the text is empty.")
     if len(text) > MAX_PASTE_CHARS:
-        raise ValueError(f"The text is too long ({len(text)} > {MAX_PASTE_CHARS} characters).")
+        raise ValueError(
+            f"The text is too long ({len(text)} > {MAX_PASTE_CHARS} characters)."
+        )
     importer = _choose(text, importers, format)
     provenance = {**PASTE_PROVENANCE, **({"url": url} if url else {})}
     song = importer.parse(text, meta=None, provenance=provenance)
