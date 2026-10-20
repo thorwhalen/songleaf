@@ -1,4 +1,4 @@
-> built 2026-10-20 15:29 UTC from 92e9ed5 (main) · songleaf 0.0.25. Details: build_info.json
+> built 2026-10-20 15:36 UTC from 92e5cb1 (main) · songleaf 0.0.26. Details: build_info.json
 
 # index.html.md
 
@@ -2958,18 +2958,20 @@ view.
 
 ### Module Attributes
 
-| [`GetJson`](_autosummary/songleaf.timing.html.md#songleaf.timing.GetJson)   | how [`fetch_lrclib()`](_autosummary/songleaf.timing.html.md#songleaf.timing.fetch_lrclib) reaches the network (inject it).   |
-|------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| [`MEDIA_LINKS`](_autosummary/songleaf.timing.html.md#songleaf.timing.MEDIA_LINKS)   | Where each service's id sits in a link to it (a watch, share, embed or track URL).                   |
+|----------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| [`GetJson`](_autosummary/songleaf.timing.html.md#songleaf.timing.GetJson)       | how [`fetch_lrclib()`](_autosummary/songleaf.timing.html.md#songleaf.timing.fetch_lrclib) reaches the network (inject it). |
 
 ### Functions
 
-| [`align_lrc`](_autosummary/songleaf.timing.html.md#songleaf.timing.align_lrc)(song, lrc, \*[, min_f1, lookahead])      | `(line start offset, ms)` pairs: LRC lines matched in order to the song's lines.   |
-|-----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
-| [`fetch_lrclib`](_autosummary/songleaf.timing.html.md#songleaf.timing.fetch_lrclib)(title, artist, \*[, duration_s, ...]) | LRCLIB's synced lyrics (LRC text) for a song, or None.                             |
-| [`parse_lrc`](_autosummary/songleaf.timing.html.md#songleaf.timing.parse_lrc)(text)                                    | `(milliseconds, line text)` per timed line of an LRC, sorted by time.              |
-| [`token_f1`](_autosummary/songleaf.timing.html.md#songleaf.timing.token_f1)(a, b)                                     | Word-overlap F1 of two lines (case and punctuation ignored).                       |
-| [`with_lrc`](_autosummary/songleaf.timing.html.md#songleaf.timing.with_lrc)(song, lrc_text, \*[, source])             | `song` with `"time"` annotations from an LRC (earlier ones replaced).              |
-| [`with_media`](_autosummary/songleaf.timing.html.md#songleaf.timing.with_media)(song, \*\*ids)                          | `song` with media ids set in `meta["media"]` (an empty id removes one).            |
+| [`align_lrc`](_autosummary/songleaf.timing.html.md#songleaf.timing.align_lrc)(song, lrc, \*[, min_f1, lookahead])      | `(line start offset, ms)` pairs: LRC lines matched in order to the song's lines.       |
+|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| [`fetch_lrclib`](_autosummary/songleaf.timing.html.md#songleaf.timing.fetch_lrclib)(title, artist, \*[, duration_s, ...]) | LRCLIB's synced lyrics (LRC text) for a song, or None.                                 |
+| [`media_id`](_autosummary/songleaf.timing.html.md#songleaf.timing.media_id)(service, text)                            | The *service* id in *text*: an id, or a link to it (watch, share, embed or track URL). |
+| [`parse_lrc`](_autosummary/songleaf.timing.html.md#songleaf.timing.parse_lrc)(text)                                    | `(milliseconds, line text)` per timed line of an LRC, sorted by time.                  |
+| [`token_f1`](_autosummary/songleaf.timing.html.md#songleaf.timing.token_f1)(a, b)                                     | Word-overlap F1 of two lines (case and punctuation ignored).                           |
+| [`with_lrc`](_autosummary/songleaf.timing.html.md#songleaf.timing.with_lrc)(song, lrc_text, \*[, source])             | `song` with `"time"` annotations from an LRC (earlier ones replaced).                  |
+| [`with_media`](_autosummary/songleaf.timing.html.md#songleaf.timing.with_media)(song, \*\*ids)                          | `song` with media ids set in `meta["media"]` (an empty id removes one).                |
 
 ### songleaf.timing.GetJson
 
@@ -2979,6 +2981,10 @@ how [`fetch_lrclib()`](_autosummary/songleaf.timing.html.md#songleaf.timing.fetc
   `(url, params) -> JSON`
 
 alias of [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Mapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]], [`object`](https://docs.python.org/3/builtins/functions.html#object)]
+
+### songleaf.timing.MEDIA_LINKS *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [Pattern](https://docs.python.org/3/library/re.html#re.Pattern)]* *= {'spotify': re.compile('(?:/track/|spotify:track:)([A-Za-z0-9]{22})(?![A-Za-z0-9])'), 'youtube': re.compile('(?:youtu\\\\.be/|[?&]v=|/embed/|/shorts/|/live/)([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])')}*
+
+Where each service’s id sits in a link to it (a watch, share, embed or track URL).
 
 ### songleaf.timing.align_lrc(song, lrc, , min_f1=0.5, lookahead=4)
 
@@ -2998,6 +3004,20 @@ LRCLIB’s synced lyrics (LRC text) for a song, or None. Use it with
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### songleaf.timing.media_id(service, text)
+
+The *service* id in *text*: an id, or a link to it (watch, share, embed or track URL).
+
+```pycon
+>>> media_id("youtube", "https://youtu.be/dQw4w9WgXcQ?t=3")
+'dQw4w9WgXcQ'
+>>> media_id("spotify", "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC?si=x")
+'4uLU6hMCjMI75M1A2tKUQC'
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### songleaf.timing.parse_lrc(text)
 
@@ -3071,7 +3091,7 @@ than dicts uses [`songleaf.sources`](_autosummary/songleaf.sources.html.md#modul
 | [`import_file`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_file)([path, title, artist, url, ...])      | Read pasted song text from a file (`-`: standard input) and store it; see `import_text`.                   |
 | [`import_text`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_text)(text, \*[, title, artist, url, ...])  | Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics. |
 | [`import_url`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_url)(url, \*[, refresh, store, source])     | Fetch one community Ultimate Guitar chord page and store its chart as `ug:<id>`.                           |
-| [`media`](_autosummary/songleaf.tools.html.md#songleaf.tools.media)(query, \*[, youtube, spotify, pick, ...])   | Link the song's recording: a YouTube video id and/or a Spotify track id.                                   |
+| [`media`](_autosummary/songleaf.tools.html.md#songleaf.tools.media)(query, \*[, youtube, spotify, pick, ...])   | Link the song's recording: a YouTube video and/or a Spotify track, by id or link.                          |
 | [`search`](_autosummary/songleaf.tools.html.md#songleaf.tools.search)([query, title, artist, lyrics, ...])       | Find songs with one query: in your lists' names, then titles, artists and lyrics.                          |
 | [`sheet`](_autosummary/songleaf.tools.html.md#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...])    | Make a one-page song sheet (PDF) for the best match of `query`.                                            |
 | [`snippet`](_autosummary/songleaf.tools.html.md#songleaf.tools.snippet)(query, notation, \*[, line, format, ...]) | Put a score snippet over one line of a song; the `score` layout draws it on the sheet.                     |
@@ -3156,7 +3176,7 @@ already stored is not fetched again unless `refresh`.
 
 ### songleaf.tools.media(query, , youtube='', spotify='', pick=1, store=None, sources=None)
 
-Link the song’s recording: a YouTube video id and/or a Spotify track id.
+Link the song’s recording: a YouTube video and/or a Spotify track, by id or link.
 
 An id given as `""` is left as it is; `"-"` removes it. Returns
 `{"key", "media"}`.
@@ -3615,7 +3635,7 @@ True
 
 # About this build
 
-This documentation was built on **2026-10-20 15:29 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/92e9ed55404f821aa7bfd10db18c66e2cfed2e62"><code>92e9ed5</code></a> on branch <code>main</code>, for **songleaf 0.0.25** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 15:36 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/92e5cb10692a309524a85e586ee236c24c24bd19"><code>92e5cb1</code></a> on branch <code>main</code>, for **songleaf 0.0.26** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -3624,7 +3644,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/92e9ed55404f821aa7bfd10db18c66e2cfed2e62"><code>92e9ed55404f821aa7bfd10db18c66e2cfed2e62</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/92e5cb10692a309524a85e586ee236c24c24bd19"><code>92e5cb10692a309524a85e586ee236c24c24bd19</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -3635,9 +3655,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39448464904">39448464904</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39449641111">39449641111</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>92e9ed55404f821aa7bfd10db18c66e2cfed2e62</code> (in the history of the built commit) |
+| Event commit | <code>92e5cb10692a309524a85e586ee236c24c24bd19</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -3662,13 +3682,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.25/">0.0.25</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.26/">0.0.26</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 92e9ed55404f821aa7bfd10db18c66e2cfed2e62
+git checkout 92e5cb10692a309524a85e586ee236c24c24bd19
 pip install "epythet==0.2.21"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

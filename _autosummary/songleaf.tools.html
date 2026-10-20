@@ -311,7 +311,7 @@ than dicts uses <a class="reference internal" href="songleaf.sources.html#module
 <td><p>Fetch one community Ultimate Guitar chord page and store its chart as <code class="docutils literal notranslate"><span class="pre">ug:&lt;id&gt;</span></code>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.tools.media" title="songleaf.tools.media"><code class="xref py py-obj docutils literal notranslate"><span class="pre">media</span></code></a>(query, *[, youtube, spotify, pick, ...])</p></td>
-<td><p>Link the song's recording: a YouTube video id and/or a Spotify track id.</p></td>
+<td><p>Link the song's recording: a YouTube video and/or a Spotify track, by id or link.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#songleaf.tools.search" title="songleaf.tools.search"><code class="xref py py-obj docutils literal notranslate"><span class="pre">search</span></code></a>([query, title, artist, lyrics, ...])</p></td>
 <td><p>Find songs with one query: in your lists' names, then titles, artists and lyrics.</p></td>
@@ -441,7 +441,7 @@ already stored is not fetched again unless <code class="docutils literal notrans
 <dl class="py function">
 <dt class="sig sig-object py" id="songleaf.tools.media">
 <span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">media</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">youtube</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spotify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pick</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/tools.html#media"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.tools.media" title="Link to this definition">¶</a></dt>
-<dd><p>Link the song’s recording: a YouTube video id and/or a Spotify track id.</p>
+<dd><p>Link the song’s recording: a YouTube video and/or a Spotify track, by id or link.</p>
 <p>An id given as <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> is left as it is; <code class="docutils literal notranslate"><span class="pre">&quot;-&quot;</span></code> removes it. Returns
 <code class="docutils literal notranslate"><span class="pre">{&quot;key&quot;,</span> <span class="pre">&quot;media&quot;}</span></code>.</p>
 <dl class="field-list simple">
@@ -700,7 +700,7 @@ longer stored are left out. <code class="docutils literal notranslate"><span cla
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=1d9216c3"></script>
+</div><script src="../_static/documentation_options.js?v=3d238c28"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

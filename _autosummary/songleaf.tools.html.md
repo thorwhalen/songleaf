@@ -22,7 +22,7 @@ than dicts uses [`songleaf.sources`](songleaf.sources.html.md#module-songleaf.so
 | [`import_file`](#songleaf.tools.import_file)([path, title, artist, url, ...])      | Read pasted song text from a file (`-`: standard input) and store it; see `import_text`.                   |
 | [`import_text`](#songleaf.tools.import_text)(text, \*[, title, artist, url, ...])  | Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics. |
 | [`import_url`](#songleaf.tools.import_url)(url, \*[, refresh, store, source])     | Fetch one community Ultimate Guitar chord page and store its chart as `ug:<id>`.                           |
-| [`media`](#songleaf.tools.media)(query, \*[, youtube, spotify, pick, ...])   | Link the song's recording: a YouTube video id and/or a Spotify track id.                                   |
+| [`media`](#songleaf.tools.media)(query, \*[, youtube, spotify, pick, ...])   | Link the song's recording: a YouTube video and/or a Spotify track, by id or link.                          |
 | [`search`](#songleaf.tools.search)([query, title, artist, lyrics, ...])       | Find songs with one query: in your lists' names, then titles, artists and lyrics.                          |
 | [`sheet`](#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...])    | Make a one-page song sheet (PDF) for the best match of `query`.                                            |
 | [`snippet`](#songleaf.tools.snippet)(query, notation, \*[, line, format, ...]) | Put a score snippet over one line of a song; the `score` layout draws it on the sheet.                     |
@@ -107,7 +107,7 @@ already stored is not fetched again unless `refresh`.
 
 ### songleaf.tools.media(query, , youtube='', spotify='', pick=1, store=None, sources=None)
 
-Link the song’s recording: a YouTube video id and/or a Spotify track id.
+Link the song’s recording: a YouTube video and/or a Spotify track, by id or link.
 
 An id given as `""` is left as it is; `"-"` removes it. Returns
 `{"key", "media"}`.

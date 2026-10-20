@@ -328,9 +328,13 @@
     <span class="kn">import</span><span class="w"> </span><span class="nn">verovio</span>
 
     <span class="k">if</span> <span class="nb">format</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ENGRAVE_FORMATS</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"format must be one of </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">ENGRAVE_FORMATS</span><span class="p">)</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="nb">format</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"format must be one of </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">ENGRAVE_FORMATS</span><span class="p">)</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="nb">format</span><span class="si">!r}</span><span class="s2">"</span>
+        <span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">notation</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">MAX_ENGRAVE_CHARS</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The notation is too long to engrave (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">notation</span><span class="p">)</span><span class="si">}</span><span class="s2"> characters)."</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"The notation is too long to engrave (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">notation</span><span class="p">)</span><span class="si">}</span><span class="s2"> characters)."</span>
+        <span class="p">)</span>
     <span class="n">verovio</span><span class="o">.</span><span class="n">enableLog</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">toolkit</span> <span class="o">=</span> <span class="n">verovio</span><span class="o">.</span><span class="n">toolkit</span><span class="p">()</span>
     <span class="n">toolkit</span><span class="o">.</span><span class="n">setOptions</span><span class="p">(</span>
@@ -367,7 +371,9 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"The engraved SVG could not be read."</span><span class="p">)</span>
     <span class="n">found</span> <span class="o">=</span> <span class="n">_SVG_SIZE_RE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">svg</span><span class="p">)</span>
     <span class="n">pixels</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span> <span class="k">if</span> <span class="n">found</span> <span class="k">else</span> <span class="n">drawing</span><span class="o">.</span><span class="n">width</span>
-    <span class="n">per_space</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">VEROVIO_UNIT</span> <span class="o">*</span> <span class="n">drawing</span><span class="o">.</span><span class="n">width</span> <span class="o">/</span> <span class="n">pixels</span>  <span class="c1"># drawing units per staff space</span>
+    <span class="n">per_space</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="mi">2</span> <span class="o">*</span> <span class="n">VEROVIO_UNIT</span> <span class="o">*</span> <span class="n">drawing</span><span class="o">.</span><span class="n">width</span> <span class="o">/</span> <span class="n">pixels</span>
+    <span class="p">)</span>  <span class="c1"># drawing units per staff space</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">bottom</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#333333"</span><span class="p">,</span> <span class="n">font</span><span class="o">=</span><span class="s2">"Helvetica"</span><span class="p">):</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">reportlab.graphics</span><span class="w"> </span><span class="kn">import</span> <span class="n">renderPDF</span>
@@ -378,7 +384,9 @@
         <span class="n">renderPDF</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">drawing</span><span class="p">,</span> <span class="n">canvas</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="n">canvas</span><span class="o">.</span><span class="n">restoreState</span><span class="p">()</span>
 
-    <span class="k">return</span> <span class="n">ScoreSnippet</span><span class="p">(</span><span class="n">drawing</span><span class="o">.</span><span class="n">width</span> <span class="o">/</span> <span class="n">per_space</span><span class="p">,</span> <span class="n">drawing</span><span class="o">.</span><span class="n">height</span> <span class="o">/</span> <span class="n">per_space</span><span class="p">,</span> <span class="n">draw</span><span class="p">,</span> <span class="n">start</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">ScoreSnippet</span><span class="p">(</span>
+        <span class="n">drawing</span><span class="o">.</span><span class="n">width</span> <span class="o">/</span> <span class="n">per_space</span><span class="p">,</span> <span class="n">drawing</span><span class="o">.</span><span class="n">height</span> <span class="o">/</span> <span class="n">per_space</span><span class="p">,</span> <span class="n">draw</span><span class="p">,</span> <span class="n">start</span>
+    <span class="p">)</span></div>
 
 
 
@@ -395,7 +403,9 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">notation</span> <span class="ow">or</span> <span class="nb">format</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ENGRAVE_FORMATS</span><span class="p">:</span>
             <span class="k">continue</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">snippet_from_svg</span><span class="p">(</span><span class="n">engrave_svg</span><span class="p">(</span><span class="n">notation</span><span class="p">,</span> <span class="nb">format</span><span class="p">),</span> <span class="n">start</span><span class="o">=</span><span class="n">annotation</span><span class="o">.</span><span class="n">start</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">snippet_from_svg</span><span class="p">(</span>
+                <span class="n">engrave_svg</span><span class="p">(</span><span class="n">notation</span><span class="p">,</span> <span class="nb">format</span><span class="p">),</span> <span class="n">start</span><span class="o">=</span><span class="n">annotation</span><span class="o">.</span><span class="n">start</span>
+            <span class="p">)</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">None</span>
     <span class="k">return</span> <span class="kc">None</span></div>
@@ -428,7 +438,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=1d9216c3"></script>
+</div><script src="../../_static/documentation_options.js?v=3d238c28"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

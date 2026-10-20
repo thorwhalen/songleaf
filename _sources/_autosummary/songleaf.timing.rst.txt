@@ -8,6 +8,7 @@ songleaf.timing
 
    .. autosummary::
    
+      MEDIA_LINKS
       GetJson
    
    .. rubric:: Functions
@@ -16,6 +17,7 @@ songleaf.timing
    
       align_lrc
       fetch_lrclib
+      media_id
       parse_lrc
       token_f1
       with_lrc
