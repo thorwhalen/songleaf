@@ -442,6 +442,65 @@ def forget(key: str, *, store=None, library_root=None) -> dict:
     return {"key": key, "deleted": deleted}
 
 
+def sync(
+    query: str,
+    *,
+    lrc: str = "",
+    lrclib: bool = False,
+    pick: int = 1,
+    store=None,
+    sources=None,
+    get_json=None,
+) -> dict:
+    """Time the song's lines from an LRC, so the page can scroll with the recording.
+
+    ``lrc`` is the LRC text (an ``.lrc`` file's content); with ``lrclib`` and no
+    ``lrc``, LRCLIB is asked for the song's synced lyrics. Only the times are stored
+    (``"time"`` annotations), never the LRC's text. Returns ``{"key", "timed",
+    "lines"}``: how many lyric lines got a time, of how many.
+    """
+    from songleaf.timing import fetch_lrclib, with_lrc
+
+    key, found = _resolve(query, pick=pick, refresh=False, sources=sources, store=store)
+    if not lrc and lrclib:
+        lrc = fetch_lrclib(found.title, found.artist, get_json=get_json) or ""
+    if not lrc:
+        raise ValueError("no LRC: pass lrc= (an .lrc file's text) or lrclib=True")
+    timed = with_lrc(found, lrc)
+    store = song_store() if store is None else store
+    store[key] = timed
+    lyric_lines = sum(1 for line in found.lines() if line.text.strip())
+    return {"key": key, "timed": len(timed.of_kind("time")), "lines": lyric_lines}
+
+
+def media(
+    query: str,
+    *,
+    youtube: str = "",
+    spotify: str = "",
+    pick: int = 1,
+    store=None,
+    sources=None,
+) -> dict:
+    """Link the song's recording: a YouTube video id and/or a Spotify track id.
+
+    An id given as ``""`` is left as it is; ``"-"`` removes it. Returns
+    ``{"key", "media"}``.
+    """
+    from songleaf.timing import with_media
+
+    key, found = _resolve(query, pick=pick, refresh=False, sources=sources, store=store)
+    changes = {
+        service: (None if value == "-" else value)
+        for service, value in (("youtube", youtube), ("spotify", spotify))
+        if value
+    }
+    linked = with_media(found, **changes)
+    store = song_store() if store is None else store
+    store[key] = linked
+    return {"key": key, "media": dict(linked.meta.get("media") or {})}
+
+
 def viewed(*, user: str = "", store=None, library_root=None) -> list[dict]:
     """The songs ``user`` opened, the most recent first: ``key``, ``title``, ``artist``, ``viewed_at``.
 
@@ -549,4 +608,6 @@ TOOLS = (
     unview,
     forget,
     build_index,
+    sync,
+    media,
 )
