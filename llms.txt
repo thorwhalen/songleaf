@@ -11,6 +11,7 @@
 - [songleaf.chordpro](_autosummary/songleaf.chordpro.html.md): Parse ChordPro text into a &#96;Song&#96;.
 - [songleaf.datasets](_autosummary/songleaf.datasets.html.md): Where the &#96;datasets&#96; data kind lives: local files by default, S3 by configuration.
 - [songleaf.harmony](_autosummary/songleaf.harmony.html.md): What a chord does in its song’s key, so that sheets can shade chords by function.
+- [songleaf.importers](_autosummary/songleaf.importers.html.md): Turn pasted text into a &#96;Song&#96;: a registry of format importers.
 - [songleaf.kaggle_index](_autosummary/songleaf.kaggle_index.html.md): A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.
 - [songleaf.library](_autosummary/songleaf.library.html.md): The library’s lists: which stored songs are in which lists, shared by everyone using it.
 - [songleaf.match](_autosummary/songleaf.match.html.md): Where a query matched: the words it shares with a field, as spans to highlight, and the lyric line.
@@ -23,7 +24,7 @@
 - [songleaf.tools](_autosummary/songleaf.tools.html.md): The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.
 - [songleaf.viewed](_autosummary/songleaf.viewed.html.md): Each viewer’s &#42;Viewed&#42; list: the songs they opened, the most recent first.
 - [For AI agents](ai-agents.html.md): &#96;songleaf&#96; ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-20 06:58 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-20 07:16 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
 
 ## Optional
 

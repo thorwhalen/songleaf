@@ -1,4 +1,4 @@
-> built 2026-10-20 06:58 UTC from 357cef5 (main) · songleaf 0.0.15. Details: build_info.json
+> built 2026-10-20 07:16 UTC from 2b1c58e (main) · songleaf 0.0.16. Details: build_info.json
 
 # index.html.md
 
@@ -54,6 +54,8 @@ python -m songleaf sheet kaggle_chords:1234               # a song by its key: n
 python -m songleaf sheet kaggle_chords:1234 --refresh     # fetch it again from its source
 python -m songleaf sheet "wonderwall oasis" --transpose 2 # chords up a whole tone, spelled for the new key
 python -m songleaf sheet "wonderwall oasis" --scale 0.8   # 80% of the size that fills the page
+python -m songleaf import chart.txt --title "Paper Boats"   # paste from any site: Ultimate Guitar markup, ChordPro, OpenSong, plain; "-" reads stdin
+python -m songleaf sheet paste:ea2a9d845214                 # the key `import` printed
 python -m songleaf song kaggle_chords:1234                # the song as data: text, chords, every key's chord table
 python -m songleaf build-index                            # once: search from an index, not the whole corpus in memory
 ```
@@ -811,21 +813,124 @@ The keys of the stored songs.
 
 ### Modules
 
-| [`chordpro`](_autosummary/songleaf.chordpro.html.md#module-songleaf.chordpro)         | Parse ChordPro text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song).           |
-|--------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
-| [`datasets`](_autosummary/songleaf.datasets.html.md#module-songleaf.datasets)         | Where the `datasets` data kind lives: local files by default, S3 by configuration.                              |
-| [`harmony`](_autosummary/songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                               |
-| [`kaggle_index`](_autosummary/songleaf.kaggle_index.html.md#module-songleaf.kaggle_index) | A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.                     |
-| [`library`](_autosummary/songleaf.library.html.md#module-songleaf.library)           | The library's lists: which stored songs are in which lists, shared by everyone using it.                        |
-| [`match`](_autosummary/songleaf.match.html.md#module-songleaf.match)               | Where a query matched: the words it shares with a field, as spans to highlight, and the lyric line.             |
-| [`model`](_autosummary/songleaf.model.html.md#module-songleaf.model)               | The linked-artifact model: a song is lyrics text plus standoff annotations.                                     |
-| [`packing`](_autosummary/songleaf.packing.html.md#module-songleaf.packing)           | Line packing: which consecutive lines of a paragraph share a row.                                               |
-| [`parse`](_autosummary/songleaf.parse.html.md#module-songleaf.parse)               | Parse chords-over-lyrics text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song). |
-| [`render`](_autosummary/songleaf.render.html.md#module-songleaf.render)             | Render a song onto one dense page, with the lyrics as large as will fit.                                        |
-| [`sources`](_autosummary/songleaf.sources.html.md#module-songleaf.sources)           | Where songs are found: sources, and a search that composes them.                                                |
-| [`store`](_autosummary/songleaf.store.html.md#module-songleaf.store)               | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                        |
-| [`tools`](_autosummary/songleaf.tools.html.md#module-songleaf.tools)               | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.              |
-| [`viewed`](_autosummary/songleaf.viewed.html.md#module-songleaf.viewed)             | Each viewer's *Viewed* list: the songs they opened, the most recent first.                                      |
+| [`chordpro`](_autosummary/songleaf.chordpro.html.md#module-songleaf.chordpro)         | Parse ChordPro text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song).                              |
+|--------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| [`datasets`](_autosummary/songleaf.datasets.html.md#module-songleaf.datasets)         | Where the `datasets` data kind lives: local files by default, S3 by configuration.                                                 |
+| [`harmony`](_autosummary/songleaf.harmony.html.md#module-songleaf.harmony)           | What a chord does in its song's key, so that sheets can shade chords by function.                                                  |
+| [`importers`](_autosummary/songleaf.importers.html.md#module-songleaf.importers)       | Turn pasted text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song): a registry of format importers. |
+| [`kaggle_index`](_autosummary/songleaf.kaggle_index.html.md#module-songleaf.kaggle_index) | A search index of the Kaggle corpus: the same songs and keys, without the corpus in memory.                                        |
+| [`library`](_autosummary/songleaf.library.html.md#module-songleaf.library)           | The library's lists: which stored songs are in which lists, shared by everyone using it.                                           |
+| [`match`](_autosummary/songleaf.match.html.md#module-songleaf.match)               | Where a query matched: the words it shares with a field, as spans to highlight, and the lyric line.                                |
+| [`model`](_autosummary/songleaf.model.html.md#module-songleaf.model)               | The linked-artifact model: a song is lyrics text plus standoff annotations.                                                        |
+| [`packing`](_autosummary/songleaf.packing.html.md#module-songleaf.packing)           | Line packing: which consecutive lines of a paragraph share a row.                                                                  |
+| [`parse`](_autosummary/songleaf.parse.html.md#module-songleaf.parse)               | Parse chords-over-lyrics text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song).                    |
+| [`render`](_autosummary/songleaf.render.html.md#module-songleaf.render)             | Render a song onto one dense page, with the lyrics as large as will fit.                                                           |
+| [`sources`](_autosummary/songleaf.sources.html.md#module-songleaf.sources)           | Where songs are found: sources, and a search that composes them.                                                                   |
+| [`store`](_autosummary/songleaf.store.html.md#module-songleaf.store)               | Where songs persist: a `MutableMapping` of songs, JSON files by default.                                                           |
+| [`tools`](_autosummary/songleaf.tools.html.md#module-songleaf.tools)               | The single source of truth for every surface: plain functions, flat arguments, JSON-ready results.                                 |
+| [`viewed`](_autosummary/songleaf.viewed.html.md#module-songleaf.viewed)             | Each viewer's *Viewed* list: the songs they opened, the most recent first.                                                         |
+
+
+# _autosummary/songleaf.importers.html.md
+
+# songleaf.importers
+
+Turn pasted text into a [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song): a registry of format importers.
+
+Each [`Importer`](_autosummary/songleaf.importers.html.md#songleaf.importers.Importer) is a strategy: `detect(text)` says whether the text is
+in its format, `parse(text, meta=, provenance=)` builds the song. The registry
+[`IMPORTERS`](_autosummary/songleaf.importers.html.md#songleaf.importers.IMPORTERS) is tried in order and the first match wins; the last one
+(plain chords-over-lyrics) matches anything, so `import_text()` always
+answers. A new format is a new [`Importer`](_autosummary/songleaf.importers.html.md#songleaf.importers.Importer) in the registry, or one passed
+as `importers=`.
+
+- `ultimate-guitar`: `[ch]G[/ch]` / `[tab]...[/tab]` markup, stripped to
+  columns, then parsed as chords-over-lyrics (`[Verse 1]` headers become
+  sections).
+- `chordpro`: `{directive}` lines or `[G]` chords inline in the lyrics.
+- `opensong`: lines prefixed `.` (chords), \`\` \`\` (lyrics), `;` (comment),
+  `[V1]`-style section tags.
+- `chords-over-lyrics`: the fallback.
+
+songleaf never contacts the site the text came from.
+
+```pycon
+>>> import_song("[ch]G[/ch]    [ch]D[/ch]\nPaper boats drift").format
+'ultimate-guitar'
+```
+
+### Module Attributes
+
+| [`PASTE_PROVENANCE`](_autosummary/songleaf.importers.html.md#songleaf.importers.PASTE_PROVENANCE)   | Provenance recorded for every pasted song (`url` is added when known).   |
+|---------------------------------------------------------------------|--------------------------------------------------------------------------|
+| [`KEY_HASH_CHARS`](_autosummary/songleaf.importers.html.md#songleaf.importers.KEY_HASH_CHARS)     | Characters of the text hashed into the `paste:<hash>` key.               |
+| [`MAX_PASTE_CHARS`](_autosummary/songleaf.importers.html.md#songleaf.importers.MAX_PASTE_CHARS)    | Pasted text longer than this is refused (a chord chart is a few KB).     |
+| [`IMPORTERS`](_autosummary/songleaf.importers.html.md#songleaf.importers.IMPORTERS)          | Tried in order; the last one accepts anything.                           |
+
+### Functions
+
+| [`detect_format`](_autosummary/songleaf.importers.html.md#songleaf.importers.detect_format)(text, \*[, importers])             | The name of the first importer that recognises *text*.                        |
+|---------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| `format_names`([importers])                                                                       |                                                                               |
+| [`import_song`](_autosummary/songleaf.importers.html.md#songleaf.importers.import_song)(text, \*[, title, artist, url, ...]) | Parse pasted *text* with the first importer that recognises it (or *format*). |
+| [`paste_key`](_autosummary/songleaf.importers.html.md#songleaf.importers.paste_key)(text)                                  | The store key of pasted *text*: `paste:<hash>` (the same text, the same key). |
+
+### Classes
+
+| [`Imported`](_autosummary/songleaf.importers.html.md#songleaf.importers.Imported)(key, format, song)   | A parsed paste: the song, its key and the format that read it.   |
+|--------------------------------------------------------------------------------|------------------------------------------------------------------|
+| [`Importer`](_autosummary/songleaf.importers.html.md#songleaf.importers.Importer)(name, detect, parse) | One text format: how to recognise it and how to read it.         |
+
+### songleaf.importers.IMPORTERS *: [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[Importer](_autosummary/songleaf.importers.html.md#songleaf.importers.Importer), ...]* *= (Importer(name='ultimate-guitar', detect=<function <lambda>>, parse=<function \_parse_ultimate_guitar>), Importer(name='chordpro', detect=<function \_is_chordpro>, parse=<function parse_chordpro>), Importer(name='opensong', detect=<function <lambda>>, parse=<function \_parse_opensong>), Importer(name='chords-over-lyrics', detect=<function <lambda>>, parse=<function parse_chords_over_lyrics>))*
+
+Tried in order; the last one accepts anything.
+
+### *class* songleaf.importers.Imported(key, format, song)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+A parsed paste: the song, its key and the format that read it.
+
+### *class* songleaf.importers.Importer(name, detect, parse)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+One text format: how to recognise it and how to read it.
+
+### songleaf.importers.KEY_HASH_CHARS *= 12*
+
+Characters of the text hashed into the `paste:<hash>` key.
+
+### songleaf.importers.MAX_PASTE_CHARS *= 200000*
+
+Pasted text longer than this is refused (a chord chart is a few KB).
+
+### songleaf.importers.PASTE_PROVENANCE *= {'license': 'personal', 'source': 'paste'}*
+
+Provenance recorded for every pasted song (`url` is added when known).
+
+### songleaf.importers.detect_format(text, \*, importers=(Importer(name='ultimate-guitar', detect=<function <lambda>>, parse=<function \_parse_ultimate_guitar>), Importer(name='chordpro', detect=<function \_is_chordpro>, parse=<function parse_chordpro>), Importer(name='opensong', detect=<function <lambda>>, parse=<function \_parse_opensong>), Importer(name='chords-over-lyrics', detect=<function <lambda>>, parse=<function parse_chords_over_lyrics>)))
+
+The name of the first importer that recognises *text*.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### songleaf.importers.import_song(text, \*, title='', artist='', url='', format='', importers=(Importer(name='ultimate-guitar', detect=<function <lambda>>, parse=<function \_parse_ultimate_guitar>), Importer(name='chordpro', detect=<function \_is_chordpro>, parse=<function parse_chordpro>), Importer(name='opensong', detect=<function <lambda>>, parse=<function \_parse_opensong>), Importer(name='chords-over-lyrics', detect=<function <lambda>>, parse=<function parse_chords_over_lyrics>)))
+
+Parse pasted *text* with the first importer that recognises it (or *format*).
+
+`title`/`artist` given here win over those in the text.
+
+* **Return type:**
+  [`Imported`](_autosummary/songleaf.importers.html.md#songleaf.importers.Imported)
+
+### songleaf.importers.paste_key(text)
+
+The store key of pasted *text*: `paste:<hash>` (the same text, the same key).
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 
 # _autosummary/songleaf.kaggle_index.html.md
@@ -2268,18 +2373,20 @@ than dicts uses [`songleaf.sources`](_autosummary/songleaf.sources.html.md#modul
 
 ### Functions
 
-| [`build_index`](_autosummary/songleaf.tools.html.md#songleaf.tools.build_index)(\*[, path])                        | Build the search index of the Kaggle corpus, once, where the corpus zip is.                 |
-|-------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
-| [`forget`](_autosummary/songleaf.tools.html.md#songleaf.tools.forget)(key, \*[, store, library_root])         | Remove a song from the stored songs, from every list it was in, and from every Viewed list. |
-| [`search`](_autosummary/songleaf.tools.html.md#songleaf.tools.search)([query, title, artist, lyrics, ...])    | Find songs with one query: in your lists' names, then titles, artists and lyrics.           |
-| [`sheet`](_autosummary/songleaf.tools.html.md#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...]) | Make a one-page song sheet (PDF) for the best match of `query`.                             |
-| [`song`](_autosummary/songleaf.tools.html.md#songleaf.tools.song)(query, \*[, pick, refresh, ...])          | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.    |
-| [`songs`](_autosummary/songleaf.tools.html.md#songleaf.tools.songs)(\*[, store])                             | The keys of the stored songs.                                                               |
-| [`unview`](_autosummary/songleaf.tools.html.md#songleaf.tools.unview)(key, \*[, user, library_root])          | Take a song out of `user`'s Viewed list.                                                    |
-| [`view`](_autosummary/songleaf.tools.html.md#songleaf.tools.view)(key, \*[, user, at, store, library_root]) | Put a stored song at the top of `user`'s Viewed list: they just opened it.                  |
-| [`viewed`](_autosummary/songleaf.tools.html.md#songleaf.tools.viewed)(\*[, user, store, library_root])        | The songs `user` opened, the most recent first: `key`, `title`, `artist`, `viewed_at`.      |
+| [`build_index`](_autosummary/songleaf.tools.html.md#songleaf.tools.build_index)(\*[, path])                          | Build the search index of the Kaggle corpus, once, where the corpus zip is.                                |
+|---------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| [`forget`](_autosummary/songleaf.tools.html.md#songleaf.tools.forget)(key, \*[, store, library_root])           | Remove a song from the stored songs, from every list it was in, and from every Viewed list.                |
+| [`import_file`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_file)([path, title, artist, url, ...])     | Read pasted song text from a file (`-`: standard input) and store it; see `import_text`.                   |
+| [`import_text`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_text)(text, \*[, title, artist, url, ...]) | Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics. |
+| [`search`](_autosummary/songleaf.tools.html.md#songleaf.tools.search)([query, title, artist, lyrics, ...])      | Find songs with one query: in your lists' names, then titles, artists and lyrics.                          |
+| [`sheet`](_autosummary/songleaf.tools.html.md#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...])   | Make a one-page song sheet (PDF) for the best match of `query`.                                            |
+| [`song`](_autosummary/songleaf.tools.html.md#songleaf.tools.song)(query, \*[, pick, refresh, ...])            | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.                   |
+| [`songs`](_autosummary/songleaf.tools.html.md#songleaf.tools.songs)(\*[, store])                               | The keys of the stored songs.                                                                              |
+| [`unview`](_autosummary/songleaf.tools.html.md#songleaf.tools.unview)(key, \*[, user, library_root])            | Take a song out of `user`'s Viewed list.                                                                   |
+| [`view`](_autosummary/songleaf.tools.html.md#songleaf.tools.view)(key, \*[, user, at, store, library_root])   | Put a stored song at the top of `user`'s Viewed list: they just opened it.                                 |
+| [`viewed`](_autosummary/songleaf.tools.html.md#songleaf.tools.viewed)(\*[, user, store, library_root])          | The songs `user` opened, the most recent first: `key`, `title`, `artist`, `viewed_at`.                     |
 
-### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function song>, <function songs>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>)*
+### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function song>, <function songs>, <function import_file>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>)*
 
 Every operation, in the order the CLI lists them.
 
@@ -2300,6 +2407,26 @@ Remove a song from the stored songs, from every list it was in, and from every V
 
 It can be found and stored again by searching. Returns `{"key", "deleted"}`;
 `deleted` is False when it was not stored.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.import_file(path='-', , title='', artist='', url='', format='', store=None)
+
+Read pasted song text from a file (`-`: standard input) and store it; see `import_text`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.import_text(text, , title='', artist='', url='', format='', store=None)
+
+Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics.
+
+The format is detected (`format` forces one of `ultimate-guitar`,
+`chordpro`, `opensong`, `chords-over-lyrics`). `url` is only
+recorded as provenance: songleaf never contacts it. The song is stored
+under `paste:<hash>` (the same text, the same key) and is then usable like
+any other: `sheet <key>`, `song <key>`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -2518,16 +2645,18 @@ True
 
 # About this build
 
-This documentation was built on **2026-10-20 06:58 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/357cef5aaf8e311d1ddd680593223be1b7cceae2"><code>357cef5</code></a> on branch <code>main</code>, for **songleaf 0.0.15** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 07:16 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/2b1c58ec024c9610e85d67caf8f03f0ad0eef8eb"><code>2b1c58e</code></a> on branch <code>main</code>, for **songleaf 0.0.16** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.0.16) is behind the latest release on PyPI (0.0.17): `pip install songleaf` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/357cef5aaf8e311d1ddd680593223be1b7cceae2"><code>357cef5aaf8e311d1ddd680593223be1b7cceae2</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/2b1c58ec024c9610e85d67caf8f03f0ad0eef8eb"><code>2b1c58ec024c9610e85d67caf8f03f0ad0eef8eb</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -2538,9 +2667,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39383361676">39383361676</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/39385173519">39385173519</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>357cef5aaf8e311d1ddd680593223be1b7cceae2</code> (in the history of the built commit) |
+| Event commit | <code>2b1c58ec024c9610e85d67caf8f03f0ad0eef8eb</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -2565,13 +2694,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.15/">0.0.15</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.17/">0.0.17</a>, newer than the documented version (0.0.16).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 357cef5aaf8e311d1ddd680593223be1b7cceae2
+git checkout 2b1c58ec024c9610e85d67caf8f03f0ad0eef8eb
 pip install "epythet==0.2.18"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

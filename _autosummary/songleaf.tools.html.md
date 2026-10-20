@@ -15,18 +15,20 @@ than dicts uses [`songleaf.sources`](songleaf.sources.html.md#module-songleaf.so
 
 ### Functions
 
-| [`build_index`](#songleaf.tools.build_index)(\*[, path])                        | Build the search index of the Kaggle corpus, once, where the corpus zip is.                 |
-|-------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
-| [`forget`](#songleaf.tools.forget)(key, \*[, store, library_root])         | Remove a song from the stored songs, from every list it was in, and from every Viewed list. |
-| [`search`](#songleaf.tools.search)([query, title, artist, lyrics, ...])    | Find songs with one query: in your lists' names, then titles, artists and lyrics.           |
-| [`sheet`](#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...]) | Make a one-page song sheet (PDF) for the best match of `query`.                             |
-| [`song`](#songleaf.tools.song)(query, \*[, pick, refresh, ...])          | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.    |
-| [`songs`](#songleaf.tools.songs)(\*[, store])                             | The keys of the stored songs.                                                               |
-| [`unview`](#songleaf.tools.unview)(key, \*[, user, library_root])          | Take a song out of `user`'s Viewed list.                                                    |
-| [`view`](#songleaf.tools.view)(key, \*[, user, at, store, library_root]) | Put a stored song at the top of `user`'s Viewed list: they just opened it.                  |
-| [`viewed`](#songleaf.tools.viewed)(\*[, user, store, library_root])        | The songs `user` opened, the most recent first: `key`, `title`, `artist`, `viewed_at`.      |
+| [`build_index`](#songleaf.tools.build_index)(\*[, path])                          | Build the search index of the Kaggle corpus, once, where the corpus zip is.                                |
+|---------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| [`forget`](#songleaf.tools.forget)(key, \*[, store, library_root])           | Remove a song from the stored songs, from every list it was in, and from every Viewed list.                |
+| [`import_file`](#songleaf.tools.import_file)([path, title, artist, url, ...])     | Read pasted song text from a file (`-`: standard input) and store it; see `import_text`.                   |
+| [`import_text`](#songleaf.tools.import_text)(text, \*[, title, artist, url, ...]) | Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics. |
+| [`search`](#songleaf.tools.search)([query, title, artist, lyrics, ...])      | Find songs with one query: in your lists' names, then titles, artists and lyrics.                          |
+| [`sheet`](#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...])   | Make a one-page song sheet (PDF) for the best match of `query`.                                            |
+| [`song`](#songleaf.tools.song)(query, \*[, pick, refresh, ...])            | The song itself as JSON: lyrics text, chords and sections, and every key it can move to.                   |
+| [`songs`](#songleaf.tools.songs)(\*[, store])                               | The keys of the stored songs.                                                                              |
+| [`unview`](#songleaf.tools.unview)(key, \*[, user, library_root])            | Take a song out of `user`'s Viewed list.                                                                   |
+| [`view`](#songleaf.tools.view)(key, \*[, user, at, store, library_root])   | Put a stored song at the top of `user`'s Viewed list: they just opened it.                                 |
+| [`viewed`](#songleaf.tools.viewed)(\*[, user, store, library_root])          | The songs `user` opened, the most recent first: `key`, `title`, `artist`, `viewed_at`.                     |
 
-### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function song>, <function songs>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>)*
+### songleaf.tools.TOOLS *= (<function search>, <function sheet>, <function song>, <function songs>, <function import_file>, <function viewed>, <function view>, <function unview>, <function forget>, <function build_index>)*
 
 Every operation, in the order the CLI lists them.
 
@@ -47,6 +49,26 @@ Remove a song from the stored songs, from every list it was in, and from every V
 
 It can be found and stored again by searching. Returns `{"key", "deleted"}`;
 `deleted` is False when it was not stored.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.import_file(path='-', , title='', artist='', url='', format='', store=None)
+
+Read pasted song text from a file (`-`: standard input) and store it; see `import_text`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### songleaf.tools.import_text(text, , title='', artist='', url='', format='', store=None)
+
+Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics.
+
+The format is detected (`format` forces one of `ultimate-guitar`,
+`chordpro`, `opensong`, `chords-over-lyrics`). `url` is only
+recorded as provenance: songleaf never contacts it. The song is stored
+under `paste:<hash>` (the same text, the same key) and is then usable like
+any other: `sheet <key>`, `song <key>`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

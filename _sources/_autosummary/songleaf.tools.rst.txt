@@ -16,6 +16,8 @@ songleaf.tools
    
       build_index
       forget
+      import_file
+      import_text
       search
       sheet
       song

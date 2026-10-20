@@ -205,6 +205,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.chordpro.html">songleaf.chordpro</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.datasets.html">songleaf.datasets</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.importers.html">songleaf.importers</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.library.html">songleaf.library</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.match.html">songleaf.match</a></li>
@@ -286,7 +287,9 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotation</span><span class="p">,</span> <span class="n">Song</span><span class="p">,</span> <span class="n">chord</span><span class="p">,</span> <span class="n">section</span>
 
-<span class="n">_DIRECTIVE_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"^\s*\{\s*(?P&lt;name&gt;[\w-]+)\s*(?::\s*(?P&lt;value&gt;.*?))?\s*\}\s*$"</span><span class="p">)</span>
+<span class="n">_DIRECTIVE_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s2">"^\s*\{\s*(?P&lt;name&gt;[\w-]+)\s*(?::\s*(?P&lt;value&gt;.*?))?\s*\}\s*$"</span>
+<span class="p">)</span>
 <span class="n">_CHORD_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\[([^\[\]]*)\]"</span><span class="p">)</span>
 
 <span class="n">_META_NAMES</span> <span class="o">=</span> <span class="p">{</span>
@@ -451,7 +454,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=2a6a9ca9"></script>
+</div><script src="../../_static/documentation_options.js?v=0adb0642"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

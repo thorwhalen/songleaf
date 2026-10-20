@@ -205,6 +205,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.chordpro.html">songleaf.chordpro</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.datasets.html">songleaf.datasets</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.harmony.html">songleaf.harmony</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.importers.html">songleaf.importers</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.library.html">songleaf.library</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.match.html">songleaf.match</a></li>
@@ -521,6 +522,69 @@
     <span class="k">return</span> <span class="n">key</span><span class="p">,</span> <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
 
+<div class="viewcode-block" id="import_text">
+<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.import_text">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">import_text</span><span class="p">(</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">artist</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="nb">format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics.</span>
+
+<span class="sd">    The format is detected (``format`` forces one of ``ultimate-guitar``,</span>
+<span class="sd">    ``chordpro``, ``opensong``, ``chords-over-lyrics``). ``url`` is only</span>
+<span class="sd">    recorded as provenance: songleaf never contacts it. The song is stored</span>
+<span class="sd">    under ``paste:&lt;hash&gt;`` (the same text, the same key) and is then usable like</span>
+<span class="sd">    any other: ``sheet &lt;key&gt;``, ``song &lt;key&gt;``.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.importers</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_song</span>
+
+    <span class="n">imported</span> <span class="o">=</span> <span class="n">import_song</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">artist</span><span class="o">=</span><span class="n">artist</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">)</span>
+    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
+    <span class="n">store</span><span class="p">[</span><span class="n">imported</span><span class="o">.</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">imported</span><span class="o">.</span><span class="n">song</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"key"</span><span class="p">:</span> <span class="n">imported</span><span class="o">.</span><span class="n">key</span><span class="p">,</span>
+        <span class="s2">"format"</span><span class="p">:</span> <span class="n">imported</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
+        <span class="s2">"title"</span><span class="p">:</span> <span class="n">imported</span><span class="o">.</span><span class="n">song</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+        <span class="s2">"artist"</span><span class="p">:</span> <span class="n">imported</span><span class="o">.</span><span class="n">song</span><span class="o">.</span><span class="n">artist</span><span class="p">,</span>
+        <span class="s2">"lines"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">imported</span><span class="o">.</span><span class="n">song</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)),</span>
+        <span class="s2">"chords"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">imported</span><span class="o">.</span><span class="n">song</span><span class="o">.</span><span class="n">of_kind</span><span class="p">(</span><span class="s2">"chord"</span><span class="p">)),</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="import_file">
+<a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.import_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">import_file</span><span class="p">(</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"-"</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">artist</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="nb">format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Read pasted song text from a file (``-``: standard input) and store it; see ``import_text``."""</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+    <span class="k">if</span> <span class="n">path</span> <span class="o">==</span> <span class="s2">"-"</span><span class="p">:</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">import_text</span><span class="p">(</span>
+        <span class="n">text</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">artist</span><span class="o">=</span><span class="n">artist</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="n">import_file</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="s2">"import"</span>  <span class="c1"># the CLI command is ``songleaf import``</span>
+
+
 <div class="viewcode-block" id="forget">
 <a class="viewcode-back" href="../../_autosummary/songleaf.tools.html#songleaf.forget">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">forget</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">library_root</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
@@ -653,7 +717,18 @@
 
 
 <span class="c1">#: Every operation, in the order the CLI lists them.</span>
-<span class="n">TOOLS</span> <span class="o">=</span> <span class="p">(</span><span class="n">search</span><span class="p">,</span> <span class="n">sheet</span><span class="p">,</span> <span class="n">song</span><span class="p">,</span> <span class="n">songs</span><span class="p">,</span> <span class="n">viewed</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">unview</span><span class="p">,</span> <span class="n">forget</span><span class="p">,</span> <span class="n">build_index</span><span class="p">)</span>
+<span class="n">TOOLS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">search</span><span class="p">,</span>
+    <span class="n">sheet</span><span class="p">,</span>
+    <span class="n">song</span><span class="p">,</span>
+    <span class="n">songs</span><span class="p">,</span>
+    <span class="n">import_file</span><span class="p">,</span>
+    <span class="n">viewed</span><span class="p">,</span>
+    <span class="n">view</span><span class="p">,</span>
+    <span class="n">unview</span><span class="p">,</span>
+    <span class="n">forget</span><span class="p">,</span>
+    <span class="n">build_index</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
         </article>
       </div>
@@ -682,7 +757,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=2a6a9ca9"></script>
+</div><script src="../../_static/documentation_options.js?v=0adb0642"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

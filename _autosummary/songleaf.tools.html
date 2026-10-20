@@ -208,6 +208,7 @@
 <li class="toctree-l3"><a class="reference internal" href="songleaf.chordpro.html">songleaf.chordpro</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.datasets.html">songleaf.datasets</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.harmony.html">songleaf.harmony</a></li>
+<li class="toctree-l3"><a class="reference internal" href="songleaf.importers.html">songleaf.importers</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.kaggle_index.html">songleaf.kaggle_index</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.library.html">songleaf.library</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.match.html">songleaf.match</a></li>
@@ -290,6 +291,12 @@ than dicts uses <a class="reference internal" href="songleaf.sources.html#module
 <tr class="row-even"><td><p><a class="reference internal" href="#songleaf.tools.forget" title="songleaf.tools.forget"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forget</span></code></a>(key, *[, store, library_root])</p></td>
 <td><p>Remove a song from the stored songs, from every list it was in, and from every Viewed list.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.tools.import_file" title="songleaf.tools.import_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_file</span></code></a>([path, title, artist, url, ...])</p></td>
+<td><p>Read pasted song text from a file (<code class="docutils literal notranslate"><span class="pre">-</span></code>: standard input) and store it; see <code class="docutils literal notranslate"><span class="pre">import_text</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.tools.import_text" title="songleaf.tools.import_text"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_text</span></code></a>(text, *[, title, artist, url, ...])</p></td>
+<td><p>Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics.</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.tools.search" title="songleaf.tools.search"><code class="xref py py-obj docutils literal notranslate"><span class="pre">search</span></code></a>([query, title, artist, lyrics, ...])</p></td>
 <td><p>Find songs with one query: in your lists' names, then titles, artists and lyrics.</p></td>
 </tr>
@@ -316,7 +323,7 @@ than dicts uses <a class="reference internal" href="songleaf.sources.html#module
 </div>
 <dl class="py data">
 <dt class="sig sig-object py" id="songleaf.tools.TOOLS">
-<span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">TOOLS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;function</span> <span class="pre">search&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">sheet&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">song&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">songs&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">viewed&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">view&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">unview&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">forget&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">build_index&gt;)</span></span><a class="headerlink" href="#songleaf.tools.TOOLS" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">TOOLS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;function</span> <span class="pre">search&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">sheet&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">song&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">songs&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">import_file&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">viewed&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">view&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">unview&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">forget&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">build_index&gt;)</span></span><a class="headerlink" href="#songleaf.tools.TOOLS" title="Link to this definition">¶</a></dt>
 <dd><p>Every operation, in the order the CLI lists them.</p>
 </dd></dl>
 
@@ -340,6 +347,33 @@ replacing the zip. <code class="docutils literal notranslate"><span class="pre">
 <dd><p>Remove a song from the stored songs, from every list it was in, and from every Viewed list.</p>
 <p>It can be found and stored again by searching. Returns <code class="docutils literal notranslate"><span class="pre">{&quot;key&quot;,</span> <span class="pre">&quot;deleted&quot;}</span></code>;
 <code class="docutils literal notranslate"><span class="pre">deleted</span></code> is False when it was not stored.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="songleaf.tools.import_file">
+<span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">import_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'-'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/tools.html#import_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.tools.import_file" title="Link to this definition">¶</a></dt>
+<dd><p>Read pasted song text from a file (<code class="docutils literal notranslate"><span class="pre">-</span></code>: standard input) and store it; see <code class="docutils literal notranslate"><span class="pre">import_text</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="songleaf.tools.import_text">
+<span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">import_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/tools.html#import_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.tools.import_text" title="Link to this definition">¶</a></dt>
+<dd><p>Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics.</p>
+<p>The format is detected (<code class="docutils literal notranslate"><span class="pre">format</span></code> forces one of <code class="docutils literal notranslate"><span class="pre">ultimate-guitar</span></code>,
+<code class="docutils literal notranslate"><span class="pre">chordpro</span></code>, <code class="docutils literal notranslate"><span class="pre">opensong</span></code>, <code class="docutils literal notranslate"><span class="pre">chords-over-lyrics</span></code>). <code class="docutils literal notranslate"><span class="pre">url</span></code> is only
+recorded as provenance: songleaf never contacts it. The song is stored
+under <code class="docutils literal notranslate"><span class="pre">paste:&lt;hash&gt;</span></code> (the same text, the same key) and is then usable like
+any other: <code class="docutils literal notranslate"><span class="pre">sheet</span> <span class="pre">&lt;key&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">song</span> <span class="pre">&lt;key&gt;</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -522,6 +556,8 @@ longer stored are left out. <code class="docutils literal notranslate"><span cla
 <li><a class="reference internal" href="#songleaf.tools.TOOLS"><code class="docutils literal notranslate"><span class="pre">TOOLS</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.tools.build_index"><code class="docutils literal notranslate"><span class="pre">build_index()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.tools.forget"><code class="docutils literal notranslate"><span class="pre">forget()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.tools.import_file"><code class="docutils literal notranslate"><span class="pre">import_file()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.tools.import_text"><code class="docutils literal notranslate"><span class="pre">import_text()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.tools.search"><code class="docutils literal notranslate"><span class="pre">search()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.tools.sheet"><code class="docutils literal notranslate"><span class="pre">sheet()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.tools.song"><code class="docutils literal notranslate"><span class="pre">song()</span></code></a></li>
@@ -540,7 +576,7 @@ longer stored are left out. <code class="docutils literal notranslate"><span cla
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=2a6a9ca9"></script>
+</div><script src="../_static/documentation_options.js?v=0adb0642"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

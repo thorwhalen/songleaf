@@ -44,6 +44,7 @@
    chordpro
    datasets
    harmony
+   importers
    kaggle_index
    library
    match

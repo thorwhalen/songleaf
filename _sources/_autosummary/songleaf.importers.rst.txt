@@ -1,0 +1,31 @@
+songleaf.importers
+==================
+
+.. automodule:: songleaf.importers
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      PASTE_PROVENANCE
+      KEY_HASH_CHARS
+      MAX_PASTE_CHARS
+      IMPORTERS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      detect_format
+      format_names
+      import_song
+      paste_key
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Imported
+      Importer
+   
