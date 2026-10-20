@@ -38,6 +38,9 @@ PASTE_PROVENANCE = {"source": "paste", "license": "personal"}
 #: Characters of the text hashed into the ``paste:<hash>`` key.
 KEY_HASH_CHARS = 12
 
+#: Characters a given ``key`` or ``capo`` may have at most (``"F#m"``, ``"2"``).
+MAX_META_CHARS = 20
+
 #: Pasted text longer than this is refused (a chord chart is a few KB).
 MAX_PASTE_CHARS = 200_000
 
@@ -172,6 +175,9 @@ def import_song(
         raise ValueError(
             f"The text is too long ({len(text)} > {MAX_PASTE_CHARS} characters)."
         )
+    for name, value in (("key", key), ("capo", capo)):
+        if len(value) > MAX_META_CHARS:
+            raise ValueError(f"The {name} is too long (over {MAX_META_CHARS} characters).")
     why = _ug.refusal(url)
     if why:
         raise ValueError(why)

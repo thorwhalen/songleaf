@@ -92,11 +92,11 @@ def test_url_source_is_off_by_default_and_never_searches(monkeypatch):
 def test_url_source_is_not_a_default_or_web_source():
     import inspect
 
-    from songleaf import sources, web
+    from songleaf import sources
 
+    web = files("songleaf").joinpath("web.py").read_text()
     assert "ultimate_guitar" not in inspect.getsource(sources.default_sources)
-    assert "import_url" not in inspect.getsource(web)
-    assert "UltimateGuitarURLSource" not in inspect.getsource(web)
+    assert "import_url" not in web and "UltimateGuitarURLSource" not in web
 
 
 def test_import_url_fetches_once_then_reads_the_store():
@@ -115,8 +115,24 @@ def test_import_url_fetches_once_then_reads_the_store():
     assert fetched == [COMMUNITY]
     with pytest.raises(ug.RefusedPage):
         tools.import_url(OFFICIAL, store=store, source=source)
-    with pytest.raises(ValueError, match="https"):
-        source.get("http://tabs.ultimate-guitar.com/tab/x/y-chords-1")
+    for bad in [
+        "http://tabs.ultimate-guitar.com/tab/x/y-chords-1",
+        "https://evil.example\\@tabs.ultimate-guitar.com/tab/x/y-chords-1",
+        "https://user@tabs.ultimate-guitar.com/tab/x/y-chords-1",
+        "file:///etc/passwd",
+    ]:
+        with pytest.raises(ValueError, match="plain https"):
+            source.get(bad)
+        with pytest.raises(ValueError, match="plain https"):
+            ug.fetch_page(bad)
+
+
+def test_more_paid_url_forms_are_refused_and_meta_is_bounded():
+    for form in ("pro", "power", "video", "guitar-pro"):
+        url = f"https://tabs.ultimate-guitar.com/tab/the-invented-band/paper-boats-{form}-77"
+        assert ug.refusal(url) == ug.REFUSAL_OFFICIAL
+    with pytest.raises(ValueError, match="too long"):
+        import_song(CHART, key="x" * 50)
 
 
 def test_web_import_takes_key_and_capo_and_refuses_official(memory_source, tmp_path):

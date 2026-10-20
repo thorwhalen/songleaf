@@ -20,7 +20,7 @@
     say("open a song's chord page on ultimate-guitar.com, then use this bookmark there.");
     return;
   }
-  if (/-official-\d+|\/pro\/|\/official\//i.test(window.location.pathname)) { say(OFFICIAL); return; }
+  if (/-(?:official|pro|power|video)-\d+|\/pro\/|\/official\//i.test(window.location.pathname)) { say(OFFICIAL); return; }
 
   var store = null;
   try {
@@ -48,6 +48,6 @@
   };
   var target = PAGE + "#import=" + encodeURIComponent(JSON.stringify(chart));
   var opened = window.open(target, "_blank");
-  if (opened) opened.opener = null;
+  if (opened) { try { opened.opener = null; } catch (error) { /* already elsewhere */ } }
   else window.location.assign(target);
 })();

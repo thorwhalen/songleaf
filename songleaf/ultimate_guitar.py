@@ -55,7 +55,10 @@ FETCH_TIMEOUT_SECONDS = 20
 MAX_PAGE_BYTES = 5_000_000
 
 _HOST_RE = re.compile(r"(^|\.)ultimate-guitar\.com$", re.IGNORECASE)
-_OFFICIAL_PATH_RE = re.compile(r"-official-\d+|/pro/|/official/", re.IGNORECASE)
+_OFFICIAL_PATH_RE = re.compile(
+    r"-(?:official|pro|power|video)-\d+|/pro/|/official/", re.IGNORECASE
+)
+_UNSAFE_URL_RE = re.compile(r"[\\\s\x00-\x1f\x7f]")
 _ID_RE = re.compile(r"-(\d+)/?$")
 _JS_STORE_RE = re.compile(
     r"""class=["'][^"']*\bjs-store\b[^"']*["'][^>]*?data-content=(["'])(.*?)\1""",
@@ -158,12 +161,40 @@ def chart_from_html(page: str, *, url: str = "") -> dict:
     return chart_from_store(store, url=url)
 
 
-def fetch_page(url: str) -> str:
-    """The HTML at *url*: one honest request, no retries, no browser disguise."""
-    from urllib.request import Request, urlopen
+def safe_page_url(url: str) -> str:
+    """*url*, rebuilt from its parts, if it is a plain https URL on ultimate-guitar.com.
 
-    request = Request(url, headers={"User-Agent": USER_AGENT})
-    with urlopen(request, timeout=FETCH_TIMEOUT_SECONDS) as response:  # noqa: S310 (https only, checked)
+    Raises ``ValueError`` otherwise: another scheme or host, user info, backslashes,
+    whitespace or control characters (where URL parsers disagree).
+    """
+    from urllib.parse import urlunsplit
+
+    url = url.strip()
+    parts = urlsplit(url)
+    if (
+        _UNSAFE_URL_RE.search(url)
+        or parts.scheme != "https"
+        or "@" in parts.netloc
+        or not is_ultimate_guitar_url(url)
+    ):
+        raise ValueError(f"Not a plain https ultimate-guitar.com URL: {url!r}")
+    return urlunsplit(parts)
+
+
+def fetch_page(url: str) -> str:
+    """The HTML at *url*: one honest request, no retries, no browser disguise.
+
+    Only https ultimate-guitar.com URLs are fetched, and a redirect anywhere else is refused.
+    """
+    from urllib.request import HTTPRedirectHandler, Request, build_opener
+
+    class _StayOnUG(HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):
+            safe_page_url(newurl)  # raises for any other scheme or host
+            return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+    request = Request(safe_page_url(url), headers={"User-Agent": USER_AGENT})
+    with build_opener(_StayOnUG).open(request, timeout=FETCH_TIMEOUT_SECONDS) as response:
         return response.read(MAX_PAGE_BYTES).decode("utf-8", "replace")
 
 
@@ -210,12 +241,11 @@ class UltimateGuitarURLSource:
                 " bookmarklet from the page you opened; on your own machine,"
                 f" {URL_SOURCE_ENVVAR}=1 turns this on."
             )
-        if urlsplit(url.strip()).scheme != "https" or not is_ultimate_guitar_url(url):
-            raise ValueError(f"Not an https ultimate-guitar.com URL: {url!r}")
+        url = safe_page_url(url)
         why = refusal(url)
         if why:
             raise RefusedPage(why)
-        chart = chart_from_html(self._fetch(url.strip()), url=url.strip())
+        chart = chart_from_html(self._fetch(url), url=url)
         return import_song(
             chart["text"],
             title=chart["title"],

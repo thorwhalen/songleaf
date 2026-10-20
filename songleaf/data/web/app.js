@@ -759,8 +759,9 @@
       url.value = prefill.url;
       Object.assign(extra, { key: prefill.key, capo: prefill.capo, format: prefill.format });
     }
+    const sent = prefill ? [prefill.key && `key ${prefill.key}`, prefill.capo && `capo ${prefill.capo}`].filter(Boolean).join(", ") : "";
     const status = h("p", { class: "muted", role: "status" },
-      prefill ? "Filled in by the bookmarklet: check it, then press Import." : "");
+      prefill ? `Filled in by the bookmarklet${sent ? ` (${sent})` : ""}: check it, then press Import.` : "");
     const submit = h("button", { type: "submit" }, "Import");
     const form = h("form", { class: "paste", onsubmit: async (e) => {
       e.preventDefault();
@@ -806,6 +807,7 @@
     const match = /^#import=(.*)$/s.exec(location.hash);
     if (!match) return null;
     history.replaceState(history.state, "", location.pathname + location.search);
+    if (new URLSearchParams(location.search).has("song")) return null; // the form is on the search view only
     try {
       const chart = JSON.parse(decodeURIComponent(match[1]));
       if (!chart || typeof chart.text !== "string" || !chart.text.trim()) return null;
