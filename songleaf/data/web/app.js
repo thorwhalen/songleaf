@@ -1167,7 +1167,15 @@
         const shownValue = valueOf(chips.renderer.setSelection(selectionOf(group)));
         if (shownValue !== group) corrected(shownValue);
       }
+      syncPrint();
       redraw();
+    }
+    // "Print list": the chosen list as one songbook PDF (contents, page numbers, bookmarks).
+    const printLink = h("a", { class: "text", target: "_blank", rel: "noopener" }, "Print list");
+    function syncPrint() {
+      const real = group && group !== UNGROUPED;
+      printLink.hidden = !real;
+      if (real) printLink.href = `${CONFIG.api}/songbook.pdf?group=${encodeURIComponent(group)}`;
     }
     function emptyNote() {
       if (!group) {
@@ -1277,13 +1285,14 @@
       redraw();
     }
     draw();
+    syncPrint();
     const unsubscribe = groups.onChange((event) => {
       if (!listHost.isConnected) { unsubscribe(); if (chips) chips.renderer.destroy(); return; } // this view is gone
       if (event.type === "rebuilt") draw();
       else if (event.type === "change" && !(menu && menu.open)) redraw(); // the menu redraws itself; we follow on close
     });
     const element = h("div", { class: "library" },
-      h("div", { class: "library-head" }, h("h2", {}, "Your songs"), edit),
+      h("div", { class: "library-head" }, h("h2", {}, "Your songs"), printLink, edit),
       navHost, actions, menuHost, listHost, arrangeHost);
     return { element, setGroup, redraw };
   }

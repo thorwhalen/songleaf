@@ -394,6 +394,42 @@ def mk_app(
             headers=_PRIVATE_CACHE,
         )
 
+    @app.get("/songbook.pdf")
+    def songbook_pdf(
+        group: str = Query(..., min_length=1, max_length=_MAX_QUERY_CHARS),
+        layout: str = "dense",
+        scale: float = Query(1.0, ge=SHEET_LIMITS["scale"][0], le=SHEET_LIMITS["scale"][1]),
+    ):
+        try:
+            layout = layout_spec(layout)
+        except ValueError as error:
+            raise HTTPException(400, str(error)) from error
+        with tempfile.TemporaryDirectory() as tmp:
+            output = os.path.join(tmp, "songbook.pdf")
+            try:
+                result = tools.songbook(
+                    group,
+                    output=output,
+                    layout=layout,
+                    scale=scale,
+                    library_root=library_root,
+                    sources=sources,
+                    store=store,
+                )
+            except LookupError as error:  # no such list, or nothing in it
+                raise HTTPException(404, str(error)) from error
+            with open(output, "rb") as file:
+                pdf = file.read()
+        name = quote(result["title"] + " - songbook.pdf", safe="")
+        return Response(
+            pdf,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"inline; filename*=UTF-8''{name}",
+                **_PRIVATE_CACHE,
+            },
+        )
+
     @app.get("/groups")
     def groups() -> dict:
         return library.read_groups(root=library_root)

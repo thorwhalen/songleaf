@@ -189,6 +189,71 @@ def sheet(
     }
 
 
+def songbook(
+    group: str,
+    *,
+    output: str = "",
+    title: str = "",
+    layout: str = "dense",
+    scale: float = 1.0,
+    library_root=None,
+    sources=None,
+    store=None,
+    renderer=None,
+) -> dict:
+    """Render a list (group) of songs as one PDF: a table of contents, then every song at its fitted size.
+
+    ``group`` is a list's id or its name (the best match of the name). The
+    songs come in the order they were filed in the list, nested lists
+    included, so the list order is the set list. Page numbers are stamped on
+    every page and each song is a PDF bookmark. ``title`` defaults to the
+    list's name. ``layout`` and ``scale`` are as for ``sheet``. The PDF goes to
+    ``output``, by default the ``sheets`` data directory.
+    """
+    from songleaf.library import list_members, list_names, lists_matching, read_groups
+    from songleaf.render import make_renderer
+    from songleaf.songbook import render_songbook
+
+    snapshot = read_groups(root=library_root)["snapshot"]
+    names = list_names(snapshot)
+    if group in names:
+        list_id = group
+    else:
+        found = lists_matching(group, snapshot)
+        if not found:
+            raise LookupError(f"No list named {group!r}")
+        list_id = found[0]["id"]
+    keys = list_members(snapshot, list_id)
+    if not keys:
+        raise LookupError(f"The list {names[list_id]!r} has no songs")
+    if renderer is None:
+        renderer = make_renderer(layout, scale=scale)
+    elif layout != "dense" or scale != 1.0:
+        raise ValueError(
+            "Pass a layout and scale, or a renderer, not both: the renderer decides them"
+        )
+    store = song_store() if store is None else store
+    songs, skipped = [], []
+    for key in keys:
+        try:
+            songs.append(
+                _resolve(key, pick=1, refresh=False, sources=sources, store=store)
+            )
+        except (LookupError, RuntimeError, ValueError):
+            skipped.append(key)  # a song whose source is gone does not sink the book
+    if not songs:
+        raise LookupError(f"None of the songs in {names[list_id]!r} could be found")
+    title = title or names[list_id]
+    output = output or os.path.join(
+        data_dir("sheets"), re.sub(r"\W+", "-", title.lower()).strip("-") + "-songbook.pdf"
+    )
+    return {
+        "group": list_id,
+        **render_songbook(songs, output, title=title, renderer=renderer),
+        "skipped": skipped,
+    }
+
+
 def song(
     query: str,
     *,
@@ -430,6 +495,7 @@ def _file_name(song, key: str, layout: str = "") -> str:
 TOOLS = (
     search,
     sheet,
+    songbook,
     song,
     songs,
     import_file,
