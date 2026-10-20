@@ -17,7 +17,7 @@ import cw
 from songleaf import tools
 
 #: Dependency-injection parameters: seams for library callers, not CLI options.
-_SEAMS = ("sources", "store", "renderer", "library_root")
+_SEAMS = ("sources", "source", "store", "renderer", "library_root")
 
 
 def _with_expected_errors(tool):

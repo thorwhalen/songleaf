@@ -86,6 +86,7 @@ ERROR_STATUS = {SongNotFound: 404, SourceUnavailable: 503}
 _UI_FILES = {
     "app.js": "text/javascript",
     "style.css": "text/css",
+    "bookmarklet.js": "text/javascript",  # the Ultimate Guitar bookmarklet's source (songleaf#28)
     # zodal-groups (model + vanilla renderers), bundled: see misc/vendor/README.md
     "vendor/zodal-groups.js": "text/javascript",
     "vendor/zodal-groups.css": "text/css",
@@ -118,7 +119,7 @@ READER_LAYOUT: dict[str, dict[str, str]] = {
 }
 _MAX_LIMIT = 50
 #: The fields of a ``POST /import`` body (``text`` first, the rest optional).
-_IMPORT_FIELDS = ("text", "title", "artist", "url", "format")
+_IMPORT_FIELDS = ("text", "title", "artist", "url", "key", "capo", "format")
 _MAX_QUERY_CHARS = 200  # a remembered line, not a pasted song
 _CLOCK_SLACK_SECONDS = (
     300  # an undo's ``at`` may be this far ahead of the server's clock
@@ -272,7 +273,12 @@ def mk_app(
 
     @app.post("/import")
     def import_text(payload: dict = Body(...)) -> dict:
-        """Store pasted text: ``{"text", "title", "artist", "url", "format"}`` (only ``text`` is required)."""
+        """Store pasted text: ``{"text", "title", "artist", "url", "key", "capo", "format"}`` (only ``text`` is required).
+
+        The Ultimate Guitar bookmarklet fills the page's paste form, and the reader's
+        own press of Import sends it here: this route never fetches anything, and it
+        refuses official and Pro UG URLs (``songleaf.ultimate_guitar.refusal``).
+        """
         fields = {k: payload.get(k, "") for k in _IMPORT_FIELDS}
         if not all(isinstance(v, str) for v in fields.values()):
             raise HTTPException(400, f"{', '.join(_IMPORT_FIELDS)} must be strings")

@@ -371,6 +371,8 @@ def import_text(
     title: str = "",
     artist: str = "",
     url: str = "",
+    key: str = "",
+    capo: str = "",
     format: str = "",
     store=None,
 ) -> dict:
@@ -378,22 +380,33 @@ def import_text(
 
     The format is detected (``format`` forces one of ``ultimate-guitar``,
     ``chordpro``, ``opensong``, ``chords-over-lyrics``). ``url`` is only
-    recorded as provenance: songleaf never contacts it. The song is stored
-    under ``paste:<hash>`` (the same text, the same key) and is then usable like
-    any other: ``sheet <key>``, ``song <key>``.
+    recorded as provenance: songleaf never contacts it (an official or Pro
+    Ultimate Guitar URL is refused). The song is stored under ``paste:<hash>``
+    (the same text, the same key), or ``ug:<id>`` for an Ultimate Guitar URL,
+    and is then usable like any other: ``sheet <key>``, ``song <key>``.
     """
     from songleaf.importers import import_song
 
-    imported = import_song(text, title=title, artist=artist, url=url, format=format)
+    imported = import_song(
+        text, title=title, artist=artist, url=url, key=key, capo=capo, format=format
+    )
+    return _stored(imported.key, imported.song, imported.format, store=store)
+
+
+def _stored(key: str, song, format: str, *, store) -> dict:
     store = song_store() if store is None else store
-    store[imported.key] = imported.song
+    store[key] = song
+    return _summary(key, song, format)
+
+
+def _summary(key: str, song, format: str) -> dict:
     return {
-        "key": imported.key,
-        "format": imported.format,
-        "title": imported.song.title,
-        "artist": imported.song.artist,
-        "lines": len(imported.song.text.split("\n")),
-        "chords": len(imported.song.of_kind("chord")),
+        "key": key,
+        "format": format,
+        "title": song.title,
+        "artist": song.artist,
+        "lines": len(song.text.split("\n")),
+        "chords": len(song.of_kind("chord")),
     }
 
 
@@ -420,6 +433,28 @@ def import_file(
 
 
 import_file.__name__ = "import"  # the CLI command is ``songleaf import``
+
+
+def import_url(url: str, *, refresh: bool = False, store=None, source=None) -> dict:
+    """Fetch one community Ultimate Guitar chord page and store its chart as ``ug:<id>``.
+
+    Local command line only, and off unless ``SONGLEAF_UG_URL=1`` is set: prefer
+    pasting, or the bookmarklet run on the page you opened (see
+    ``songleaf.ultimate_guitar``). Official and Pro pages are refused. A chart
+    already stored is not fetched again unless ``refresh``.
+    """
+    from songleaf.ultimate_guitar import UltimateGuitarURLSource, ug_key
+
+    store = song_store() if store is None else store
+    key = ug_key(url)
+    if not key:
+        raise ValueError(f"Not an Ultimate Guitar tab URL (no tab id): {url!r}")
+    if not refresh and _is_stored(store, key):
+        song = store[key]
+        return {**_summary(key, song, "ultimate-guitar"), "cached": True}
+    source = UltimateGuitarURLSource() if source is None else source
+    song = source.get(url)
+    return {**_stored(key, song, "ultimate-guitar", store=store), "cached": False}
 
 
 def forget(key: str, *, store=None, library_root=None) -> dict:
@@ -603,6 +638,7 @@ TOOLS = (
     export,
     songs,
     import_file,
+    import_url,
     viewed,
     view,
     unview,
