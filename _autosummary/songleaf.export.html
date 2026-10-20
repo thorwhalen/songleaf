@@ -283,12 +283,12 @@ a <code class="docutils literal notranslate"><span class="pre">[Label]</span></c
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Song</span><span class="p">,</span> <span class="n">chord</span><span class="p">,</span> <span class="n">section</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">song</span> <span class="o">=</span> <span class="n">Song</span><span class="p">(</span><span class="s2">"Paper boats drift"</span><span class="p">,</span> <span class="p">[</span><span class="n">chord</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="s2">"G"</span><span class="p">),</span> <span class="n">chord</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="s2">"D"</span><span class="p">),</span> <span class="n">section</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">17</span><span class="p">,</span> <span class="s2">"Chorus"</span><span class="p">)],</span>
 <span class="gp">... </span>            <span class="n">meta</span><span class="o">=</span><span class="p">{</span><span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Paper Boats"</span><span class="p">})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">to_chordpro</span><span class="p">(</span><span class="n">song</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">to_chordpro</span><span class="p">(</span><span class="n">song</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
 <span class="go">{title: Paper Boats}</span>
 <span class="go">{start_of_chorus: Chorus}</span>
 <span class="go">Paper [G]boats [D]drift</span>
 <span class="go">{end_of_chorus}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">to_text</span><span class="p">(</span><span class="n">song</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">to_text</span><span class="p">(</span><span class="n">song</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
 <span class="go">Paper Boats</span>
 
 <span class="go">[Chorus]</span>
@@ -422,7 +422,7 @@ their label, chords go inline in brackets at the syllable they land on.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=9463f84e"></script>
+</div><script src="../_static/documentation_options.js?v=36140909"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

@@ -276,12 +276,12 @@
 <span class="sd">&gt;&gt;&gt; from songleaf.model import Song, chord, section</span>
 <span class="sd">&gt;&gt;&gt; song = Song("Paper boats drift", [chord(6, "G"), chord(12, "D"), section(0, 17, "Chorus")],</span>
 <span class="sd">...             meta={"title": "Paper Boats"})</span>
-<span class="sd">&gt;&gt;&gt; print(to_chordpro(song))</span>
+<span class="sd">&gt;&gt;&gt; print(to_chordpro(song), end="")</span>
 <span class="sd">{title: Paper Boats}</span>
 <span class="sd">{start_of_chorus: Chorus}</span>
 <span class="sd">Paper [G]boats [D]drift</span>
 <span class="sd">{end_of_chorus}</span>
-<span class="sd">&gt;&gt;&gt; print(to_text(song))</span>
+<span class="sd">&gt;&gt;&gt; print(to_text(song), end="")</span>
 <span class="sd">Paper Boats</span>
 <span class="sd">&lt;BLANKLINE&gt;</span>
 <span class="sd">[Chorus]</span>
@@ -464,7 +464,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=9463f84e"></script>
+</div><script src="../../_static/documentation_options.js?v=36140909"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

@@ -15,12 +15,12 @@ a `[Label]` line at each section. It is for reading and pasting; it does not car
 >>> from songleaf.model import Song, chord, section
 >>> song = Song("Paper boats drift", [chord(6, "G"), chord(12, "D"), section(0, 17, "Chorus")],
 ...             meta={"title": "Paper Boats"})
->>> print(to_chordpro(song))
+>>> print(to_chordpro(song), end="")
 {title: Paper Boats}
 {start_of_chorus: Chorus}
 Paper [G]boats [D]drift
 {end_of_chorus}
->>> print(to_text(song))
+>>> print(to_text(song), end="")
 Paper Boats
 
 [Chorus]
