@@ -136,7 +136,7 @@ def test_a_rebuilt_index_is_picked_up_and_a_failed_build_leaves_nothing(
     def broken(conn, batch):  # fails mid-write, after the file exists
         raise OSError("disk gone")
 
-    monkeypatch.setattr("songleaf.kaggle_index._insert", broken)
+    monkeypatch.setattr("sung.chords_index._insert", broken)  # the writer is sung's
     with pytest.raises(OSError):
         build_kaggle_index(path=path, loader=lambda: corpus("Third"))
     assert sorted(p.name for p in tmp_path.iterdir()) == ["index.sqlite"]
