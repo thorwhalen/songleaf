@@ -6,7 +6,7 @@
 <link rel="alternate" type="text/markdown" href="datasets.html.md">
 <link rel="describedby" href="../../llms.txt" type="text/markdown"><link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html">
 
-    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+    <!-- Generated with Sphinx 9.1.1 and Furo 2025.12.19 -->
         <title>songleaf.datasets - songleaf</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d75fae25" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
@@ -271,12 +271,12 @@
 <span class="sd">  ``~/.cache/songleaf/datasets``).</span>
 <span class="sd">"""</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">fcntl</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlparse</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.library</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_lock</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">DATA_DIR_ENVVAR</span><span class="p">,</span> <span class="n">data_dir</span>
 
 <span class="n">DATASETS_URI_ENVVAR</span> <span class="o">=</span> <span class="s2">"SONGLEAF_DATASETS_URI"</span>
@@ -313,10 +313,14 @@
         <span class="k">return</span> <span class="kc">None</span>
     <span class="n">parsed</span> <span class="o">=</span> <span class="n">urlparse</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">parsed</span><span class="o">.</span><span class="n">scheme</span> <span class="o">!=</span> <span class="n">_S3</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">parsed</span><span class="o">.</span><span class="n">netloc</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">DATASETS_URI_ENVVAR</span><span class="si">}</span><span class="s2"> must look like s3://bucket/prefix, not </span><span class="si">{</span><span class="n">uri</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">DATASETS_URI_ENVVAR</span><span class="si">}</span><span class="s2"> must look like s3://bucket/prefix, not </span><span class="si">{</span><span class="n">uri</span><span class="si">!r}</span><span class="s2">"</span>
+        <span class="p">)</span>
     <span class="n">prefix</span> <span class="o">=</span> <span class="n">parsed</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">S3Location</span><span class="p">(</span>
-        <span class="n">parsed</span><span class="o">.</span><span class="n">netloc</span><span class="p">,</span> <span class="n">prefix</span> <span class="o">+</span> <span class="s2">"/"</span> <span class="k">if</span> <span class="n">prefix</span> <span class="k">else</span> <span class="s2">""</span><span class="p">,</span> <span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">S3_PROFILE_ENVVAR</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span>
+        <span class="n">parsed</span><span class="o">.</span><span class="n">netloc</span><span class="p">,</span>
+        <span class="n">prefix</span> <span class="o">+</span> <span class="s2">"/"</span> <span class="k">if</span> <span class="n">prefix</span> <span class="k">else</span> <span class="s2">""</span><span class="p">,</span>
+        <span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">S3_PROFILE_ENVVAR</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 
@@ -337,7 +341,10 @@
     <span class="kn">from</span><span class="w"> </span><span class="nn">s3dol</span><span class="w"> </span><span class="kn">import</span> <span class="n">s3_store</span>
 
     <span class="k">return</span> <span class="n">s3_store</span><span class="p">(</span>
-        <span class="n">location</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="n">location</span><span class="o">.</span><span class="n">prefix</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="n">location</span><span class="o">.</span><span class="n">profile</span><span class="p">,</span> <span class="n">readonly</span><span class="o">=</span><span class="n">readonly</span>
+        <span class="n">location</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span>
+        <span class="n">prefix</span><span class="o">=</span><span class="n">location</span><span class="o">.</span><span class="n">prefix</span><span class="p">,</span>
+        <span class="n">profile</span><span class="o">=</span><span class="n">location</span><span class="o">.</span><span class="n">profile</span><span class="p">,</span>
+        <span class="n">readonly</span><span class="o">=</span><span class="n">readonly</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 
@@ -365,12 +372,18 @@
     <span class="n">store</span> <span class="o">=</span> <span class="n">datasets_store</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="n">location</span><span class="p">)</span>
     <span class="n">client</span><span class="p">,</span> <span class="n">s3_key</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">client</span><span class="p">,</span> <span class="n">location</span><span class="o">.</span><span class="n">prefix</span> <span class="o">+</span> <span class="n">key</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">remote_size</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">head_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="n">location</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="n">s3_key</span><span class="p">)[</span><span class="s2">"ContentLength"</span><span class="p">]</span>
+        <span class="n">remote_size</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">head_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="n">location</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="n">s3_key</span><span class="p">)[</span>
+            <span class="s2">"ContentLength"</span>
+        <span class="p">]</span>
     <span class="k">except</span> <span class="n">client</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ClientError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
         <span class="n">status</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="s2">"response"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Error"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Code"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">status</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"404"</span><span class="p">,</span> <span class="s2">"NoSuchKey"</span><span class="p">,</span> <span class="s2">"NotFound"</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">path</span>  <span class="c1"># absent on S3: callers test os.path.isfile, as for a local path</span>
-        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>  <span class="c1"># S3 refused (credentials, throttling): serve the cache</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">path</span>  <span class="c1"># absent on S3: callers test os.path.isfile, as for a local path</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span>
+            <span class="n">path</span>
+        <span class="p">):</span>  <span class="c1"># S3 refused (credentials, throttling): serve the cache</span>
             <span class="k">return</span> <span class="n">path</span>
         <span class="k">raise</span>
     <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>  <span class="c1"># unreachable network: the cached copy, if any, is still good</span>
@@ -379,8 +392,7 @@
         <span class="k">raise</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">==</span> <span class="n">remote_size</span><span class="p">):</span>
         <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span> <span class="o">+</span> <span class="s2">".lock"</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">lock</span><span class="p">:</span>  <span class="c1"># one worker downloads, the rest wait</span>
-            <span class="n">fcntl</span><span class="o">.</span><span class="n">flock</span><span class="p">(</span><span class="n">lock</span><span class="p">,</span> <span class="n">fcntl</span><span class="o">.</span><span class="n">LOCK_EX</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">file_lock</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>  <span class="c1"># one worker downloads, the rest wait</span>
             <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">==</span> <span class="n">remote_size</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">path</span>
             <span class="n">part</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()</span><span class="si">}</span><span class="s2">.part"</span>  <span class="c1"># moved into place when whole</span>
@@ -420,7 +432,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=6b09a97f"></script>
+</div><script src="../../_static/documentation_options.js?v=832ae8cf"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
