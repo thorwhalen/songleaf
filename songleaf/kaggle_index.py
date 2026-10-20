@@ -16,6 +16,10 @@ decomposed accents, where the DataFrame source's regular expression does the
 opposite. Rebuilding the index while a server runs is safe: a process that
 notices the file changed reloads it.
 
+The file format, its writing and its raw reads belong to ``sung.chords_index``
+(stdlib only, so reading the index never imports pandas); this module adds where
+songleaf keeps the file and the ranking shared with the DataFrame source.
+
 >>> import pandas as pd, tempfile, os
 >>> corpus = pd.DataFrame({
 ...     "Unnamed: 0": [1, 2], "artist_name": ["The Band", "Other"],
@@ -32,13 +36,10 @@ notices the file changed reloads it.
 from __future__ import annotations
 
 import os
-import sqlite3
 import threading
-import time
-import zlib
-from contextlib import closing
 from functools import cached_property
-from pathlib import Path
+
+from sung import chords_index
 
 from songleaf.sources import (
     KAGGLE_CHORDS_ZIP,
@@ -50,22 +51,7 @@ from songleaf.datasets import dataset_path
 from songleaf.store import data_dir
 
 #: The index's file name, beside the corpus zip under ``datasets/``.
-KAGGLE_INDEX_NAME = "chords-and-lyrics.sqlite"
-_SCHEMA = """
-CREATE TABLE songs (
-    row INTEGER PRIMARY KEY,
-    id TEXT NOT NULL,
-    title TEXT NOT NULL,
-    artist TEXT NOT NULL,
-    lang TEXT NOT NULL,
-    popularity REAL NOT NULL,
-    chart BLOB NOT NULL
-);
-CREATE VIRTUAL TABLE chart_words USING fts5(
-    chart, content='', tokenize='unicode61 remove_diacritics 0'
-);
-CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-"""
+KAGGLE_INDEX_NAME = chords_index.INDEX_NAME
 
 
 def _index_key() -> str:
@@ -97,84 +83,14 @@ def build_kaggle_index(
     """Write the index of the Kaggle corpus (``loader``: as for ``KaggleChordsSource``).
 
     Loading the corpus takes the memory the index exists to avoid, so run this
-    once, apart from any server (``songleaf build-index``). The file is written
-    beside the target and moved into place when complete, so a reader never
-    sees half an index.
+    once, apart from any server (``songleaf build-index``). The index format and
+    its writing are ``sung.chords_index``'s; this picks the corpus and the path.
     """
-    path = path or _local_index_path()
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    started = time.time()
     df = (loader or _load_kaggle_corpus)().reset_index(drop=True)
-    columns = KaggleChordsSource.columns
-    building = (
-        f"{path}.{os.getpid()}.building"  # one per process: concurrent builds never mix
-    )
-    try:
-        _write_index(building, df, columns, batch_size=batch_size)
-        os.replace(building, path)
-    finally:
-        if os.path.exists(building):  # a failed build leaves nothing behind
-            os.remove(building)
-    return {
-        "path": path,
-        "songs": len(df),
-        "megabytes": round(os.path.getsize(path) / 1e6, 1),
-        "seconds": round(time.time() - started, 1),
-    }
-
-
-def _write_index(building: str, df, columns, *, batch_size: int) -> None:
-    if os.path.exists(building):
-        os.remove(building)
-    with closing(sqlite3.connect(building)) as conn:
-        conn.executescript(_SCHEMA)
-        rows = zip(*(df[name].tolist() for name in columns))
-        batch = []
-        for row, (song_id, artist, title, chart, lang, popularity) in enumerate(rows):
-            chart = chart if isinstance(chart, str) else ""
-            batch.append(
-                (
-                    row,
-                    str(song_id),
-                    _text_or_empty(title),
-                    _text_or_empty(artist),
-                    str(lang),
-                    _number_or_zero(popularity),
-                    chart,
-                )
-            )
-            if len(batch) >= batch_size:
-                _insert(conn, batch)
-                batch = []
-        _insert(conn, batch)
-        conn.executemany(
-            "INSERT INTO meta VALUES (?, ?)",
-            [("songs", str(len(df))), ("built_at", time.strftime("%Y-%m-%d %H:%M:%S"))],
-        )
-        conn.execute("INSERT INTO chart_words(chart_words) VALUES ('optimize')")
-        conn.commit()
-
-
-def _text_or_empty(value) -> str:
-    return "" if value is None or value != value else str(value)  # NaN != NaN
-
-
-def _number_or_zero(value) -> float:
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return 0.0
-    return 0.0 if number != number else number
-
-
-def _insert(conn, batch: list[tuple]) -> None:
-    conn.executemany(
-        "INSERT INTO songs VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [(*fields[:-1], zlib.compress(fields[-1].encode("utf-8"))) for fields in batch],
-    )
-    conn.executemany(
-        "INSERT INTO chart_words(rowid, chart) VALUES (?, ?)",
-        [(fields[0], fields[-1]) for fields in batch],
+    return chords_index.build_chords_index(
+        path or _local_index_path(),
+        rows=zip(*(df[name].tolist() for name in KaggleChordsSource.columns)),
+        batch_size=batch_size,
     )
 
 
@@ -197,14 +113,12 @@ class KaggleChordsIndex(KaggleChordsSource):
     def _no_dataframe():
         raise AssertionError("KaggleChordsIndex never loads the corpus DataFrame")
 
-    def _connect(self):
+    def _check_built(self) -> None:
         if not os.path.isfile(self.path):
             raise SourceUnavailable(
                 f"No search index at {self.path}: run `songleaf build-index` "
                 "where the corpus zip is"
             )
-        # read-only, one connection per call: safe across threads
-        return closing(sqlite3.connect(f"{Path(self.path).as_uri()}?mode=ro", uri=True))
 
     _CACHED = (
         "_ids",
@@ -219,11 +133,7 @@ class KaggleChordsIndex(KaggleChordsSource):
     )
 
     def _version(self):
-        try:
-            stat = os.stat(self.path)
-        except OSError:
-            return None
-        return stat.st_mtime_ns, stat.st_size
+        return chords_index.index_version(self.path)
 
     def _reload_if_rebuilt(self) -> None:
         """Drop what was read from an index file that has since been rebuilt."""
@@ -251,14 +161,9 @@ class KaggleChordsIndex(KaggleChordsSource):
         if self._columns_loaded is None:
             with self._columns_lock:
                 if self._columns_loaded is None:
+                    self._check_built()
                     self._loaded_version = self._version()
-                    with self._connect() as conn:
-                        rows = conn.execute(
-                            "SELECT id, title, artist, lang, popularity "
-                            "FROM songs ORDER BY row"
-                        ).fetchall()
-                    names = ("ids", "titles", "artists", "langs", "popularity")
-                    self._columns_loaded = dict(zip(names, map(list, zip(*rows))))
+                    self._columns_loaded = chords_index.read_columns(self.path)
         return self._columns_loaded
 
     @cached_property
@@ -287,16 +192,9 @@ class KaggleChordsIndex(KaggleChordsSource):
         tokens = utils.default_process(words).split()
         if not tokens:
             return {}
-        match = " ".join('"{}"'.format(token.replace('"', '""')) for token in tokens)
-        with self._connect() as conn:
-            rows = conn.execute(
-                "SELECT rowid FROM chart_words WHERE chart_words MATCH ?", (match,)
-            ).fetchall()
-        return {row: 100.0 for (row,) in rows}
+        self._check_built()
+        return dict.fromkeys(chords_index.rows_with_words(self.path, tokens), 100.0)
 
     def _text(self, row: int) -> str:
-        with self._connect() as conn:
-            found = conn.execute(
-                "SELECT chart FROM songs WHERE row = ?", (row,)
-            ).fetchone()
-        return zlib.decompress(found[0]).decode("utf-8") if found else ""
+        self._check_built()
+        return chords_index.read_chart(self.path, row)

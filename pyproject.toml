@@ -40,7 +40,7 @@ dependencies = [
     "rapidfuzz>=3",
     "reportlab>=4",
     "scoreseek>=0.0.8",
-    "sung>=0.0.26",
+    "sung>=0.0.33"  # sung.chords_index,
 ]
 
 [project.scripts]
