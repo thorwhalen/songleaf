@@ -79,10 +79,24 @@ def section(start: int, end: int, label: str) -> Annotation:
 
 
 def score_link(
-    start: int, end: int, *, source: str, id: str, url: str = "", format: str = ""
+    start: int,
+    end: int,
+    *,
+    source: str,
+    id: str,
+    url: str = "",
+    format: str = "",
+    notation: str = "",
+    rule: str = "",
 ) -> Annotation:
-    """A link from ``[start, end)`` to a score snippet held by a source."""
+    """A link from ``[start, end)`` to a score snippet held by a source.
+
+    ``notation`` holds a short snippet inline (``format`` says in what, such as
+    ``"abc"``); ``rule`` names the rule that chose the stretch (``"chosen"``
+    when picked by hand). Both are left out of the body when empty.
+    """
     body = {"source": source, "id": id, "url": url, "format": format}
+    body.update({k: v for k, v in (("notation", notation), ("rule", rule)) if v})
     return Annotation("score", start, end, body)
 
 

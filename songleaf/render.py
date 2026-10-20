@@ -134,6 +134,9 @@ class DenseStyle:
     repeat_color: str = "#4d4d4d"
     tonic_chord_color: str = "#1c4a91"
     outside_chord_color: str = "#c0602a"
+    # score="score": a snippet's staff space, per unit of lyric size (narrowed to fit the column)
+    staff_space: float = 0.4
+    snippet_color: str = "#333333"
 
 
 _LABEL_ABBREVIATIONS = {
@@ -269,6 +272,7 @@ class _Row:
     bottom: float  # extent below the baseline
     gap_before: float = 0.0
     shade: str = ""  # background colour of the row's band, if any
+    figure: tuple | None = None  # (ScoreSnippet, staff space): a snippet row has no items
 
 
 def _words(text: str) -> str:
@@ -823,9 +827,11 @@ def _layout(
     chords: ChordPlacement = _OVER,
     packer: Callable = pack_greedy,
     paint: _Paint | None = None,
+    snippet: tuple | None = None,
 ) -> list[_Row]:
     paint = paint or _Paint(style)
     rows = [_heading_row(heading, size, width, style)] if heading else []
+    pending = snippet  # (ScoreSnippet, line): placed above the row holding that line
     parts = (
         part for whole in pieces for part in _wrap(whole, size, width, style, chords)
     )
@@ -842,10 +848,21 @@ def _layout(
         for start, stop in packing:
             new = start == 0 and run[0].new_paragraph
             gap = style.paragraph_gap * size if rows and new else 0.0
+            if pending and run[stop - 1].line >= pending[1]:
+                rows.append(_snippet_row(pending[0], size, width, style, bool(rows)))
+                pending, gap = None, 0.0
             rows.append(
                 _row(run[start:stop], size, style, gap, chords=chords, paint=paint)
             )
+    if pending:  # its line is past the last row: at the end
+        rows.append(_snippet_row(pending[0], size, width, style, bool(rows)))
     return rows
+
+
+def _snippet_row(snippet, size: float, width: float, style: DenseStyle, after: bool) -> _Row:
+    space = min(style.staff_space * size, width / snippet.width)
+    gap = style.paragraph_gap * size if after else 0.0
+    return _Row([], snippet.height * space, 0.0, gap, figure=(snippet, space))
 
 
 def _height(rows: list[_Row], size: float, style: DenseStyle) -> float:
@@ -883,6 +900,9 @@ class SheetLayout:
         diagrams: ``"piano"`` or ``"guitar"`` draws the song's chords as a strip
             of diagrams at the foot of the first page (:mod:`songleaf.diagrams`);
             the lyrics shrink to make room. ``None``: no diagrams.
+        score: Draw the song's score snippet, if its provider has one, above
+            the line it belongs to (:mod:`songleaf.snippets`); the lyrics shrink
+            to make room.
         style: Typography and colours.
     """
 
@@ -892,6 +912,7 @@ class SheetLayout:
     shading: bool = False
     diagrams: str | None = None
     style: DenseStyle = field(default_factory=DenseStyle)
+    score: bool = False
 
     def __post_init__(self):  # a bad layout fails here, not mid-render
         from songleaf.diagrams import DIAGRAM_KINDS
@@ -905,6 +926,8 @@ class SheetLayout:
             raise ValueError(f"columns must be a positive integer, got {columns!r}")
         if not isinstance(self.shading, bool):
             raise ValueError(f"shading must be True or False, got {self.shading!r}")
+        if not isinstance(self.score, bool):
+            raise ValueError(f"score must be True or False, got {self.score!r}")
         methods = ("extent", "fitting_length", "items")
         if not all(callable(getattr(self.placement, name, None)) for name in methods):
             raise ValueError(
@@ -951,6 +974,7 @@ LAYOUT_OPTIONS: dict[str, dict] = {
     "shaded": {"shading": True},
     "piano": {"diagrams": "piano"},
     "guitar": {"diagrams": "guitar"},
+    "score": {"score": True},
 }
 _OPTION_ALIASES = {
     "2col": "two-column",
@@ -1027,11 +1051,17 @@ def _flow_rows(rows, size: float, style: DenseStyle, capacities) -> tuple[list, 
     frames, current, used, overflow = [], [], 0.0, False
     capacities = iter(capacities)
     capacity = next(capacities)
-    for row in rows:
+    rows = list(rows)
+    for k, row in enumerate(rows):
         need = row.top + row.bottom
         if current:
             need += row.gap_before + style.row_gap * size
-        if current and used + need > capacity + _EPSILON:
+        if row.figure and k + 1 < len(rows):  # a snippet stays with the line under it
+            after = rows[k + 1]
+            keep = need + after.gap_before + style.row_gap * size + after.top + after.bottom
+        else:
+            keep = need
+        if current and used + keep > capacity + _EPSILON:
             frames.append(current)
             current, used, capacity = [], 0.0, next(capacities)
             need = row.top + row.bottom
@@ -1053,9 +1083,15 @@ def _flow(
     layout: SheetLayout,
     paint,
     diagram_chords: tuple = (),
+    snippet: tuple | None = None,
 ) -> _Flow:
     style, columns = layout.style, layout.columns
-    options = {"chords": layout.placement, "packer": layout.packer, "paint": paint}
+    options = {
+        "chords": layout.placement,
+        "packer": layout.packer,
+        "paint": paint,
+        "snippet": snippet,
+    }
     strip = 0.0
     if layout.diagrams and diagram_chords:
         from songleaf.diagrams import strip_height
@@ -1089,6 +1125,19 @@ def _diagram_chords(song: Song, layout: SheetLayout) -> tuple:
     return tuple(song_chords(song))
 
 
+def _snippet(song: Song, layout: SheetLayout, provider) -> tuple | None:
+    """``(ScoreSnippet, line index)`` when the layout draws snippets and the provider has one."""
+    if not layout.score:
+        return None
+    if provider is None:
+        from songleaf.snippets import abc_snippet as provider
+    found = provider(song)
+    if found is None or not (found.width > 0 and found.height > 0):
+        return None
+    line = sum(1 for line in song.lines() if line.end < found.start)
+    return found, line
+
+
 def fit_font_size(
     song: Song,
     *,
@@ -1099,11 +1148,14 @@ def fit_font_size(
     min_font_size: float = 6.0,
     max_font_size: float = 72.0,
     precision: float = 0.05,
+    snippets: Callable | None = None,
 ) -> float:
     """The largest lyric font size at which ``song`` fits one page in ``layout`` (default: v1's).
 
     ``style``, if given, replaces the layout's style. Returns ``min_font_size``
-    if even that does not fit (the song then needs more pages).
+    if even that does not fit (the song then needs more pages). ``snippets``
+    is the score-snippet provider of a ``score`` layout (default
+    :func:`songleaf.snippets.abc_snippet`).
     """
     layout = _as_layout(layout, style)
     page_width, page_height = _page_dimensions(page_size)
@@ -1117,6 +1169,7 @@ def fit_font_size(
     pieces, heading = _pieces(song), _heading(song)
     paint = _paint(song, layout.style, layout.shading)
     diagram_chords = _diagram_chords(song, layout)
+    snippet = _snippet(song, layout, snippets)
 
     def fits(size):
         flow = _flow(
@@ -1128,6 +1181,7 @@ def fit_font_size(
             layout=layout,
             paint=paint,
             diagram_chords=diagram_chords,
+            snippet=snippet,
         )
         return len(flow.frames) <= layout.columns and not flow.overflow
 
@@ -1182,12 +1236,16 @@ def render_sheet(
     min_font_size: float = 6.0,
     max_font_size: float = 72.0,
     scale: float = 1.0,
+    snippets: Callable | None = None,
 ) -> dict:
     """Render ``song`` in ``layout`` (a :class:`SheetLayout` or a spec) as a PDF to ``output``.
 
     The lyric font size is the largest that fits the song on one page, times
     ``scale``: ``1`` fills the page, ``0.8`` leaves room, ``1.2`` is larger type
     that runs onto a second page. It never goes past ``max_font_size``.
+
+    ``snippets`` provides a ``score`` layout's snippet: ``song -> ScoreSnippet | None``
+    (default :func:`songleaf.snippets.abc_snippet`).
 
     ``output`` is a path or a binary file object. Returns
     ``{"path", "font_size", "pages", "rows"}``; ``path`` is ``None`` when
@@ -1207,6 +1265,7 @@ def render_sheet(
         layout=layout,
         min_font_size=min_font_size,
         max_font_size=max_font_size,
+        snippets=snippets,
     )
     if not scale > 0:  # also refuses NaN
         raise ValueError(f"scale must be positive, got {scale!r}")
@@ -1214,6 +1273,7 @@ def render_sheet(
     heading = _heading(song)
     paint = _paint(song, style, layout.shading)
     diagram_chords = _diagram_chords(song, layout)
+    snippet = _snippet(song, layout, snippets)
     flow = _flow(
         _pieces(song),
         heading,
@@ -1223,6 +1283,7 @@ def render_sheet(
         layout=layout,
         paint=paint,
         diagram_chords=diagram_chords,
+        snippet=snippet,
     )
 
     target = os.fspath(output) if isinstance(output, (str, os.PathLike)) else output
@@ -1273,6 +1334,16 @@ def render_sheet(
                 )
         for row, baseline in zip(rows, baselines):
             _draw_items(canvas, row, left, baseline, style)
+            if row.figure:
+                figure, space = row.figure
+                figure.draw(
+                    canvas,
+                    left,
+                    baseline - row.bottom,
+                    space,
+                    color=style.snippet_color,
+                    font=usable_font(style.chord_font),
+                )
         bottom = y + row_gap
         if column and rows and style.column_rule_color:
             rule_x = left - column_gap / 2
