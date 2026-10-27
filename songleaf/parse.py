@@ -27,19 +27,9 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping
 
+from chordsym import is_chord_token
 from songleaf.model import Annotation, Song, chord, section
 
-_CHORD_RE = re.compile(
-    r"[*.]{0,3}\(?"  # leading marks: *D, ...Dm6
-    r"[A-G][#b]?"  # root
-    r"(?:maj|min|dim|aug|sus|add|m|M|\+|°|º|ø)?"  # quality
-    r"\d{0,2}[M+\-]?"  # extension: 7, 9, 13; Brazilian 7M, 7+, 5-
-    r"(?:sus\d{0,2}|(?:maj|add|dim|aug|no|m|b|#|\+|-)\d{1,2}[+\-]?)*"  # b5, sus, add9
-    r"(?:/(?:[#b]?\d{1,2}[+\-#b]?|sus\d{0,2}))*"  # stacked: 7/9, 4/7, 5-/7, /b13, 7/9b, 7/sus4
-    r"(?:\([^()\s]{1,10}\))*"  # parenthesised alterations: (#9), (4/9), (b5), 7(4)(9)
-    r"(?:/[A-G][#b]?)?"  # bass
-    r"\)?\*?"
-)
 # Tokens allowed on a chord line besides chords: bars, repeats, "no chord", stray
 # marks, and short notes such as "(riff)" or "(walking bass)".
 _FILLER_RE = re.compile(
@@ -79,15 +69,6 @@ _META_RE = re.compile(
 _META_FIELDS = {"tom": "key", "tono": "key", "key": "key"}
 _TAB_RE = re.compile(r"[A-Ga-g]?[#b]?\s*[|:]?[-0-9hpbrvx/\\~|*.()\s]+")
 _DECORATION_RE = re.compile(r"[=_\-~*.#^\s]{3,}")
-
-
-def is_chord_token(token: str) -> bool:
-    """True if ``token`` reads as a chord symbol (``G``, ``F#m7b5``, ``E7(#9)``, ``C/G``).
-
-    >>> is_chord_token("Bb7(4)(9)"), is_chord_token("A7/sus4"), is_chord_token("Bridge")
-    (True, True, False)
-    """
-    return bool(_CHORD_RE.fullmatch(token))
 
 
 def _chords_in(token: str) -> list[tuple[int, str]]:

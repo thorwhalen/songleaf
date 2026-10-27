@@ -33,6 +33,7 @@ classifiers = [
     "Topic :: Multimedia :: Sound/Audio",
 ]
 dependencies = [
+    "chordsym",
     "cw>=0.1.4,<0.2",
     "dol",
     "pandas",

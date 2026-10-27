@@ -29,61 +29,13 @@ import re
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 
-from songleaf.harmony import parse_chord
+from chordsym import chord_tones, parse_chord
 
-_LETTERS = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
-_NOTE_RE = re.compile(r"([A-G])([#b]?)")
 #: Standard guitar tuning, low to high, as pitch classes (E A D G B E).
 STANDARD_TUNING = (4, 9, 2, 7, 11, 4)
 DIAGRAM_KINDS = ("piano", "guitar")
 MAX_FRET = 12
 MAX_SPAN = 3  # a shape spans at most four frets (lowest fretted to highest, inclusive)
-
-
-def _note(text: str) -> int | None:
-    m = _NOTE_RE.match(text.strip())
-    if not m:
-        return None
-    return (_LETTERS[m.group(1)] + {"#": 1, "b": -1, "": 0}[m.group(2)]) % 12
-
-
-def chord_tones(symbol: str) -> tuple[int, ...] | None:
-    """The chord's pitch classes, bass first (the root, or the bass of a slash chord).
-
-    Triads by quality (``m``, ``dim``, ``aug``/``+``, ``sus2``, ``sus4``, ``5``), then
-    sevenths (``7``, ``maj7``, ``dim7``, ``m7b5``), sixths and added ninths. ``None``
-    for what :func:`songleaf.harmony.parse_chord` does not read as a chord.
-    """
-    parsed = parse_chord(symbol)
-    if parsed is None:
-        return None
-    root, quality = parsed
-    head, _, bass_text = symbol.strip().partition("/")
-    rest = _NOTE_RE.sub("", head, count=1)
-    third = {"minor": 3, "diminished": 3}.get(quality, 4)
-    fifth = 6 if quality == "diminished" else 7
-    if "aug" in rest or rest.startswith("+"):
-        fifth = 8
-    intervals = [0, third, fifth]
-    if quality == "open":  # suspended or power: no third
-        intervals = (
-            [0, 7] if re.match(r"5(?!\d)", rest) else [0, 2 if "sus2" in rest else 5, 7]
-        )
-    if "dim7" in rest or rest in ("°7", "o7"):
-        intervals.append(9)
-    elif re.search(r"(maj|M|Δ)(7|9|11|13)", rest):
-        intervals.append(11)
-    elif re.search(r"(?<!add)(7|9|11|13)", rest):
-        intervals.append(10)
-    if re.search(r"(?<!\d)6", rest):
-        intervals.append(9)
-    if re.search(r"9|add2", rest) and 2 not in intervals:
-        intervals.append(2)
-    tones = list(dict.fromkeys((root + i) % 12 for i in intervals))
-    bass = _note(bass_text) if bass_text else None
-    if bass is not None:
-        tones = [bass] + [t for t in tones if t != bass]
-    return tuple(tones)
 
 
 def song_chords(song) -> list[str]:
