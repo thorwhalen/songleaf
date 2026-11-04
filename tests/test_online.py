@@ -359,12 +359,6 @@ def test_sheet_falls_back_to_the_web_when_nothing_matches(
         tools.sheet("other song", web="off", sources=[], store={})
 
 
-def test_the_cli_hides_the_fetch_seam():
-    import songleaf.__main__ as cli
-
-    assert "fetch" in cli._SEAMS
-
-
 def test_candidate_keys_are_web_keys():
     assert Candidate("lrclib", "7", "T").key == "web:lrclib:7"
 
@@ -392,3 +386,135 @@ def test_default_sources_put_the_kept_web_songs_first(monkeypatch):
         assert isinstance(sources_module.default_sources()[0], StoredWebSource)
     finally:
         sources_module.default_sources.cache_clear()
+
+
+# --- regressions from the adversarial review ----------------------------------------
+
+
+def test_a_one_word_title_of_a_long_query_is_not_kept():
+    records = [
+        {"id": 1, "trackName": "Dream", "artistName": "Rivers", "plainLyrics": LYRICS}
+    ]
+    fetch = fetcher({"https://lrclib.net/api/search": json.dumps(records)})
+    store = {}
+    assert expand("silver morning dream river song", fetch=fetch, store=store) is None
+    assert store == {}
+
+
+def test_a_lyrics_match_here_counts_as_found(lrclib_fetch):
+    class Lyrical:
+        name = "lyrical"
+
+        def search_tiers(self, query, *, limit=10):
+            hit = online_hit("lyrical", "1", "Some Title")
+            return {"title": [], "artist": [], "lyrics": [hit]}
+
+    rows = tools.search(
+        "silver stream morning dream",
+        sources=[Lyrical()],
+        store={},
+        fetch=lrclib_fetch,
+        web="fallback",
+    )
+    assert [row["match"] for row in rows] == ["lyrics"]
+    assert lrclib_fetch.asked == []
+
+
+def online_hit(source, song_id, title):
+    from songleaf.sources import Hit
+
+    return Hit(source, song_id, title)
+
+
+def test_odd_lrclib_records_are_skipped_one_by_one():
+    records = ["not a record", {"id": None, "plainLyrics": LYRICS}, *LRCLIB_RECORDS]
+    fetch = fetcher({"https://lrclib.net/api/search": json.dumps(records)})
+    found = LrclibSite().find("paper boats", limit=20, fetch=fetch)
+    assert [c.id for c in found] == ["7", "9"]
+
+
+def test_without_the_online_extra_always_says_how_to_install_it(
+    monkeypatch, memory_source
+):
+    import sys
+
+    monkeypatch.setitem(sys.modules, "scraped", None)
+    monkeypatch.setitem(sys.modules, "scraped.acquire", None)
+    online._polite_fetcher.cache_clear()
+    try:
+        common = dict(sources=[memory_source], store={})
+        with pytest.raises(online.OnlineUnavailable, match=r"songleaf\[online\]"):
+            tools.search("nowhere to be found", web="always", **common)
+        assert tools.search("nowhere to be found", web="fallback", **common) == []
+    finally:
+        online._polite_fetcher.cache_clear()
+
+
+def test_songs_kept_in_the_callers_store_are_found_there(monkeypatch, lrclib_fetch):
+    from songleaf import sources as sources_module
+
+    monkeypatch.setattr(sources_module, "default_sources", lambda: (StoredWebSource(),))
+    store = {}
+    common = dict(store=store, fetch=lrclib_fetch, web="fallback")
+    (row,) = tools.search("Paper Boats Invented Band", **common)
+    assert row["match"] == "web" and "web:lrclib:7" in store
+    asked = len(lrclib_fetch.asked)
+    (row,) = tools.search("Paper Boats Invented Band", **common)
+    assert row["match"] == "title" and len(lrclib_fetch.asked) == asked
+
+
+def test_an_unreadable_kept_song_is_skipped_not_fatal(tmp_path, lrclib_fetch):
+    from songleaf.store import file_name_of_key, song_store
+
+    store = song_store(str(tmp_path / "songs"))
+    expand("paper boats invented band", fetch=lrclib_fetch, store=store)
+    (tmp_path / "songs" / file_name_of_key("web:x:broken")).write_text("{not json")
+    web = StoredWebSource(store)
+    assert [h.key for h in web.search_tiers("paper boats")["title"]] == ["web:lrclib:7"]
+    assert [h.key for h in web.search("paper boats")] == ["web:lrclib:7"]
+
+
+def test_sheet_always_goes_online_first(
+    monkeypatch, tmp_path, memory_source, lrclib_fetch
+):
+    monkeypatch.setattr(online, "polite_fetch", lrclib_fetch)
+    store = {}
+    common = dict(sources=[memory_source], store=store)
+    result = tools.sheet("paper boats", output=str(tmp_path / "a.pdf"), **common)
+    assert result["key"] == "memory:1" and lrclib_fetch.asked == []  # found here
+    result = tools.sheet(
+        "paper boats invented band",
+        output=str(tmp_path / "b.pdf"),
+        web="always",
+        **common,
+    )
+    assert result["key"] == "web:lrclib:7"
+
+
+def test_the_cli_offers_web_options_but_not_the_fetch_seam(capsys):
+    import songleaf.__main__ as cli
+
+    with pytest.raises(SystemExit):
+        cli.main(["search", "--help"])
+    usage = capsys.readouterr().out
+    assert "--web" in usage and "--web-sites" in usage and "--fetch" not in usage
+
+
+def test_equal_scores_go_to_the_plainest_label():
+    records = [
+        {
+            "id": 1,
+            "trackName": "Paper Boats",
+            "artistName": "Invented Band - Paper Boats",
+            "plainLyrics": LYRICS,
+        },
+        {
+            "id": 2,
+            "trackName": "Paper Boats",
+            "artistName": "Invented Band",
+            "plainLyrics": LYRICS,
+        },
+    ]
+    fetch = fetcher({"https://lrclib.net/api/search": json.dumps(records)})
+    (_, best, _), *_ = find_online("paper boats invented band", fetch=fetch)
+    assert best.id == "2"

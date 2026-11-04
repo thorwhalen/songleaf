@@ -55,6 +55,7 @@ def search(
     ``web:<site>:<id>`` and reported first after the title and artist matches, with
     ``match: "web"``; from then on it is found locally (``source: "web"``).
     """
+    sources = _bound_to(store, sources)
     if title or artist or lyrics:
         hits = _sources.search(
             query,
@@ -90,6 +91,34 @@ def search(
     return _with_web(rows, query, mode=web, sites=web_sites, store=store, fetch=fetch)
 
 
+def _bound_to(store, sources):
+    """``sources``, or the default ones with the kept web songs read from ``store``.
+
+    The default ``web`` source reads the default song store; a caller's own ``store=``
+    is where songs found online are kept, so it is where they must be found again.
+    """
+    if sources is not None or store is None:
+        return sources
+    from songleaf.online import StoredWebSource
+
+    defaults = _sources.default_sources()
+    held = _BOUND.get(id(store))
+    if (
+        held and held[0] is store and held[1] is defaults
+    ):  # keep the source's read cache
+        return held[2]
+    bound = tuple(
+        StoredWebSource(store) if isinstance(source, StoredWebSource) else source
+        for source in defaults
+    )
+    _BOUND[id(store)] = (store, defaults, bound)
+    return bound
+
+
+#: ``id(store) -> (store, default sources, bound sources)``: one bound tuple per store.
+_BOUND: dict = {}
+
+
 #: The kinds of row a web row goes after (lyrics matches come after it).
 _FOUND_KINDS = frozenset({"", "list", "title", "artist"})
 
@@ -97,14 +126,15 @@ _FOUND_KINDS = frozenset({"", "list", "title", "artist"})
 def _found_here(rows: list[dict], query: str) -> bool:
     """Whether the local rows hold the song ``query`` names: no web fallback then.
 
-    A narrower (field) search or a list match counts as found. Otherwise a title or artist
-    row must hold the whole query (``match.covers``): "birds of a feather <artist>" is not
-    found by another band's *Birds Of A Feather*, nor by the artist's other songs.
+    A narrower (field) search, a list match or a lyrics match (every word of the query in
+    a song's lyrics) counts as found. Otherwise a title or artist row must hold the whole
+    query (``match.covers``): "birds of a feather <artist>" is not found by another band's
+    *Birds Of A Feather*, nor by the artist's other songs.
     """
     from songleaf.match import covers
 
     for row in rows:
-        if row["match"] in ("", "list"):
+        if row["match"] in ("", "list", "lyrics"):
             return True
         if row["match"] in ("title", "artist") and covers(
             query, f"{row['title']} {row.get('artist', '')}"
@@ -231,8 +261,12 @@ def sheet(
     that fills the page: ``0.8`` for smaller type, ``1.2`` for larger type over
     more pages.
 
-    When nothing matches here, the song is looked for online, as ``search`` does
-    (``web``: ``fallback`` by default, or ``$SONGLEAF_WEB_SEARCH``; ``off`` never).
+    ``web`` (default ``$SONGLEAF_WEB_SEARCH``, else ``fallback``): with ``fallback`` the
+    song is looked for online (as ``search`` does) only when nothing here matches the
+    query at all, since a sheet takes the best local match, chords and all; with
+    ``always`` online first, the local best match when nothing usable is found; ``off``
+    never. To choose between a local near miss and the song online, ``search`` first and
+    make the sheet from the key it shows.
     """
     if pick < 1:
         raise ValueError(f"pick counts from 1, got {pick}")
@@ -433,11 +467,16 @@ def _resolve(query: str, *, pick: int, refresh: bool, sources, store, web="off")
     With nothing found and a ``web`` mode other than ``off`` (``None``: the configured
     mode), the song is looked for online (``search``'s web expansion).
     """
+    sources = _bound_to(store, sources)
     store = song_store() if store is None else store
     key = _key_named_by(query, store=store, sources=sources)
     if key is None:
+        if pick == 1 and _web_mode(web) == "always":  # asked for: online first
+            key = _web_fallback_key(query, mode="always", store=store)
+            if key:
+                return key, store[key]
         hits = _sources.search(query, limit=pick, sources=sources)
-        if not hits and pick == 1:  # nothing here: the song may be online
+        if not hits and pick == 1:  # nothing here at all: the song may be online
             key = _web_fallback_key(query, mode=web or "", store=store)
             if key:
                 return key, store[key]
@@ -448,6 +487,12 @@ def _resolve(query: str, *, pick: int, refresh: bool, sources, store, web="off")
     if refresh or not _is_stored(store, key):
         store[key] = _sources.get_song(key, sources=sources)
     return key, store[key]
+
+
+def _web_mode(web) -> str:
+    from songleaf import online
+
+    return "off" if web == "off" else online.web_mode(web or "")
 
 
 def _web_fallback_key(query: str, *, mode: str, store) -> str | None:

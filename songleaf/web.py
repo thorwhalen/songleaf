@@ -247,7 +247,7 @@ def mk_app(
         q, title, artist, lyrics = (text.strip() for text in (q, title, artist, lyrics))
         if not (q or title or artist or lyrics):
             return []
-        if title or artist or lyrics:  # the narrower search: no lists, no store
+        if title or artist or lyrics:  # the narrower search: no lists
             return tools.search(
                 q,
                 title=title,
@@ -256,6 +256,7 @@ def mk_app(
                 limit=limit,
                 web=web_search,
                 sources=sources,
+                store=store,
             )
         return tools.search(
             q,

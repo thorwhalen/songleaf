@@ -127,7 +127,7 @@ Other sources surveyed, plus the Ultimate Guitar / MuseScore decisions, are in [
 
 ## Searching the web
 
-When nothing found locally holds the whole query (another band's song of the same name, or the artist's other songs, do not count), `search` and `sheet` look online, on a list of sites, extract the best result into songleaf's own format, and keep it in the song store as `web:<site>:<id>`, with the page URL, the site and a `personal` licence in its provenance. The next search finds it locally, with no request. It needs the `online` extra:
+When nothing found locally holds the whole query (another band's song of the same name, or the artist's other songs, do not count), `search` looks online, on a list of sites, extract the best result into songleaf's own format, and keep it in the song store as `web:<site>:<id>`, with the page URL, the site and a `personal` licence in its provenance. The next search finds it locally, with no request. It needs the `online` extra:
 
 ```bash
 pip install "songleaf[online]"
@@ -137,7 +137,7 @@ python -m songleaf search "paper boats" --web off                # never
 SONGLEAF_WEB_SITES=lrclib,chordie python -m songleaf search ...  # which sites to ask
 ```
 
-`--web` (or `SONGLEAF_WEB_SEARCH`) is `fallback` (the default), `always` or `off`; `--web-sites` (or `SONGLEAF_WEB_SITES`) names the sites, comma-separated. The default list is LRCLIB only, an open lyrics API made for automated clients: it gives lyrics (with their timings) but no chords. Chordie is known but off by default; why each site is in or out is in [`misc/docs/sources.md`](misc/docs/sources.md#web-sites-songleaf60). Every request obeys the site's robots.txt, waits at least a second between two requests to one host, and says it is songleaf (no browser disguise). The web app does not go online unless built with `mk_app(web_search="fallback")`: its page searches as you type.
+`sheet` takes the best local match, chords and all, so it goes online only when nothing here matches at all, or with `--web always`; to choose between a local near miss and the song online, `search` first and make the sheet from the key it shows. `--web` (or `SONGLEAF_WEB_SEARCH`) is `fallback` (the default), `always` or `off`; `--web-sites` (or `SONGLEAF_WEB_SITES`) names the sites, comma-separated. The default list is LRCLIB only, an open lyrics API made for automated clients: it gives lyrics (with their timings) but no chords. Chordie is known but off by default; why each site is in or out is in [`misc/docs/sources.md`](misc/docs/sources.md#web-sites-songleaf60). Every request obeys the site's robots.txt, waits at least a second between two requests to one host, and says it is songleaf (no browser disguise). The web app does not go online unless built with `mk_app(web_search="fallback")`: its page searches as you type.
 
 Lyrics and chord charts are copyrighted. What songleaf fetches stays in your data directory, for your own use.
 
