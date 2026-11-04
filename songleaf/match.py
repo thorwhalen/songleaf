@@ -60,6 +60,20 @@ def shared_words(query: str, text: str) -> int:
     return len(set(query_words(query)) & set(query_words(text)))
 
 
+def covers(query: str, text: str) -> bool:
+    """Whether ``text`` holds the whole ``query`` word by word, as :class:`WordIndex` matches.
+
+    What says a search found *the* song a query names, not just a song sharing some of its
+    words (the web expansion goes online when no title and artist covers the query).
+
+    >>> covers("wonderwal oasis", "Wonderwall Oasis"), covers("birds of a feather", "Birds Of A Feather The Band")
+    (True, True)
+    >>> covers("birds of a feather billie", "Birds Of A Feather The Band")
+    False
+    """
+    return bool(WordIndex([text]).matching(query))
+
+
 def word_spans(text: str, query: str) -> list[list[int]]:
     """``[start, end]`` of each word of ``text`` that a word of ``query`` starts, in order.
 

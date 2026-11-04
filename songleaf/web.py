@@ -208,9 +208,14 @@ def mk_app(
     image_cache_size: int = 8,
     image_scale: float = 2.0,
     get_json=None,
+    web_search: str = "off",
 ):
     """The FastAPI app. ``sources`` and ``store`` are the seams of :mod:`songleaf.tools`;
     ``library_root`` is where the groups are kept (default: the data root).
+
+    ``web_search`` is the web mode of ``/search`` and ``/sheet`` (:mod:`songleaf.online`):
+    ``off`` by default, because the page searches as the reader types and a search that
+    goes online would make requests, and keep songs, for every half-typed query.
 
     ``image_scale`` is pixels per PDF point for ``/sheet.png`` (2: an A4 page is
     1190 pixels wide, sharp on a phone). ``get_json`` is how ``POST /sync`` reaches
@@ -249,12 +254,14 @@ def mk_app(
                 artist=artist,
                 lyrics=lyrics,
                 limit=limit,
+                web=web_search,
                 sources=sources,
             )
         return tools.search(
             q,
             limit=limit,
             list_songs=list_songs,
+            web=web_search,
             sources=sources,
             store=store,
             library_root=library_root,
@@ -439,6 +446,7 @@ def mk_app(
                 output=output,
                 transpose=request.transpose,
                 renderer=request.renderer(),
+                web=web_search,
                 sources=sources,
                 store=store,
             )

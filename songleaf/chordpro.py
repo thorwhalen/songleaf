@@ -6,7 +6,10 @@ lines.
 
 - ``[X]`` becomes a ``chord`` annotation at that character offset of the
   bracket-free lyric line; a line of chords only becomes an empty text line
-  carrying its chords in order, as in :mod:`songleaf.parse`.
+  carrying its chords in order, as in :mod:`songleaf.parse`. Only brackets that
+  read as chords are chords (:func:`songleaf.parse.is_chord_token`, plus ``N.C.``):
+  a line of bracketed labels only (``[Verse 1]``, ``[---][Chorus]``) starts a
+  section, and any other bracket (``[x2]``) stays in the text as written.
 - ``{title}``, ``{artist}``, ``{key}``, ``{capo}``, ``{tempo}`` (and their short
   forms) become metadata.
 - ``{soc}``/``{eoc}`` (and verse, bridge, tab-less variants) and ``{c: label}``
@@ -72,12 +75,48 @@ def _meta_value(name: str, value: str):
     return value
 
 
+_NO_CHORD_RE = re.compile(r"N\.?C\.?", re.IGNORECASE)
+
+
+def _is_chord(symbol: str) -> bool:
+    from songleaf.parse import is_chord_token
+
+    return is_chord_token(symbol) or bool(_NO_CHORD_RE.fullmatch(symbol))
+
+
+def _section_label(raw: str) -> str | None:
+    """The label of a line of bracketed labels only (``[---][Verse 1]``), or ``None``.
+
+    >>> _section_label("[---][Verse 1]"), _section_label("[G]la"), _section_label("[x2]")
+    ('Verse 1', None, None)
+    """
+    from songleaf.parse import _header
+
+    if _CHORD_RE.sub("", raw).strip():
+        return None
+    labels = [m.group(1).strip() for m in _CHORD_RE.finditer(raw)]
+    if any(_is_chord(label) for label in labels):
+        return None
+    for label in labels:
+        header = _header(f"[{label}]")
+        if header:
+            return header[0]
+    return None
+
+
 def _lyric_line(raw: str) -> tuple[str, list]:
-    """A ChordPro line as its lyric text and ``(offset, symbol)`` chords."""
+    """A ChordPro line as its lyric text and ``(offset, symbol)`` chords.
+
+    >>> _lyric_line("[G]Sing it [x2]")
+    ('Sing it [x2]', [(0, 'G')])
+    """
     text, chords, last = "", [], 0
     for match in _CHORD_RE.finditer(raw):
         text += raw[last : match.start()]
-        if symbol := match.group(1).strip():
+        symbol = match.group(1).strip()
+        if symbol and not _is_chord(symbol):
+            text += match.group(0)  # not a chord: the text as written
+        elif symbol:
             chords.append((len(text), symbol))
         last = match.end()
     text += raw[last:]
@@ -144,6 +183,10 @@ def parse_chordpro(
         if not line.strip():
             if pending is None and lines and not is_blank(len(lines) - 1):
                 lines.append(("", []))
+            continue
+        if (label := _section_label(line)) is not None:
+            close_pending()
+            pending = label
             continue
         add(*_lyric_line(line))
     close_pending()

@@ -92,3 +92,13 @@ def test_txt_files_still_use_chords_over_lyrics(tmp_path, chart):
     source = LocalFolderSource(str(tmp_path))
     (hit,) = source.search("paper boats")
     assert source.get(hit.id).of_kind("chord")
+
+
+def test_only_brackets_that_read_as_chords_are_chords():
+    song = parse_chordpro(
+        "[---][Verse 1]\n[G]Paper boats [D]drift [x2]\n[N.C.]silver stream"
+    )
+    assert [a.body["symbol"] for a in song.of_kind("chord")] == ["G", "D", "N.C."]
+    assert song.text == "Paper boats drift [x2]\nsilver stream"
+    (verse,) = song.of_kind("section")
+    assert verse.body["label"] == "Verse 1" and verse.start == 0

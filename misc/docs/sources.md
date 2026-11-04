@@ -49,6 +49,23 @@ Two routes stay open without any account at all, and are already how `scoreseek`
 
 Built: `songleaf.sources.LocalFolderSource` indexes `~/.local/share/songleaf/imports/` (or any folder you point it at). Text exports are parsed as chords-over-lyrics charts; Guitar Pro/MusicXML/MSCZ/MIDI/PDF exports become a score-linked `Song` with no lyrics text. It reads only what's already on disk — no network calls, no login.
 
+## Web sites (songleaf#60)
+
+`songleaf.online` searches web sites when the local search does not find a song, and keeps the best result in the reader's data directory (never in the repo). Requests go through `scraped.acquire` on its plain urllib transport: robots.txt enforced, at least one second between two requests to one host (a longer `Crawl-delay` wins), User-Agent `songleaf (+https://github.com/thorwhalen/songleaf)`, no browser impersonation. Checked on 2026-11-04.
+
+| Site | Gives | robots.txt | Terms | Decision |
+|---|---|---|---|---|
+| **LRCLIB** (lrclib.net) | plain + synced lyrics, no chords | no restrictions | open API, "openly accessible to all users and applications"; asks clients to identify themselves and to stay within rate limits | **default** |
+| **Chordie** (chordie.com) | chord charts (ChordPro in each page) | "All robots will spider all" | none published | **known, off by default** (`SONGLEAF_WEB_SITES=lrclib,chordie`): most of its pages (`chord.pere/<other host>/...`) re-host other sites' charts, including guitartabs.cc and guitaretab.com, whose terms forbid stored copies. Decision for the owner in a manual-task issue |
+| **Ultimate Guitar** | chord charts | allows chord pages | no reproduction onto memory or devices (section 6.2), link don't replicate (section 14) | **out** (songleaf#28: paste or bookmarklet only) |
+| **guitartabs.cc**, **guitaretab.com** | chord charts | allow chord pages | the same template as UG: "you will not duplicate or otherwise reproduce the Content ... onto any physical medium, memory or device" | **out**: a kept copy is exactly that |
+| **E-Chords** | chord charts | `Disallow: /search`, `/*?q=` | none found | **out**: its own search is closed to robots |
+| **Cifra Club** | chord charts | answers 403 to a plain client | not reviewed | **out**: it refuses honest clients |
+| **Genius** | lyrics | | terms forbid reusing lyrics from its pages (songleaf#3) | **out** |
+| **AZChords**, **Boite à chansons** | chord charts | allow chord pages | none found | not added: no terms to rely on, and AZChords is among the hosts Chordie re-hosts; candidates for a later decision |
+
+A site enters the default list only when its terms allow automated access *and* keeping a personal copy. Adding one is an entry in `songleaf.online.WEB_SITES`; add its row here with the date checked.
+
 ## What's built vs. what's a source survey
 
 The verdicts in songleaf#3 that don't need the user (Kaggle corpus, Chordonomicon, LRCLIB, music21 corpus, McGill Billboard, ChoCo, and `scoreseek`'s existing sources) stand as written there. This file only adds the two decisions that came back from the owner.
