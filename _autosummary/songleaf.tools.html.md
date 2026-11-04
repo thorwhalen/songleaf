@@ -115,7 +115,7 @@ An id given as `""` is left as it is; `"-"` removes it. Returns
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### songleaf.tools.search(query='', , title='', artist='', lyrics='', limit=10, list_songs=3, sources=None, store=None, library_root=None)
+### songleaf.tools.search(query='', , title='', artist='', lyrics='', limit=10, list_songs=3, web='', web_sites='', sources=None, store=None, library_root=None, fetch=None)
 
 Find songs with one query: in your lists’ names, then titles, artists and lyrics.
 
@@ -131,10 +131,18 @@ artist (and of `list_name`) as `[start, end]` spans; a lyrics match carries
 With `title`, `artist` or `lyrics`, it is a narrower search instead: songs that
 match every field given (and `query`, fuzzily over title and artist), `match: ""`.
 
+`web` says when to look online too ([`songleaf.online`](songleaf.online.html.md#module-songleaf.online)): `fallback` (the
+default, or `$SONGLEAF_WEB_SEARCH`) when no title or artist found here holds the
+whole query (another song of the same name, or the artist’s other songs, do not),
+`always`, or `off`. `web_sites` names the sites to ask, comma-separated (default:
+`$SONGLEAF_WEB_SITES`, else `lrclib`). The best usable result is stored as
+`web:<site>:<id>` and reported first after the title and artist matches, with
+`match: "web"`; from then on it is found locally (`source: "web"`).
+
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
-### songleaf.tools.sheet(query, , output='', pick=1, refresh=False, layout='dense', transpose=0, scale=1.0, sources=None, store=None, renderer=None)
+### songleaf.tools.sheet(query, , output='', pick=1, refresh=False, layout='dense', transpose=0, scale=1.0, web='', sources=None, store=None, renderer=None)
 
 Make a one-page song sheet (PDF) for the best match of `query`.
 
@@ -156,6 +164,13 @@ itself, so it does not go with `layout` or `scale`.
 key); the stored song keeps its chords. `scale` multiplies the font size
 that fills the page: `0.8` for smaller type, `1.2` for larger type over
 more pages.
+
+`web` (default `$SONGLEAF_WEB_SEARCH`, else `fallback`): with `fallback` the
+song is looked for online (as `search` does) only when nothing here matches the
+query at all, since a sheet takes the best local match, chords and all; with
+`always` online first, the local best match when nothing usable is found; `off`
+never. To choose between a local near miss and the song online, `search` first and
+make the sheet from the key it shows.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

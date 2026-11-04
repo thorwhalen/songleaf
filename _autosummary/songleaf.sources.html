@@ -216,6 +216,7 @@
 <li class="toctree-l3"><a class="reference internal" href="songleaf.library.html">songleaf.library</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.match.html">songleaf.match</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.model.html">songleaf.model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="songleaf.online.html">songleaf.online</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.parse.html">songleaf.parse</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.render.html">songleaf.render</a></li>
@@ -549,7 +550,11 @@ moved by <code class="docutils literal notranslate"><span class="pre">SONGLEAF_D
 <dd><p>The sources used when none are given, built once per process.</p>
 <p>The Kaggle corpus is read from its search index when one has been built
 (<code class="docutils literal notranslate"><span class="pre">songleaf</span> <span class="pre">build-index</span></code>): the same songs and keys, in tens of MB rather
-than the GB the whole corpus takes in memory.</p>
+than the GB the whole corpus takes in memory. Before it, the songs found on
+the web and kept in the song store (<a class="reference internal" href="songleaf.online.html#songleaf.online.StoredWebSource" title="songleaf.online.StoredWebSource"><code class="xref py py-class docutils literal notranslate"><span class="pre">songleaf.online.StoredWebSource</span></code></a>),
+so a song fetched once is found locally from then on. They come first: each
+kind of match keeps <code class="docutils literal notranslate"><span class="pre">limit</span></code> songs, sources in order, and a song the reader
+went online for must not be cut by the corpus’s near misses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a></span></p>
@@ -704,7 +709,7 @@ source’s hits come in its own ranking, the sources in the order given.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=9f547d6f"></script>
+</div><script src="../_static/documentation_options.js?v=d8383de7"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

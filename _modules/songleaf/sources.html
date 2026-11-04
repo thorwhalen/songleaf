@@ -213,6 +213,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.library.html">songleaf.library</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.match.html">songleaf.match</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.model.html">songleaf.model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.online.html">songleaf.online</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.parse.html">songleaf.parse</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.render.html">songleaf.render</a></li>
@@ -843,13 +844,18 @@
 
 <span class="sd">    The Kaggle corpus is read from its search index when one has been built</span>
 <span class="sd">    (``songleaf build-index``): the same songs and keys, in tens of MB rather</span>
-<span class="sd">    than the GB the whole corpus takes in memory.</span>
+<span class="sd">    than the GB the whole corpus takes in memory. Before it, the songs found on</span>
+<span class="sd">    the web and kept in the song store (:class:`songleaf.online.StoredWebSource`),</span>
+<span class="sd">    so a song fetched once is found locally from then on. They come first: each</span>
+<span class="sd">    kind of match keeps ``limit`` songs, sources in order, and a song the reader</span>
+<span class="sd">    went online for must not be cut by the corpus's near misses.</span>
 <span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.kaggle_index</span><span class="w"> </span><span class="kn">import</span> <span class="n">KaggleChordsIndex</span><span class="p">,</span> <span class="n">kaggle_index_path</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.online</span><span class="w"> </span><span class="kn">import</span> <span class="n">StoredWebSource</span>
 
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">kaggle_index_path</span><span class="p">()):</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">KaggleChordsIndex</span><span class="p">(),)</span>
-    <span class="k">return</span> <span class="p">(</span><span class="n">KaggleChordsSource</span><span class="p">(),)</span></div>
+        <span class="k">return</span> <span class="p">(</span><span class="n">StoredWebSource</span><span class="p">(),</span> <span class="n">KaggleChordsIndex</span><span class="p">())</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">StoredWebSource</span><span class="p">(),</span> <span class="n">KaggleChordsSource</span><span class="p">())</span></div>
 
 
 
@@ -996,7 +1002,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=9f547d6f"></script>
+</div><script src="../../_static/documentation_options.js?v=d8383de7"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

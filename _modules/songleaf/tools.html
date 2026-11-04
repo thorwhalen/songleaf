@@ -213,6 +213,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.library.html">songleaf.library</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.match.html">songleaf.match</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.model.html">songleaf.model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.online.html">songleaf.online</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.parse.html">songleaf.parse</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.render.html">songleaf.render</a></li>
@@ -292,9 +293,12 @@
     <span class="n">lyrics</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
     <span class="n">list_songs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="n">web</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">web_sites</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">library_root</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">fetch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Find songs with one query: in your lists' names, then titles, artists and lyrics.</span>
 
@@ -309,7 +313,16 @@
 
 <span class="sd">    With ``title``, ``artist`` or ``lyrics``, it is a narrower search instead: songs that</span>
 <span class="sd">    match every field given (and ``query``, fuzzily over title and artist), ``match: ""``.</span>
+
+<span class="sd">    ``web`` says when to look online too (:mod:`songleaf.online`): ``fallback`` (the</span>
+<span class="sd">    default, or ``$SONGLEAF_WEB_SEARCH``) when no title or artist found here holds the</span>
+<span class="sd">    whole query (another song of the same name, or the artist's other songs, do not),</span>
+<span class="sd">    ``always``, or ``off``. ``web_sites`` names the sites to ask, comma-separated (default:</span>
+<span class="sd">    ``$SONGLEAF_WEB_SITES``, else ``lrclib``). The best usable result is stored as</span>
+<span class="sd">    ``web:&lt;site&gt;:&lt;id&gt;`` and reported first after the title and artist matches, with</span>
+<span class="sd">    ``match: "web"``; from then on it is found locally (``source: "web"``).</span>
 <span class="sd">    """</span>
+    <span class="n">sources</span> <span class="o">=</span> <span class="n">_bound_to</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">sources</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">title</span> <span class="ow">or</span> <span class="n">artist</span> <span class="ow">or</span> <span class="n">lyrics</span><span class="p">:</span>
         <span class="n">hits</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
             <span class="n">query</span><span class="p">,</span>
@@ -319,7 +332,11 @@
             <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">,</span>
             <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">_tagged</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="s2">""</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span> <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">hits</span><span class="p">]</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span><span class="n">_tagged</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="s2">""</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span> <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">hits</span><span class="p">]</span>
+        <span class="n">web_query</span> <span class="o">=</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">artist</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">_with_web</span><span class="p">(</span>
+            <span class="n">rows</span><span class="p">,</span> <span class="n">web_query</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">web</span><span class="p">,</span> <span class="n">sites</span><span class="o">=</span><span class="n">web_sites</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">fetch</span><span class="o">=</span><span class="n">fetch</span>
+        <span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">query</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
         <span class="k">return</span> <span class="p">[]</span>
     <span class="n">rows</span> <span class="o">=</span> <span class="n">_list_hits</span><span class="p">(</span>
@@ -338,8 +355,95 @@
             <span class="k">if</span> <span class="n">snippet</span><span class="p">:</span>
                 <span class="n">row</span><span class="p">[</span><span class="s2">"snippet"</span><span class="p">]</span> <span class="o">=</span> <span class="n">snippet</span>
             <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">rows</span></div>
+    <span class="k">return</span> <span class="n">_with_web</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">web</span><span class="p">,</span> <span class="n">sites</span><span class="o">=</span><span class="n">web_sites</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">fetch</span><span class="o">=</span><span class="n">fetch</span><span class="p">)</span></div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_bound_to</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">sources</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""``sources``, or the default ones with the kept web songs read from ``store``.</span>
+
+<span class="sd">    The default ``web`` source reads the default song store; a caller's own ``store=``</span>
+<span class="sd">    is where songs found online are kept, so it is where they must be found again.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">sources</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">sources</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.online</span><span class="w"> </span><span class="kn">import</span> <span class="n">StoredWebSource</span>
+
+    <span class="n">defaults</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">default_sources</span><span class="p">()</span>
+    <span class="n">held</span> <span class="o">=</span> <span class="n">_BOUND</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">store</span><span class="p">))</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">held</span> <span class="ow">and</span> <span class="n">held</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="n">store</span> <span class="ow">and</span> <span class="n">held</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="n">defaults</span>
+    <span class="p">):</span>  <span class="c1"># keep the source's read cache</span>
+        <span class="k">return</span> <span class="n">held</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">bound</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+        <span class="n">StoredWebSource</span><span class="p">(</span><span class="n">store</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">StoredWebSource</span><span class="p">)</span> <span class="k">else</span> <span class="n">source</span>
+        <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">defaults</span>
+    <span class="p">)</span>
+    <span class="n">_BOUND</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="n">store</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">defaults</span><span class="p">,</span> <span class="n">bound</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">bound</span>
+
+
+<span class="c1">#: ``id(store) -&gt; (store, default sources, bound sources)``: one bound tuple per store.</span>
+<span class="n">_BOUND</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+
+<span class="c1">#: The kinds of row a web row goes after (lyrics matches come after it).</span>
+<span class="n">_FOUND_KINDS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">""</span><span class="p">,</span> <span class="s2">"list"</span><span class="p">,</span> <span class="s2">"title"</span><span class="p">,</span> <span class="s2">"artist"</span><span class="p">})</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_found_here</span><span class="p">(</span><span class="n">rows</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Whether the local rows hold the song ``query`` names: no web fallback then.</span>
+
+<span class="sd">    A narrower (field) search, a list match or a lyrics match (every word of the query in</span>
+<span class="sd">    a song's lyrics) counts as found. Otherwise a title or artist row must hold the whole</span>
+<span class="sd">    query (``match.covers``): "birds of a feather &lt;artist&gt;" is not found by another band's</span>
+<span class="sd">    *Birds Of A Feather*, nor by the artist's other songs.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.match</span><span class="w"> </span><span class="kn">import</span> <span class="n">covers</span>
+
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s2">"match"</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="s2">"list"</span><span class="p">,</span> <span class="s2">"lyrics"</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s2">"match"</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"title"</span><span class="p">,</span> <span class="s2">"artist"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">covers</span><span class="p">(</span>
+            <span class="n">query</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">'title'</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'artist'</span><span class="p">,</span><span class="w"> </span><span class="s1">''</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_with_web</span><span class="p">(</span><span class="n">rows</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">sites</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">fetch</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""``rows`` with the song found on the web, when ``mode`` says to look (see ``search``)."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf</span><span class="w"> </span><span class="kn">import</span> <span class="n">online</span>
+
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">online</span><span class="o">.</span><span class="n">web_mode</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
+    <span class="n">looked_for</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"off"</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">looked_for</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">rows</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"fallback"</span> <span class="ow">and</span> <span class="n">_found_here</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">looked_for</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">rows</span>
+    <span class="n">found</span> <span class="o">=</span> <span class="n">_expand_online</span><span class="p">(</span><span class="n">looked_for</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">sites</span><span class="o">=</span><span class="n">sites</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">fetch</span><span class="o">=</span><span class="n">fetch</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">found</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">"key"</span><span class="p">]</span> <span class="o">==</span> <span class="n">found</span><span class="o">.</span><span class="n">key</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">rows</span>
+    <span class="n">row</span> <span class="o">=</span> <span class="n">_tagged</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">hit</span><span class="p">()</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="s2">"web"</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+    <span class="n">row</span><span class="p">[</span><span class="s2">"cached"</span><span class="p">]</span> <span class="o">=</span> <span class="n">found</span><span class="o">.</span><span class="n">cached</span>
+    <span class="n">at</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">"match"</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_FOUND_KINDS</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="o">*</span><span class="n">rows</span><span class="p">[:</span><span class="n">at</span><span class="p">],</span> <span class="n">row</span><span class="p">,</span> <span class="o">*</span><span class="n">rows</span><span class="p">[</span><span class="n">at</span><span class="p">:]]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_expand_online</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sites</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fetch</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""``online.expand``, where a missing ``online`` extra stops only an explicit ``always``."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf</span><span class="w"> </span><span class="kn">import</span> <span class="n">online</span>
+
+    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">online</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">sites</span><span class="o">=</span><span class="n">sites</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">fetch</span><span class="o">=</span><span class="n">fetch</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">online</span><span class="o">.</span><span class="n">OnlineUnavailable</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"always"</span><span class="p">:</span>
+            <span class="k">raise</span>
+        <span class="n">online</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"songleaf: no web fallback: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_tagged</span><span class="p">(</span><span class="n">row</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
@@ -401,6 +505,7 @@
     <span class="n">layout</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"dense"</span><span class="p">,</span>
     <span class="n">transpose</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">web</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">renderer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -425,6 +530,13 @@
 <span class="sd">    key); the stored song keeps its chords. ``scale`` multiplies the font size</span>
 <span class="sd">    that fills the page: ``0.8`` for smaller type, ``1.2`` for larger type over</span>
 <span class="sd">    more pages.</span>
+
+<span class="sd">    ``web`` (default ``$SONGLEAF_WEB_SEARCH``, else ``fallback``): with ``fallback`` the</span>
+<span class="sd">    song is looked for online (as ``search`` does) only when nothing here matches the</span>
+<span class="sd">    query at all, since a sheet takes the best local match, chords and all; with</span>
+<span class="sd">    ``always`` online first, the local best match when nothing usable is found; ``off``</span>
+<span class="sd">    never. To choose between a local near miss and the song online, ``search`` first and</span>
+<span class="sd">    make the sheet from the key it shows.</span>
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="n">pick</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"pick counts from 1, got </span><span class="si">{</span><span class="n">pick</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
@@ -440,7 +552,7 @@
             <span class="s2">"Pass a layout and scale, or a renderer, not both: the renderer decides them"</span>
         <span class="p">)</span>
     <span class="n">key</span><span class="p">,</span> <span class="n">song</span> <span class="o">=</span> <span class="n">_resolve</span><span class="p">(</span>
-        <span class="n">query</span><span class="p">,</span> <span class="n">pick</span><span class="o">=</span><span class="n">pick</span><span class="p">,</span> <span class="n">refresh</span><span class="o">=</span><span class="n">refresh</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span>
+        <span class="n">query</span><span class="p">,</span> <span class="n">pick</span><span class="o">=</span><span class="n">pick</span><span class="p">,</span> <span class="n">refresh</span><span class="o">=</span><span class="n">refresh</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">web</span><span class="o">=</span><span class="n">web</span> <span class="ow">or</span> <span class="kc">None</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">transpose</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.harmony</span><span class="w"> </span><span class="kn">import</span> <span class="n">transpose</span> <span class="k">as</span> <span class="n">transposed</span>
@@ -629,12 +741,25 @@
 
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_resolve</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">pick</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">refresh</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">store</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""``(key, song)`` for a song key or a search, fetching the song into the store if needed."""</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">pick</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">refresh</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">web</span><span class="o">=</span><span class="s2">"off"</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""``(key, song)`` for a song key or a search, fetching the song into the store if needed.</span>
+
+<span class="sd">    With nothing found and a ``web`` mode other than ``off`` (``None``: the configured</span>
+<span class="sd">    mode), the song is looked for online (``search``'s web expansion).</span>
+<span class="sd">    """</span>
+    <span class="n">sources</span> <span class="o">=</span> <span class="n">_bound_to</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">sources</span><span class="p">)</span>
     <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
     <span class="n">key</span> <span class="o">=</span> <span class="n">_key_named_by</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pick</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">_web_mode</span><span class="p">(</span><span class="n">web</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"always"</span><span class="p">:</span>  <span class="c1"># asked for: online first</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">_web_fallback_key</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"always"</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">key</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">key</span><span class="p">,</span> <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
         <span class="n">hits</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">pick</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">hits</span> <span class="ow">and</span> <span class="n">pick</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># nothing here at all: the song may be online</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">_web_fallback_key</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">web</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">key</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">key</span><span class="p">,</span> <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">pick</span><span class="p">:</span>
             <span class="n">found</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span><span class="si">}</span><span class="s2"> match"</span> <span class="k">if</span> <span class="n">hits</span> <span class="k">else</span> <span class="s2">"nothing matches"</span>
             <span class="k">raise</span> <span class="n">_sources</span><span class="o">.</span><span class="n">SongNotFound</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No song number </span><span class="si">{</span><span class="n">pick</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="n">query</span><span class="si">!r}</span><span class="s2">: </span><span class="si">{</span><span class="n">found</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
@@ -642,6 +767,23 @@
     <span class="k">if</span> <span class="n">refresh</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">_is_stored</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_sources</span><span class="o">.</span><span class="n">get_song</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">key</span><span class="p">,</span> <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_web_mode</span><span class="p">(</span><span class="n">web</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf</span><span class="w"> </span><span class="kn">import</span> <span class="n">online</span>
+
+    <span class="k">return</span> <span class="s2">"off"</span> <span class="k">if</span> <span class="n">web</span> <span class="o">==</span> <span class="s2">"off"</span> <span class="k">else</span> <span class="n">online</span><span class="o">.</span><span class="n">web_mode</span><span class="p">(</span><span class="n">web</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_web_fallback_key</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">store</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The key of the song ``query`` names online, now stored, unless the web mode is off."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf</span><span class="w"> </span><span class="kn">import</span> <span class="n">online</span>
+
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">online</span><span class="o">.</span><span class="n">web_mode</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"off"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">found</span> <span class="o">=</span> <span class="n">_expand_online</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">found</span><span class="o">.</span><span class="n">key</span> <span class="k">if</span> <span class="n">found</span> <span class="k">else</span> <span class="kc">None</span>
 
 
 <div class="viewcode-block" id="import_text">
@@ -1032,7 +1174,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=9f547d6f"></script>
+</div><script src="../../_static/documentation_options.js?v=d8383de7"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

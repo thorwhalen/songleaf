@@ -216,6 +216,7 @@
 <li class="toctree-l3"><a class="reference internal" href="songleaf.library.html">songleaf.library</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.match.html">songleaf.match</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.model.html">songleaf.model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="songleaf.online.html">songleaf.online</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.parse.html">songleaf.parse</a></li>
 <li class="toctree-l3"><a class="reference internal" href="songleaf.render.html">songleaf.render</a></li>
@@ -279,7 +280,10 @@ lines.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">[X]</span></code> becomes a <code class="docutils literal notranslate"><span class="pre">chord</span></code> annotation at that character offset of the
 bracket-free lyric line; a line of chords only becomes an empty text line
-carrying its chords in order, as in <a class="reference internal" href="songleaf.parse.html#module-songleaf.parse" title="songleaf.parse"><code class="xref py py-mod docutils literal notranslate"><span class="pre">songleaf.parse</span></code></a>.</p></li>
+carrying its chords in order, as in <a class="reference internal" href="songleaf.parse.html#module-songleaf.parse" title="songleaf.parse"><code class="xref py py-mod docutils literal notranslate"><span class="pre">songleaf.parse</span></code></a>. Only brackets that
+are not something else are chords: a line of bracketed labels only
+(<code class="docutils literal notranslate"><span class="pre">[Verse</span> <span class="pre">1]</span></code>, <code class="docutils literal notranslate"><span class="pre">[---][Chorus]</span></code>) starts a section, and a repeat mark (<code class="docutils literal notranslate"><span class="pre">[x2]</span></code>)
+or a rule (<code class="docutils literal notranslate"><span class="pre">[---]</span></code>) elsewhere stays in the text as written.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">{title}</span></code>, <code class="docutils literal notranslate"><span class="pre">{artist}</span></code>, <code class="docutils literal notranslate"><span class="pre">{key}</span></code>, <code class="docutils literal notranslate"><span class="pre">{capo}</span></code>, <code class="docutils literal notranslate"><span class="pre">{tempo}</span></code> (and their short
 forms) become metadata.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">{soc}</span></code>/<code class="docutils literal notranslate"><span class="pre">{eoc}</span></code> (and verse, bridge, tab-less variants) and <code class="docutils literal notranslate"><span class="pre">{c:</span> <span class="pre">label}</span></code>
@@ -410,7 +414,7 @@ chords at those positions, counted over the song’s chords in text order, as so
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=9f547d6f"></script>
+</div><script src="../_static/documentation_options.js?v=d8383de7"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

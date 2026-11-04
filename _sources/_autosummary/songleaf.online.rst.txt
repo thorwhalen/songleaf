@@ -1,0 +1,67 @@
+songleaf.online
+===============
+
+.. automodule:: songleaf.online
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      Fetch
+      WEB_MODE_ENVVAR
+      WEB_SITES_ENVVAR
+      WEB_MODES
+      WEB_SOURCE
+      USER_AGENT
+      MIN_INTERVAL_SECONDS
+      TIMEOUT_SECONDS
+      MAX_PAGE_CHARS
+      MIN_CLOSENESS
+      CHORDS_BONUS
+      RESULTS_PER_SITE
+      MAX_EXTRACTIONS
+      MIN_LYRIC_LINES
+      MIN_CHORDS
+      URL_ID_CHARS
+      CHORDIE
+      WEB_SITES
+      DEFAULT_WEB_SITES
+      SAME_WORD_RATIO
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      chart_counts
+      chart_text
+      closeness
+      expand
+      find_online
+      is_usable
+      polite_fetch
+      site_names
+      text_blocks
+      url_id
+      web_key
+      web_mode
+      web_sites
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Candidate
+      ChartPageSite
+      Found
+      LrclibSite
+      StoredWebSource
+      WebSite
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      FetchFailed
+      OnlineUnavailable
+   

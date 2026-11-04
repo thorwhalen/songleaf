@@ -348,7 +348,7 @@ A section (verse, chorus, …) spanning `[start, end)`.
 * **Return type:**
   [`Annotation`](songleaf.model.html.md#songleaf.model.Annotation)
 
-### songleaf.sheet(query, , output='', pick=1, refresh=False, layout='dense', transpose=0, scale=1.0, sources=None, store=None, renderer=None)
+### songleaf.sheet(query, , output='', pick=1, refresh=False, layout='dense', transpose=0, scale=1.0, web='', sources=None, store=None, renderer=None)
 
 Make a one-page song sheet (PDF) for the best match of `query`.
 
@@ -370,6 +370,13 @@ itself, so it does not go with `layout` or `scale`.
 key); the stored song keeps its chords. `scale` multiplies the font size
 that fills the page: `0.8` for smaller type, `1.2` for larger type over
 more pages.
+
+`web` (default `$SONGLEAF_WEB_SEARCH`, else `fallback`): with `fallback` the
+song is looked for online (as `search` does) only when nothing here matches the
+query at all, since a sheet takes the best local match, chords and all; with
+`always` online first, the local best match when nothing usable is found; `off`
+never. To choose between a local near miss and the song online, `search` first and
+make the sheet from the key it shows.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -402,6 +409,7 @@ The keys of the stored songs.
 | [`library`](songleaf.library.html.md#module-songleaf.library)                 | The library's lists: which stored songs are in which lists, shared by everyone using it.                                           |
 | [`match`](songleaf.match.html.md#module-songleaf.match)                     | Where a query matched: the words it shares with a field, as spans to highlight, and the lyric line.                                |
 | [`model`](songleaf.model.html.md#module-songleaf.model)                     | The linked-artifact model: a song is lyrics text plus standoff annotations.                                                        |
+| [`online`](songleaf.online.html.md#module-songleaf.online)                   | Web expansion: find a song on chord and lyrics sites, extract it, keep it locally.                                                 |
 | [`packing`](songleaf.packing.html.md#module-songleaf.packing)                 | Line packing: which consecutive lines of a paragraph share a row.                                                                  |
 | [`parse`](songleaf.parse.html.md#module-songleaf.parse)                     | Parse chords-over-lyrics text into a [`Song`](songleaf.model.html.md#songleaf.model.Song).                    |
 | [`render`](songleaf.render.html.md#module-songleaf.render)                   | Render a song onto one dense page, with the lyrics as large as will fit.                                                           |

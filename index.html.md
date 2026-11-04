@@ -56,6 +56,7 @@ python -m songleaf import chart.txt --title "Paper Boats"   # paste from any sit
 python -m songleaf sheet paste:ea2a9d845214                 # the key `import` printed
 python -m songleaf song kaggle_chords:1234                # the song as data: text, chords, every key's chord table
 python -m songleaf build-index                            # once: search from an index, not the whole corpus in memory
+python -m songleaf search "some new song" --web always    # also look online (default: only when nothing here holds the query)
 ```
 
 The `songleaf` console script is the same command.
@@ -124,6 +125,24 @@ Loading the corpus takes about five seconds on the first search in a process, an
 Other sources surveyed, plus the Ultimate Guitar / MuseScore decisions, are in [`misc/docs/sources.md`]().
 
 `LocalFolderSource` indexes a folder of files you exported yourself from a paid chords/tab or score site (Ultimate Guitar, MuseScore, …) — text charts are parsed like the Kaggle corpus, score/tab files (Guitar Pro, MusicXML, MSCZ, MIDI, PDF) are attached as a score link. Default folder: `~/.local/share/songleaf/imports/` (moved by `SONGLEAF_DATA_DIR`).
+
+## Searching the web
+
+When nothing found locally holds the whole query (another band’s song of the same name, or the artist’s other songs, do not count), `search` looks online, on a list of sites, extract the best result into songleaf’s own format, and keep it in the song store as `web:<site>:<id>`, with the page URL, the site and a `personal` licence in its provenance. The next search finds it locally, with no request. It needs the `online` extra:
+
+```bash
+pip install "songleaf[online]"
+python -m songleaf search "birds of a feather billie eilish"     # finds it online the first time, locally after
+python -m songleaf search "wonderwall oasis" --web always        # look online even when it is here
+python -m songleaf search "paper boats" --web off                # never
+SONGLEAF_WEB_SITES=lrclib,chordie python -m songleaf search ...  # which sites to ask
+```
+
+`sheet` takes the best local match, chords and all, so it goes online only when nothing here matches at all, or with `--web always`; to choose between a local near miss and the song online, `search` first and make the sheet from the key it shows. `--web` (or `SONGLEAF_WEB_SEARCH`) is `fallback` (the default), `always` or `off`; `--web-sites` (or `SONGLEAF_WEB_SITES`) names the sites, comma-separated. The default list is LRCLIB only, an open lyrics API made for automated clients: it gives lyrics (with their timings) but no chords. Chordie is known but off by default; why each site is in or out is in [`misc/docs/sources.md`](). Every request obeys the site’s robots.txt, waits at least a second between two requests to one host, and says it is songleaf (no browser disguise). The web app does not go online unless built with `mk_app(web_search="fallback")`: its page searches as you type.
+
+Lyrics and chord charts are copyrighted. What songleaf fetches stays in your data directory, for your own use.
+
+A site is an entry in `songleaf.online.WEB_SITES`: a `ChartPageSite` (a search URL and a pattern for its result links) covers most chord sites, and any object with `name`, `license`, `chords`, `find(query, *, limit, fetch)` and `extract(candidate, *, fetch)` works. `fetch=` (`url -> text`) is the seam for the network.
 
 ## Web app
 

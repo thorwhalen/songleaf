@@ -17,6 +17,7 @@ songleaf.match
 
    .. autosummary::
    
+      covers
       lyric_snippet
       query_words
       shared_words

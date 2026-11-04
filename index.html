@@ -216,6 +216,7 @@
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.library.html">songleaf.library</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.match.html">songleaf.match</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.model.html">songleaf.model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.online.html">songleaf.online</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.parse.html">songleaf.parse</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/songleaf.render.html">songleaf.render</a></li>
@@ -342,6 +343,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>sheet<span class="w"> </span>paste:ea2a9d845214<span class="w">                 </span><span class="c1"># the key `import` printed</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>song<span class="w"> </span>kaggle_chords:1234<span class="w">                </span><span class="c1"># the song as data: text, chords, every key's chord table</span>
 python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>build-index<span class="w">                            </span><span class="c1"># once: search from an index, not the whole corpus in memory</span>
+python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>search<span class="w"> </span><span class="s2">"some new song"</span><span class="w"> </span>--web<span class="w"> </span>always<span class="w">    </span><span class="c1"># also look online (default: only when nothing here holds the query)</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">songleaf</span></code> console script is the same command.</p>
@@ -405,6 +407,20 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 <p>Other sources surveyed, plus the Ultimate Guitar / MuseScore decisions, are in <a class="reference internal" href="#misc/docs/sources.md"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">misc/docs/sources.md</span></code></span></a>.</p>
 <p><code class="docutils literal notranslate"><span class="pre">LocalFolderSource</span></code> indexes a folder of files you exported yourself from a paid chords/tab or score site (Ultimate Guitar, MuseScore, …) — text charts are parsed like the Kaggle corpus, score/tab files (Guitar Pro, MusicXML, MSCZ, MIDI, PDF) are attached as a score link. Default folder: <code class="docutils literal notranslate"><span class="pre">~/.local/share/songleaf/imports/</span></code> (moved by <code class="docutils literal notranslate"><span class="pre">SONGLEAF_DATA_DIR</span></code>).</p>
 </section>
+<section id="searching-the-web">
+<h2>Searching the web<a class="headerlink" href="#searching-the-web" title="Link to this heading">¶</a></h2>
+<p>When nothing found locally holds the whole query (another band’s song of the same name, or the artist’s other songs, do not count), <code class="docutils literal notranslate"><span class="pre">search</span></code> looks online, on a list of sites, extract the best result into songleaf’s own format, and keep it in the song store as <code class="docutils literal notranslate"><span class="pre">web:&lt;site&gt;:&lt;id&gt;</span></code>, with the page URL, the site and a <code class="docutils literal notranslate"><span class="pre">personal</span></code> licence in its provenance. The next search finds it locally, with no request. It needs the <code class="docutils literal notranslate"><span class="pre">online</span></code> extra:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"songleaf[online]"</span>
+python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>search<span class="w"> </span><span class="s2">"birds of a feather billie eilish"</span><span class="w">     </span><span class="c1"># finds it online the first time, locally after</span>
+python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>search<span class="w"> </span><span class="s2">"wonderwall oasis"</span><span class="w"> </span>--web<span class="w"> </span>always<span class="w">        </span><span class="c1"># look online even when it is here</span>
+python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>search<span class="w"> </span><span class="s2">"paper boats"</span><span class="w"> </span>--web<span class="w"> </span>off<span class="w">                </span><span class="c1"># never</span>
+<span class="nv">SONGLEAF_WEB_SITES</span><span class="o">=</span>lrclib,chordie<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w"> </span>search<span class="w"> </span>...<span class="w">  </span><span class="c1"># which sites to ask</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">sheet</span></code> takes the best local match, chords and all, so it goes online only when nothing here matches at all, or with <code class="docutils literal notranslate"><span class="pre">--web</span> <span class="pre">always</span></code>; to choose between a local near miss and the song online, <code class="docutils literal notranslate"><span class="pre">search</span></code> first and make the sheet from the key it shows. <code class="docutils literal notranslate"><span class="pre">--web</span></code> (or <code class="docutils literal notranslate"><span class="pre">SONGLEAF_WEB_SEARCH</span></code>) is <code class="docutils literal notranslate"><span class="pre">fallback</span></code> (the default), <code class="docutils literal notranslate"><span class="pre">always</span></code> or <code class="docutils literal notranslate"><span class="pre">off</span></code>; <code class="docutils literal notranslate"><span class="pre">--web-sites</span></code> (or <code class="docutils literal notranslate"><span class="pre">SONGLEAF_WEB_SITES</span></code>) names the sites, comma-separated. The default list is LRCLIB only, an open lyrics API made for automated clients: it gives lyrics (with their timings) but no chords. Chordie is known but off by default; why each site is in or out is in <a class="reference internal" href="#misc/docs/sources.md#web-sites-songleaf60"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">misc/docs/sources.md</span></code></span></a>. Every request obeys the site’s robots.txt, waits at least a second between two requests to one host, and says it is songleaf (no browser disguise). The web app does not go online unless built with <code class="docutils literal notranslate"><span class="pre">mk_app(web_search=&quot;fallback&quot;)</span></code>: its page searches as you type.</p>
+<p>Lyrics and chord charts are copyrighted. What songleaf fetches stays in your data directory, for your own use.</p>
+<p>A site is an entry in <code class="docutils literal notranslate"><span class="pre">songleaf.online.WEB_SITES</span></code>: a <code class="docutils literal notranslate"><span class="pre">ChartPageSite</span></code> (a search URL and a pattern for its result links) covers most chord sites, and any object with <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">license</span></code>, <code class="docutils literal notranslate"><span class="pre">chords</span></code>, <code class="docutils literal notranslate"><span class="pre">find(query,</span> <span class="pre">*,</span> <span class="pre">limit,</span> <span class="pre">fetch)</span></code> and <code class="docutils literal notranslate"><span class="pre">extract(candidate,</span> <span class="pre">*,</span> <span class="pre">fetch)</span></code> works. <code class="docutils literal notranslate"><span class="pre">fetch=</span></code> (<code class="docutils literal notranslate"><span class="pre">url</span> <span class="pre">-&gt;</span> <span class="pre">text</span></code>) is the seam for the network.</p>
+</section>
 <section id="web-app">
 <h2>Web app<a class="headerlink" href="#web-app" title="Link to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">songleaf.web.mk_app()</span></code> is a FastAPI app over the same functions: search, <code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/import</span></code> (paste a song; the page has a “Paste a song” box), the stored songs, the layout options, and the sheet as JSON, PDF and a PNG per page (for phone browsers that show no PDF inline). It also serves its own page, built phone first: the song starts right under the title and one row of controls. That row holds the text size, the key (−1 / +1, and a key picker that lists every chord of the song beside what it becomes), <strong>Aa</strong> and <strong>⋯</strong>. <strong>Aa</strong> holds the reader’s settings: paper (auto, light, sepia, dark, black), where the chords go (above the words, in the line, or off), one or two columns, shaded choruses, and under <em>Fine tuning</em> the colour and opacity of lyrics and chords, chord size, line spacing and font. <strong>⋯</strong> leads to <strong>Print</strong>, which shows the one-page PDF sheet. Its layout starts from the reader’s settings and can be changed there in the same words (chords above, on the words or in the line; rows filled or broken at rhymes; one or two columns; shading). Opacity prints as the matching shade on white paper. The page is a two-line HTML shell that loads its script and style from the app, so it changes with the package.</p>
@@ -445,7 +461,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-20 19:46 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/7d7ca22103a0c6e275e4d87a752ed999d81237ac">7d7ca22</a> (main) · songleaf 0.0.29 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-04 06:15 UTC from <a href="https://github.com/thorwhalen/songleaf/commit/77cb0c9d577463c0a7c4669b5f435b05e906b8c8">77cb0c9</a> (main) · songleaf 0.0.30 · <a href="about-this-build.html">about this build</a></p>
         </article>
       </div>
       <footer>
@@ -495,6 +511,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
 <li><a class="reference internal" href="#the-song-model">The song model</a></li>
 <li><a class="reference internal" href="#storage">Storage</a></li>
 <li><a class="reference internal" href="#sources">Sources</a></li>
+<li><a class="reference internal" href="#searching-the-web">Searching the web</a></li>
 <li><a class="reference internal" href="#web-app">Web app</a></li>
 <li><a class="reference internal" href="#extending">Extending</a></li>
 </ul>
@@ -508,7 +525,7 @@ python<span class="w"> </span>-m<span class="w"> </span>songleaf<span class="w">
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=9f547d6f"></script>
+</div><script src="_static/documentation_options.js?v=d8383de7"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

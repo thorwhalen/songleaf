@@ -213,6 +213,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.library.html">songleaf.library</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.match.html">songleaf.match</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.model.html">songleaf.model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.online.html">songleaf.online</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.packing.html">songleaf.packing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.parse.html">songleaf.parse</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/songleaf.render.html">songleaf.render</a></li>
@@ -327,6 +328,23 @@
 <span class="sd">    4</span>
 <span class="sd">    """</span>
     <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">query_words</span><span class="p">(</span><span class="n">query</span><span class="p">))</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">query_words</span><span class="p">(</span><span class="n">text</span><span class="p">)))</span></div>
+
+
+
+<div class="viewcode-block" id="covers">
+<a class="viewcode-back" href="../../_autosummary/songleaf.match.html#songleaf.match.covers">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">covers</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Whether ``text`` holds the whole ``query`` word by word, as :class:`WordIndex` matches.</span>
+
+<span class="sd">    What says a search found *the* song a query names, not just a song sharing some of its</span>
+<span class="sd">    words (the web expansion goes online when no title and artist covers the query).</span>
+
+<span class="sd">    &gt;&gt;&gt; covers("wonderwal oasis", "Wonderwall Oasis"), covers("birds of a feather", "Birds Of A Feather The Band")</span>
+<span class="sd">    (True, True)</span>
+<span class="sd">    &gt;&gt;&gt; covers("birds of a feather billie", "Birds Of A Feather The Band")</span>
+<span class="sd">    False</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">WordIndex</span><span class="p">([</span><span class="n">text</span><span class="p">])</span><span class="o">.</span><span class="n">matching</span><span class="p">(</span><span class="n">query</span><span class="p">))</span></div>
 
 
 
@@ -545,7 +563,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=9f547d6f"></script>
+</div><script src="../../_static/documentation_options.js?v=d8383de7"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

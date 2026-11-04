@@ -8,7 +8,10 @@ lines.
 
 - `[X]` becomes a `chord` annotation at that character offset of the
   bracket-free lyric line; a line of chords only becomes an empty text line
-  carrying its chords in order, as in [`songleaf.parse`](songleaf.parse.html.md#module-songleaf.parse).
+  carrying its chords in order, as in [`songleaf.parse`](songleaf.parse.html.md#module-songleaf.parse). Only brackets that
+  are not something else are chords: a line of bracketed labels only
+  (`[Verse 1]`, `[---][Chorus]`) starts a section, and a repeat mark (`[x2]`)
+  or a rule (`[---]`) elsewhere stays in the text as written.
 - `{title}`, `{artist}`, `{key}`, `{capo}`, `{tempo}` (and their short
   forms) become metadata.
 - `{soc}`/`{eoc}` (and verse, bridge, tab-less variants) and `{c: label}`

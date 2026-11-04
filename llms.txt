@@ -19,6 +19,7 @@
 - [songleaf.library](_autosummary/songleaf.library.html.md): The library’s lists: which stored songs are in which lists, shared by everyone using it.
 - [songleaf.match](_autosummary/songleaf.match.html.md): Where a query matched: the words it shares with a field, as spans to highlight, and the lyric line.
 - [songleaf.model](_autosummary/songleaf.model.html.md): The linked-artifact model: a song is lyrics text plus standoff annotations.
+- [songleaf.online](_autosummary/songleaf.online.html.md): Web expansion: find a song on chord and lyrics sites, extract it, keep it locally.
 - [songleaf.packing](_autosummary/songleaf.packing.html.md): Line packing: which consecutive lines of a paragraph share a row.
 - [songleaf.parse](_autosummary/songleaf.parse.html.md): Parse chords-over-lyrics text into a &#96;Song&#96;.
 - [songleaf.render](_autosummary/songleaf.render.html.md): Render a song onto one dense page, with the lyrics as large as will fit.
@@ -31,7 +32,7 @@
 - [songleaf.ultimate_guitar](_autosummary/songleaf.ultimate_guitar.html.md): Ultimate Guitar: community chord charts the reader opened themselves (songleaf#28).
 - [songleaf.viewed](_autosummary/songleaf.viewed.html.md): Each viewer’s &#42;Viewed&#42; list: the songs they opened, the most recent first.
 - [For AI agents](ai-agents.html.md): &#96;songleaf&#96; ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-20 19:46 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-11-04 06:15 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
 
 ## Optional
 

@@ -28,11 +28,12 @@ are not there.
 
 ### Functions
 
-| [`lyric_snippet`](#songleaf.match.lyric_snippet)(text, query, \*[, width])   | The line of `text` holding the most words of `query` (whole words), with their spans.   |
-|--------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
-| [`query_words`](#songleaf.match.query_words)(query)                        | The distinct words of a query, lowercased, in order; `10,000` is the word `10000`.      |
-| [`shared_words`](#songleaf.match.shared_words)(query, text)                 | How many distinct words of `query` are words of `text`.                                 |
-| [`word_spans`](#songleaf.match.word_spans)(text, query)                   | `[start, end]` of each word of `text` that a word of `query` starts, in order.          |
+| [`covers`](#songleaf.match.covers)(query, text)                     | Whether `text` holds the whole `query` word by word, as [`WordIndex`](#songleaf.match.WordIndex) matches.   |
+|------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
+| [`lyric_snippet`](#songleaf.match.lyric_snippet)(text, query, \*[, width]) | The line of `text` holding the most words of `query` (whole words), with their spans.                                         |
+| [`query_words`](#songleaf.match.query_words)(query)                      | The distinct words of a query, lowercased, in order; `10,000` is the word `10000`.                                            |
+| [`shared_words`](#songleaf.match.shared_words)(query, text)               | How many distinct words of `query` are words of `text`.                                                                       |
+| [`word_spans`](#songleaf.match.word_spans)(text, query)                 | `[start, end]` of each word of `text` that a word of `query` starts, in order.                                                |
 
 ### Classes
 
@@ -112,6 +113,23 @@ The rows holding `word` (a query word, lowercased), a word it starts, or one it 
 
 * **Return type:**
   [`set`](https://docs.python.org/3/builtins/stdtypes.html#set)[[`int`](https://docs.python.org/3/builtins/functions.html#int)]
+
+### songleaf.match.covers(query, text)
+
+Whether `text` holds the whole `query` word by word, as [`WordIndex`](#songleaf.match.WordIndex) matches.
+
+What says a search found *the* song a query names, not just a song sharing some of its
+words (the web expansion goes online when no title and artist covers the query).
+
+```pycon
+>>> covers("wonderwal oasis", "Wonderwall Oasis"), covers("birds of a feather", "Birds Of A Feather The Band")
+(True, True)
+>>> covers("birds of a feather billie", "Birds Of A Feather The Band")
+False
+```
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
 ### songleaf.match.lyric_snippet(text, query, , width=90)
 
