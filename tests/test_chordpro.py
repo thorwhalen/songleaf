@@ -46,7 +46,11 @@ def test_inline_chords_anchor_on_the_bracket_free_text():
     assert "[" not in song.text and "{" not in song.text
     assert song.text.startswith("\n\nPaper boats drift\non the stream\n")
     assert chords_of(song)[:5] == [
-        (0, "G"), (0, "D"), (0, "Em"), (8, "G"), (14, "D"),
+        (0, "G"),
+        (0, "D"),
+        (0, "Em"),
+        (8, "G"),
+        (14, "D"),
     ]
 
 
@@ -59,7 +63,12 @@ def test_chord_only_line_is_an_empty_line_with_its_chords_in_order():
 def test_sections_span_their_lines_and_trailing_comment_is_a_marker():
     song = parse_chordpro(CHART)
     sections = song.of_kind("section")
-    assert [a.body["label"] for a in sections] == ["Intro", "Verse 1", "Chorus", "Outro"]
+    assert [a.body["label"] for a in sections] == [
+        "Intro",
+        "Verse 1",
+        "Chorus",
+        "Outro",
+    ]
     verse = sections[1]
     assert song.text[verse.start : verse.end] == "Paper boats drift\non the stream"
     assert sections[-1].body.get("marker") is True
@@ -92,3 +101,29 @@ def test_txt_files_still_use_chords_over_lyrics(tmp_path, chart):
     source = LocalFolderSource(str(tmp_path))
     (hit,) = source.search("paper boats")
     assert source.get(hit.id).of_kind("chord")
+
+
+def test_only_brackets_that_read_as_chords_are_chords():
+    song = parse_chordpro(
+        "[---][Verse 1]\n[G]Paper boats [D]drift [x2]\n[N.C.]silver stream"
+    )
+    assert [a.body["symbol"] for a in song.of_kind("chord")] == ["G", "D", "N.C."]
+    assert song.text == "Paper boats drift [x2]\nsilver stream"
+    (verse,) = song.of_kind("section")
+    assert verse.body["label"] == "Verse 1" and verse.start == 0
+
+
+def test_free_form_chordpro_chords_stay_chords():
+    song = parse_chordpro("[H7]Paper [Hm]boats [am]drift [N/C]on")
+    assert [a.body["symbol"] for a in song.of_kind("chord")] == [
+        "H7",
+        "Hm",
+        "am",
+        "N/C",
+    ]
+
+
+def test_a_label_right_after_a_chorus_directive_is_one_section():
+    song = parse_chordpro("{soc}\n[Chorus]\nla la [G]la\n{eoc}")
+    assert song.text == "la la la"
+    assert [a.body["label"] for a in song.of_kind("section")] == ["Chorus"]

@@ -74,6 +74,8 @@ class MemorySource:
 def isolated_data_dir(tmp_path, monkeypatch):
     """No test writes to the real data root."""
     monkeypatch.setenv("SONGLEAF_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("SONGLEAF_WEB_SEARCH", "off")  # no test reaches the network
+    monkeypatch.delenv("SONGLEAF_WEB_SITES", raising=False)
 
 
 @pytest.fixture

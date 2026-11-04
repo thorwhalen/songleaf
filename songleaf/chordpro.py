@@ -6,7 +6,10 @@ lines.
 
 - ``[X]`` becomes a ``chord`` annotation at that character offset of the
   bracket-free lyric line; a line of chords only becomes an empty text line
-  carrying its chords in order, as in :mod:`songleaf.parse`.
+  carrying its chords in order, as in :mod:`songleaf.parse`. Only brackets that
+  are not something else are chords: a line of bracketed labels only
+  (``[Verse 1]``, ``[---][Chorus]``) starts a section, and a repeat mark (``[x2]``)
+  or a rule (``[---]``) elsewhere stays in the text as written.
 - ``{title}``, ``{artist}``, ``{key}``, ``{capo}``, ``{tempo}`` (and their short
   forms) become metadata.
 - ``{soc}``/``{eoc}`` (and verse, bridge, tab-less variants) and ``{c: label}``
@@ -72,12 +75,65 @@ def _meta_value(name: str, value: str):
     return value
 
 
+#: A bracket that is a repeat mark, not a chord: ``[x2]``, ``[2x]``, ``[(x3)]``.
+_REPEAT_RE = re.compile(r"\(?\s*(?:x\s*\d+|\d+\s*x)\s*\)?", re.IGNORECASE)
+#: A bracket of decoration only: ``[---]``, ``[===]``.
+_RULE_RE = re.compile(r"[-=_~.\s]+")
+
+
+def _is_label(symbol: str) -> bool:
+    """Whether a bracket's content is a section label (``Verse 1``), not a chord."""
+    from songleaf.parse import _header
+
+    return _header(f"[{symbol}]") is not None
+
+
+def _is_chord(symbol: str) -> bool:
+    """Whether a bracket's content is a chord: anything but a label, a repeat mark or a rule.
+
+    ChordPro chords are free-form (``H7``, ``am``, ``N.C.``, ``*Coda``), so only what is
+    plainly something else is not one.
+    """
+    return not (
+        _is_label(symbol) or _REPEAT_RE.fullmatch(symbol) or _RULE_RE.fullmatch(symbol)
+    )
+
+
+def _section_label(raw: str) -> str | None:
+    """The label of a line of bracketed labels only (``[---][Verse 1]``), or ``None``.
+
+    >>> _section_label("[---][Verse 1]"), _section_label("[G]la"), _section_label("[x2]")
+    ('Verse 1', None, None)
+    """
+    from songleaf.parse import _header
+
+    if _CHORD_RE.sub("", raw).strip():
+        return None
+    labels = [m.group(1).strip() for m in _CHORD_RE.finditer(raw)]
+    if not any(_is_label(label) for label in labels):
+        return None
+    if any(_is_chord(label) for label in labels if label):
+        return None
+    for label in labels:
+        header = _header(f"[{label}]")
+        if header:
+            return header[0]
+    return None
+
+
 def _lyric_line(raw: str) -> tuple[str, list]:
-    """A ChordPro line as its lyric text and ``(offset, symbol)`` chords."""
+    """A ChordPro line as its lyric text and ``(offset, symbol)`` chords.
+
+    >>> _lyric_line("[G]Sing it [x2]")
+    ('Sing it [x2]', [(0, 'G')])
+    """
     text, chords, last = "", [], 0
     for match in _CHORD_RE.finditer(raw):
         text += raw[last : match.start()]
-        if symbol := match.group(1).strip():
+        symbol = match.group(1).strip()
+        if symbol and not _is_chord(symbol):
+            text += match.group(0)  # not a chord: the text as written
+        elif symbol:
             chords.append((len(text), symbol))
         last = match.end()
     text += raw[last:]
@@ -144,6 +200,11 @@ def parse_chordpro(
         if not line.strip():
             if pending is None and lines and not is_blank(len(lines) - 1):
                 lines.append(("", []))
+            continue
+        if (label := _section_label(line)) is not None:
+            if pending is None:  # "{soc}" then "[Chorus]": one section, not two
+                close_pending()
+            pending = label
             continue
         add(*_lyric_line(line))
     close_pending()

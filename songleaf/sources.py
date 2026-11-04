@@ -541,13 +541,18 @@ def default_sources() -> tuple:
 
     The Kaggle corpus is read from its search index when one has been built
     (``songleaf build-index``): the same songs and keys, in tens of MB rather
-    than the GB the whole corpus takes in memory.
+    than the GB the whole corpus takes in memory. Before it, the songs found on
+    the web and kept in the song store (:class:`songleaf.online.StoredWebSource`),
+    so a song fetched once is found locally from then on. They come first: each
+    kind of match keeps ``limit`` songs, sources in order, and a song the reader
+    went online for must not be cut by the corpus's near misses.
     """
     from songleaf.kaggle_index import KaggleChordsIndex, kaggle_index_path
+    from songleaf.online import StoredWebSource
 
     if os.path.isfile(kaggle_index_path()):
-        return (KaggleChordsIndex(),)
-    return (KaggleChordsSource(),)
+        return (StoredWebSource(), KaggleChordsIndex())
+    return (StoredWebSource(), KaggleChordsSource())
 
 
 def search(

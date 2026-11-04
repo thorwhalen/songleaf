@@ -105,13 +105,13 @@ def test_the_index_is_used_by_default_once_built(monkeypatch, tmp_path):
     monkeypatch.setenv("SONGLEAF_DATA_DIR", str(tmp_path))
     sources_module.default_sources.cache_clear()
     try:
-        assert type(sources_module.default_sources()[0]) is KaggleChordsSource
+        assert type(sources_module.default_sources()[-1]) is KaggleChordsSource
         corpus = pd.DataFrame(
             {name: ["x"] for name in KaggleChordsSource.columns}
         ).assign(**{"Unnamed: 0": [5], "popularity": [1]})
         build_kaggle_index(loader=lambda: corpus)
         sources_module.default_sources.cache_clear()
-        (source,) = sources_module.default_sources()
+        *_, source = sources_module.default_sources()  # after the web songs kept here
         assert type(source) is KaggleChordsIndex and source.path == kaggle_index_path()
     finally:
         sources_module.default_sources.cache_clear()

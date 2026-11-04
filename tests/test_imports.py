@@ -1,7 +1,7 @@
 import subprocess
 import sys
 
-HEAVY = ("sung", "pandas", "reportlab", "cw", "rapidfuzz", "dol")
+HEAVY = ("sung", "pandas", "reportlab", "cw", "rapidfuzz", "dol", "scraped")
 
 
 def test_importing_songleaf_loads_no_heavy_dependency():

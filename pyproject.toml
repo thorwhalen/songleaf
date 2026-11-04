@@ -63,6 +63,10 @@ score = [
     "verovio",
     "svglib",
 ]
+# Search the web for songs not found locally (songleaf.online): robots-aware, polite fetching.
+online = [
+    "scraped>=0.0.30",
+]
 # Read the datasets from S3 (SONGLEAF_DATASETS_URI), through s3dol.
 s3 = [
     "s3dol",
