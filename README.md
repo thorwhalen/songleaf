@@ -137,11 +137,22 @@ python -m songleaf search "paper boats" --web off                # never
 SONGLEAF_WEB_SITES=lrclib,chordie python -m songleaf search ...  # which sites to ask
 ```
 
-`sheet` takes the best local match, chords and all, so it goes online only when nothing here matches at all, or with `--web always`; to choose between a local near miss and the song online, `search` first and make the sheet from the key it shows. `--web` (or `SONGLEAF_WEB_SEARCH`) is `fallback` (the default), `always` or `off`; `--web-sites` (or `SONGLEAF_WEB_SITES`) names the sites, comma-separated. The default list is LRCLIB only, an open lyrics API made for automated clients: it gives lyrics (with their timings) but no chords. Chordie is known but off by default; why each site is in or out is in [`misc/docs/sources.md`](misc/docs/sources.md#web-sites-songleaf60). Every request obeys the site's robots.txt, waits at least a second between two requests to one host, and says it is songleaf (no browser disguise). The web app does not go online unless built with `mk_app(web_search="fallback")`: its page searches as you type.
+`sheet` takes the best local match, chords and all, so it goes online only when nothing here matches at all, or with `--web always`; to choose between a local near miss and the song online, `search` first and make the sheet from the key it shows. `--web` (or `SONGLEAF_WEB_SEARCH`) is `fallback` (the default), `always` or `off`; `--web-sites` (or `SONGLEAF_WEB_SITES`) names the sites, comma-separated. The default list is LRCLIB only, an open lyrics API made for automated clients: it gives lyrics (with their timings) but no chords. Chordie is known but off by default; why each site is in or out is in [`misc/docs/sources.md`](misc/docs/sources.md#web-sites-songleaf60). Every request obeys the site's robots.txt, waits at least a second between two requests to one host, and says it is songleaf (no browser disguise). The web app does not go online as you type unless built with `mk_app(web_search="fallback")`: its page searches on every keystroke. Built with `mk_app(web_on_request=True)` (and the `online` extra), the page instead shows a **Search the web for “…”** button after the results: one press asks the configured sites once (`/search?web=always`), and a song found there is kept and shown with where it came from ([songleaf#62](https://github.com/thorwhalen/songleaf/issues/62)). `GET /web` says whether it is available.
 
 Lyrics and chord charts are copyrighted. What songleaf fetches stays in your data directory, for your own use.
 
-A site is an entry in `songleaf.online.WEB_SITES`: a `ChartPageSite` (a search URL and a pattern for its result links) covers most chord sites, and any object with `name`, `license`, `chords`, `find(query, *, limit, fetch)` and `extract(candidate, *, fetch)` works. `fetch=` (`url -> text`) is the seam for the network.
+### A page you name
+
+`import-url` reads one song page you give it and keeps it the same way, so the next search finds it locally:
+
+```bash
+python -m songleaf import-url "https://www.chordie.com/chord.pere/..."           # web:chordie:<id>
+SONGLEAF_UG_URL=1 python -m songleaf import-url "https://tabs.ultimate-guitar.com/tab/<artist>/<song>-chords-<id>"   # ug:<id>
+```
+
+Pages on Chordie, AZChords and Ultimate Guitar are read. The site is picked from the URL (`songleaf.online.site_for_url`); a URL no known site reads is refused with the list of those that do, and pasting the chart (`import`) works for any site. Ultimate Guitar community charts are read only on your own machine with `SONGLEAF_UG_URL=1`, never from the web app, and official or Pro tabs are refused ([songleaf#28](https://github.com/thorwhalen/songleaf/issues/28)). A page already kept is not fetched again unless `--refresh`. Songs you pasted (`paste:`), imported (`ug:`, `web:`) or found online are all searched locally, first.
+
+A site is an entry in `songleaf.online.WEB_SITES`: a `ChartPageSite` (a search URL and a pattern for its result links) covers most chord sites, and any object with `name`, `license`, `chords`, `find(query, *, limit, fetch)` and `extract(candidate, *, fetch)` works. A site that can also read a page by URL has `candidate_for(url)` (a `ChartPageSite` has it when given `page_path=`, a regex over its song pages' paths). `fetch=` (`url -> text`) is the seam for the network.
 
 ## Web app
 

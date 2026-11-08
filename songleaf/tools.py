@@ -181,6 +181,11 @@ def _expand_online(query: str, *, mode: str, sites="", store=None, fetch=None):
 def _tagged(row: dict, kind: str, query: str) -> dict:
     from songleaf.match import word_spans
 
+    site = (row.get("meta") or {}).get("site")
+    if site:  # a song the reader brought in: how a page names where it came from
+        from songleaf.online import label_of
+
+        row["site_label"] = label_of(site)
     row["match"] = kind
     row["highlight"] = {
         "title": word_spans(row["title"], query),
@@ -484,9 +489,17 @@ def _resolve(query: str, *, pick: int, refresh: bool, sources, store, web="off")
             found = f"only {len(hits)} match" if hits else "nothing matches"
             raise _sources.SongNotFound(f"No song number {pick} for {query!r}: {found}")
         key = hits[pick - 1].key
-    if refresh or not _is_stored(store, key):
+    if not _is_stored(store, key) or (refresh and not _is_kept(key)):
         store[key] = _sources.get_song(key, sources=sources)
     return key, store[key]
+
+
+def _is_kept(key: str) -> bool:
+    """Whether ``key`` names a song the reader brought in: the store is its only copy, so
+    there is no source to refresh it from (``import-url --refresh`` re-reads a page)."""
+    from songleaf.online import KEPT_SOURCES
+
+    return key.partition(":")[0] in KEPT_SOURCES
 
 
 def _web_mode(web) -> str:
@@ -576,26 +589,36 @@ def import_file(
 import_file.__name__ = "import"  # the CLI command is ``songleaf import``
 
 
-def import_url(url: str, *, refresh: bool = False, store=None, source=None) -> dict:
-    """Fetch one community Ultimate Guitar chord page and store its chart as ``ug:<id>``.
+def import_url(
+    url: str,
+    *,
+    refresh: bool = False,
+    web_sites: str = "",
+    store=None,
+    source=None,
+    fetch=None,
+) -> dict:
+    """Read one song page you name (a chord site's URL) and keep it, so search finds it.
 
-    Local command line only, and off unless ``SONGLEAF_UG_URL=1`` is set: prefer
-    pasting, or the bookmarklet run on the page you opened (see
-    ``songleaf.ultimate_guitar``). Official and Pro pages are refused. A chart
-    already stored is not fetched again unless ``refresh``.
+    The site is picked from the URL (``songleaf.online.WEB_SITES``: Chordie, and
+    Ultimate Guitar community charts). The song is stored under ``web:<site>:<id>``,
+    or ``ug:<id>`` for Ultimate Guitar, and is found by local search from then on. A
+    page already kept is not fetched again unless ``refresh``. ``web_sites`` limits the
+    sites that may read it (comma-separated names; default: every known one).
+
+    Ultimate Guitar is local command line only and off unless ``SONGLEAF_UG_URL=1``;
+    official and Pro pages are refused (prefer pasting, or the bookmarklet run on the
+    page you opened: ``songleaf.ultimate_guitar``). ``source`` is a site object to read
+    with instead of the registry's (for tests or a site of your own).
     """
-    from songleaf.ultimate_guitar import UltimateGuitarURLSource, ug_key
+    from songleaf import online
 
-    store = song_store() if store is None else store
-    key = ug_key(url)
-    if not key:
-        raise ValueError(f"Not an Ultimate Guitar tab URL (no tab id): {url!r}")
-    if not refresh and _is_stored(store, key):
-        song = store[key]
-        return {**_summary(key, song, "ultimate-guitar"), "cached": True}
-    source = UltimateGuitarURLSource() if source is None else source
-    song = source.get(url)
-    return {**_stored(key, song, "ultimate-guitar", store=store), "cached": False}
+    sites = [source] if source is not None else (web_sites or None)
+    found = online.import_url(
+        url, sites=sites, fetch=fetch, store=store, refresh=refresh
+    )
+    site = found.song.provenance.get("site", "")
+    return {**_summary(found.key, found.song, site), "site": site, "cached": found.cached}
 
 
 def forget(key: str, *, store=None, library_root=None) -> dict:

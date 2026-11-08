@@ -7,7 +7,10 @@ apps.thorwhalen.com). Its routes:
   (``tools.search``): each song once, tagged with where it matched (``match``: ``list``,
   ``title``, ``artist``, ``lyrics``, in that order), with the matched words as spans and,
   for lyrics, the line that matched. ``title=``, ``artist=``, ``lyrics=`` narrow instead
-  (songs matching every field given), as before
+  (songs matching every field given), as before. ``web=always`` also looks online, once
+  (the page's "Search the web" control), only in an app built with ``web_on_request``
+- ``GET /web``: whether this app can search the web on request (``available``), the sites it
+  asks (as a page names them), and why not when it cannot
 - ``GET /songs``: the stored songs, with title and artist
 - ``DELETE /songs?key=``: remove one from them, its lists and every Viewed list (``tools.forget``)
 - ``GET /viewed``: the songs the viewer opened, the most recent first (``tools.viewed``);
@@ -209,6 +212,8 @@ def mk_app(
     image_scale: float = 2.0,
     get_json=None,
     web_search: str = "off",
+    web_on_request: bool = False,
+    fetch=None,
 ):
     """The FastAPI app. ``sources`` and ``store`` are the seams of :mod:`songleaf.tools`;
     ``library_root`` is where the groups are kept (default: the data root).
@@ -216,6 +221,10 @@ def mk_app(
     ``web_search`` is the web mode of ``/search`` and ``/sheet`` (:mod:`songleaf.online`):
     ``off`` by default, because the page searches as the reader types and a search that
     goes online would make requests, and keep songs, for every half-typed query.
+    ``web_on_request`` lets the page ask once, explicitly (``/search?web=always``, the
+    "Search the web" control; songleaf#62): the sites asked are the configured ones
+    (``$SONGLEAF_WEB_SITES``, else LRCLIB), and it needs the ``online`` extra. ``fetch``
+    (``url -> text``) is how those requests are made (default: ``online.polite_fetch``).
 
     ``image_scale`` is pixels per PDF point for ``/sheet.png`` (2: an A4 page is
     1190 pixels wide, sharp on a phone). ``get_json`` is how ``POST /sync`` reaches
@@ -243,10 +252,25 @@ def mk_app(
         lyrics: str = "",
         limit: int = Query(20, ge=1, le=_MAX_LIMIT),
         list_songs: int = Query(3, ge=0, le=_MAX_LIMIT),
+        web: str = Query("", pattern="^(always)?$"),
     ) -> list[dict]:
         q, title, artist, lyrics = (text.strip() for text in (q, title, artist, lyrics))
         if not (q or title or artist or lyrics):
             return []
+        from songleaf import online
+
+        mode = web_search
+        if web:
+            if not web_on_request:
+                raise HTTPException(403, "This app does not search the web on request")
+            reason = "" if fetch else online.unavailable_reason()
+            try:
+                online.web_sites()
+            except ValueError as error:  # a misspelt $SONGLEAF_WEB_SITES
+                reason = reason or str(error)
+            if reason:
+                raise HTTPException(503, reason)
+            mode = web
         if title or artist or lyrics:  # the narrower search: no lists
             return tools.search(
                 q,
@@ -254,19 +278,33 @@ def mk_app(
                 artist=artist,
                 lyrics=lyrics,
                 limit=limit,
-                web=web_search,
+                web=mode,
                 sources=sources,
                 store=store,
+                fetch=fetch,
             )
         return tools.search(
             q,
             limit=limit,
             list_songs=list_songs,
-            web=web_search,
+            web=mode,
             sources=sources,
             store=store,
             library_root=library_root,
+            fetch=fetch,
         )
+
+    @app.get("/web")
+    def web_status() -> dict:
+        from songleaf import online
+
+        reason = "" if web_on_request else "off in this app"
+        reason = reason or ("" if fetch else online.unavailable_reason())
+        try:
+            sites = [online.site_label(site) for site in online.web_sites()]
+        except ValueError as error:  # a misspelt $SONGLEAF_WEB_SITES
+            sites, reason = [], reason or str(error)
+        return {"available": not reason, "sites": sites, "reason": reason}
 
     @app.get("/viewed")
     def viewed(request: Request) -> list[dict]:

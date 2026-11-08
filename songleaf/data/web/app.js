@@ -837,11 +837,76 @@
       clear && h("button", { type: "button", class: "text", onclick: clear }, "Clear the search"));
   }
 
+  // ----- search the web, on request (songleaf#62) -----------------------------------------
+  // Typing never goes online: one press of "Search the web" asks the server's sites once
+  // (`/search?web=always`), and a song found there is kept with the reader's songs, so the
+  // next search finds it here. Shown only when the app allows it (`GET /web`, asked once).
+  let webStatus = null;
+  function webAvailability() {
+    if (!webStatus) {
+      webStatus = getJSON("/web").catch(() => {
+        webStatus = null; // a failed ask is asked again by the next search, not kept
+        return { available: false, sites: [] };
+      });
+    }
+    return webStatus;
+  }
+
+  async function appendWebControl(route, results, gen) {
+    const status = await webAvailability();
+    if (gen !== generation || !status.available || !results.isConnected) return;
+    results.append(webControl(route, status.sites || [], gen, results));
+  }
+
+  function webControl(route, sites, gen, results) {
+    const asks = sites.length ? `Asks ${sites.join(", ")}. ` : "";
+    const note = h("p", { class: "muted" }, `${asks}A song found there is kept with your songs.`);
+    const said = h("p", { class: "muted", role: "status" });
+    const button = h("button", { type: "button", class: "secondary-button web-search" }, `Search the web for “${route.q}”`);
+    const box = h("section", { class: "web-search-box", "aria-label": "Search the web" }, button, note, said);
+    let busy = false;
+    const setPending = (on) => {
+      busy = on;
+      for (const [name, value] of [["data-pending", ""], ["aria-busy", "true"], ["aria-disabled", "true"]]) {
+        if (on) button.setAttribute(name, value); else button.removeAttribute(name);
+      }
+      button.textContent = on ? "Searching the web…" : `Search the web for “${route.q}”`;
+    };
+    button.addEventListener("pointerdown", () => button.setAttribute("data-pressed", ""));
+    for (const end of ["pointerup", "pointercancel", "pointerleave"]) button.addEventListener(end, () => button.removeAttribute("data-pressed"));
+    button.addEventListener("click", async () => {
+      if (busy) return; // one request at a time: a repeat press while it runs does nothing
+      setPending(true);
+      said.textContent = "";
+      const params = new URLSearchParams({ q: route.q, limit: "25", list_songs: String(LIST_PREVIEW), web: "always" });
+      try {
+        const hits = await getJSON("/search?" + params);
+        if (gen !== generation) return;
+        const found = hits.filter((hit) => hit.match === "web");
+        if (!found.length) {
+          box.replaceChildren(h("p", { class: "muted", role: "status" },
+            `Nothing new found on the web for “${route.q}”.`));
+          return;
+        }
+        const nothingHere = results.querySelector(".empty > p"); // "No … matches" is no longer the news
+        if (nothingHere) nothingHere.remove();
+        box.replaceChildren(h("h2", { class: "section-head" }, "From the web"), songList(found, { fromLabel: "Results" }),
+          h("p", { class: "muted", role: "status" }, "Kept with your songs: a search finds it here from now on."));
+      } catch (error) {
+        if (gen !== generation) return;
+        setPending(false);
+        said.textContent = `The web search did not go through (${error.message}).`;
+      }
+    });
+    return box;
+  }
+
   // Where a hit matched, in the order the server ranks them (`match`), and what each section says.
   const MATCH_SECTIONS = [
     { kind: "list", label: "In your lists" },
     { kind: "title", label: "Titles" },
     { kind: "artist", label: "Artists" },
+    { kind: "web", label: "From the web" },
     { kind: "lyrics", label: "Lyrics" },
   ];
   const LIST_PREVIEW = 3; // songs shown under a list whose name matched; the list itself opens the rest
@@ -854,6 +919,7 @@
       const hits = await getJSON("/search?" + params);
       if (gen !== generation) return;
       results.replaceChildren(...(hits.length ? hitSections(hits) : [noMatch(route, after.clear)]));
+      appendWebControl(route, results, gen);
       if (after.restoreY != null) window.scrollTo(0, after.restoreY);
     } catch (error) {
       if (gen !== generation) return;
@@ -872,7 +938,7 @@
     const out = [];
     if (!byKind.get("title").length) {
       const others = MATCH_SECTIONS.filter((s) => s.kind !== "title" && byKind.get(s.kind).length)
-        .map((s) => ({ list: "list", artist: "artist", lyrics: "lyrics" })[s.kind]);
+        .map((s) => ({ list: "list", artist: "artist", web: "web", lyrics: "lyrics" })[s.kind]);
       const words = others.length > 1 ? `${others.slice(0, -1).join(", ")} and ${others[others.length - 1]}` : others[0];
       out.push(h("p", { class: "no-title muted" }, `No title matches — showing ${words} matches`));
     }
@@ -1381,7 +1447,7 @@
         },
       }, h("span", { class: "title" }, marked(song.title || song.key, marks.title)),
       song.artist && h("span", { class: "artist" }, marked(song.artist, marks.artist)),
-      snippet, groupLine(song.key));
+      snippet, originLine(song), groupLine(song.key));
       const row = h("li", {}, link);
       if (onRemove) {
         row.append(h("button", {
@@ -1391,6 +1457,13 @@
       }
       return row;
     }));
+  }
+
+  // Where a song the reader brought in came from (a web site, Ultimate Guitar): its site, said
+  // in words. The row is a link, so the page's URL is not a second link inside it.
+  function originLine(song) {
+    const site = song.site_label || (song.meta && song.meta.site);
+    return site ? h("span", { class: "origin muted" }, `from ${site}`) : null;
   }
 
   function groupLine(key) {

@@ -186,7 +186,7 @@ def import_song(
     importer = _choose(text, importers, format)
     provenance = {**PASTE_PROVENANCE, **({"url": url} if url else {})}
     if url and _ug.is_ultimate_guitar_url(url):
-        provenance["site"] = "ultimate-guitar"
+        provenance["site"] = _ug.SITE_NAME
     song = importer.parse(text, meta=None, provenance=provenance)
     given = (("title", title), ("artist", artist), ("key", key), ("capo", capo))
     song.meta.update({k: v.strip() for k, v in given if v and v.strip()})

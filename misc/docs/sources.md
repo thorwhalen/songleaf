@@ -29,7 +29,7 @@ The routes, in the order songleaf prefers them:
 
 1. **Paste** (the default): copy the chart from the page and paste it into "Paste a song". No contact with UG.
 2. **Bookmarklet**: "Send to songleaf", offered under "Paste a song". Run in the reader's own browser on a community "Chords" or "Tabs" page they opened, it reads the chart from that page (`.js-store`, `page.data.tab_view.wiki_tab.content`, plus tonality and capo) and opens songleaf's paste form filled in with it, through the URL fragment (never seen by a server). Nothing is stored until the reader presses Import. Official and Pro pages get an explanation instead.
-3. **`UltimateGuitarURLSource`** / `songleaf import-url <url>`: local command line only, off unless `SONGLEAF_UG_URL=1`, one URL per call, cached as `ug:<id>` (a stored chart is not fetched again), never searches, never in `default_sources()`, never behind an HTTP route, so never in the deployed app.
+3. **`UltimateGuitarURLSource`** / `songleaf import-url <url>`: local command line only, off unless `SONGLEAF_UG_URL=1`, one URL per call, cached as `ug:<id>` (a stored chart is not fetched again), never searches, never in `default_sources()`, never behind an HTTP route, so never in the deployed app. Since 2026-11-08 it is the `ug` entry of `songleaf.online.WEB_SITES`, so `import-url` reads UG and Chordie pages through one registry (`online.site_for_url`); its `find` returns nothing, so a web search never asks UG, whatever `SONGLEAF_WEB_SITES` says.
 
 Charts from a UG URL, by any route, are stored as `ug:<id>`.
 
@@ -62,7 +62,16 @@ Built: `songleaf.sources.LocalFolderSource` indexes `~/.local/share/songleaf/imp
 | **E-Chords** | chord charts | `Disallow: /search`, `/*?q=` | none found | **out**: its own search is closed to robots |
 | **Cifra Club** | chord charts | answers 403 to a plain client | not reviewed | **out**: it refuses honest clients |
 | **Genius** | lyrics | | terms forbid reusing lyrics from its pages (songleaf#3) | **out** |
-| **AZChords**, **Boite à chansons** | chord charts | allow chord pages | none found | not added: no terms to rely on, and AZChords is among the hosts Chordie re-hosts; candidates for a later decision |
+| **AZChords** (azchords.com) | chords over lyrics (`<pre id="content">`) | allows song and artist pages | no terms page; footer limits use to "private study, scholarship, research or language learning" (re-checked 2026-11-08) | **known, off by default, URL import only** (`AZCHORDS`): its search box is Google's, so it never searches; `import-url` reads a song page you name |
+| **Boite à chansons** | French chord charts | allows song pages, blocks ~70 named bots | "la copie ... strictement interdite" (2026-11-08) | **out**: forbids copies |
+| **Guitarparty** | chord charts | `Allow: /` | no copies "onto any ... memory or device", no robots or offline readers; its v2 API is gone (2026-11-08) | **out** |
+| **Ukutabs** | ukulele charts | song pages allowed, search blocked | answers 403 to an honest client (2026-11-08) | **out** |
+| **Songsterr** | notation tabs, not chord sheets | `/api/` blocked | downloads are a paid feature; no official API (2026-11-08) | **out** |
+| **LaCuerda**, **Tabs4Acoustic** | Spanish / French chord charts | allowed | "prohibida la ... copia" / "formellement prohibé de dupliquer le contenu" (2026-11-08) | **out** |
+
+No chords site checked so far qualifies for the default list, and no open-licence chords and lyrics collection with an API was found (2026-11-08 re-check, including ChordWiki, Ozbcoz and Pisnicky-akordy, which challenge or refuse honest clients). The 2026-11-08 notes are kept outside the repo, with the session's working documents.
+
+**Importing a page by URL** (`import-url`, `songleaf.online.import_url`) asks every site in `WEB_SITES` that can read pages, whatever the search list says: a page the reader names is one personal request, made from their own machine (the web app has no URL import). Ultimate Guitar still needs `SONGLEAF_UG_URL=1`. Chordie and AZChords read without a switch; if the owner wants a switch for them too, that is a decision for [songleaf#61](https://github.com/thorwhalen/songleaf/issues/61).
 
 A site enters the default list only when its terms allow automated access *and* keeping a personal copy. Adding one is an entry in `songleaf.online.WEB_SITES`; add its row here with the date checked.
 
