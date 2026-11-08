@@ -209,6 +209,8 @@ class ChartPageSite:
     Args:
         name: Registry name, and the ``<site>`` of its keys.
         search_url: The search page, ``{query}`` standing for the URL-quoted query.
+            ``""`` for a site with no search of its own: it then only reads pages
+            named by URL (:meth:`candidate_for`), on the host of ``home``.
         result_link: A regex over the search page with named groups ``url`` (the
             result's href, relative or absolute) and ``label`` (the link's inner HTML).
         label_separator: Splits a label's text into title and artist (title first).
@@ -216,6 +218,7 @@ class ChartPageSite:
         chords: Whether its pages carry chords.
         page_path: A regex over the path of one of its song pages: a URL on its host
             whose path matches can be imported (:meth:`candidate_for`). ``""``: none.
+        home: The site's root URL; its host is the site's when ``search_url`` is ``""``.
     """
 
     name: str
@@ -225,8 +228,11 @@ class ChartPageSite:
     license: str = "personal"
     chords: bool = True
     page_path: str = ""
+    home: str = ""
 
     def find(self, query: str, *, limit: int, fetch: Fetch) -> list[Candidate]:
+        if not self.search_url:
+            return []  # a site that only reads pages named by URL
         page_url = self.search_url.format(query=quote_plus(query))
         page = fetch(page_url)
         found: dict[str, Candidate] = {}
@@ -257,7 +263,7 @@ class ChartPageSite:
         """
         url = url.strip()
         parts = urlsplit(url)
-        if not self.page_path or not _same_site(url, self.search_url):
+        if not self.page_path or not _same_site(url, self.search_url or self.home):
             return None
         if parts.username or parts.password or not re.search(self.page_path, parts.path):
             return None
@@ -296,12 +302,14 @@ def _same_site(url: str, page_url: str) -> bool:
 
 _TITLE_RE = re.compile(r"<title[^>]*>(.*?)</title\s*>", re.DOTALL | re.IGNORECASE)
 _H1_RE = re.compile(r"<h1\b[^>]*>(.*?)</h1\s*>", re.DOTALL | re.IGNORECASE)
-#: Words a page title adds after the song's name (``... chords``, ``| Site``), dropped.
-_TITLE_TAIL_RE = re.compile(
-    r"\s*(?:[|:\u2013\u2014]\s*[^|:\u2013\u2014]*$"
-    r"|\b(?:chords?|lyrics|tabs?|ukulele|guitar)\b.*$)",
-    re.IGNORECASE,
+#: The ``| Site name`` (or ``| Version #2``) a page title ends with.
+_TITLE_SITE_RE = re.compile(r"\s*\|[^|]*$")
+#: The kind of page a title names after the song (``chords``, ``tab``...), and what follows.
+_TITLE_KIND_RE = re.compile(
+    r"\s+\b(?:chords?|lyrics|tabs?|ukulele|bass|guitar)\b(?P<rest>.*)$", re.IGNORECASE
 )
+#: After the kind, `` – Artist`` (kept as `` - Artist``); anything else is the site's words.
+_TITLE_ARTIST_RE = re.compile(r"\s*[-\u2013\u2014]\s*(?P<artist>\S.*)$")
 
 
 def page_heading(page: str) -> str:
@@ -320,16 +328,25 @@ def page_heading(page: str) -> str:
 
 
 def page_title(page: str) -> str:
-    """The song name a page's ``<title>`` gives, without the site's name or "chords".
+    """The song a page's ``<title>`` names (``title - artist``), without the site's words.
 
     >>> page_title("<title>Paper Boats - Invented Band chords | Some Site</title>")
     'Paper Boats - Invented Band'
+    >>> page_title("<title>Paper Boats  Chords &ndash; Invented Band | Version #2</title>")
+    'Paper Boats - Invented Band'
+    >>> page_title("<title>Paper Boats Invented Band Chords and Lyrics for Guitar</title>")
+    'Paper Boats Invented Band'
     """
     found = _TITLE_RE.search(page)
     if not found:
         return ""
     text = " ".join(_html.unescape(_TAG_RE.sub("", found.group(1))).split())
-    return _TITLE_TAIL_RE.sub("", text).strip(" -")
+    text = _TITLE_SITE_RE.sub("", text)
+    kind = _TITLE_KIND_RE.search(text)
+    if kind:
+        artist = _TITLE_ARTIST_RE.match(kind.group("rest"))
+        text = text[: kind.start()] + (f" - {artist.group('artist')}" if artist else "")
+    return text.strip(" -")
 
 
 def url_id(url: str) -> str:
@@ -347,11 +364,23 @@ CHORDIE = ChartPageSite(
     page_path=r"^/(?:chord|song)\.pere/",
 )
 
+#: AZChords (azchords.com): chords over lyrics in ``<pre id="content">``. Its robots.txt
+#: allows song pages; it publishes no terms beyond a footer limiting use to "private study,
+#: scholarship, research". Its search box is Google's, so it only reads pages named by URL.
+AZCHORDS = ChartPageSite(
+    name="azchords",
+    search_url="",
+    result_link="",
+    page_path=r"^/[a-z0-9]/[a-z0-9]+-tabs-\d+/[a-z0-9]+-tabs-\d+\.html$",
+    home="https://www.azchords.com/",
+)
+
 #: Every site songleaf knows, by name. A new site is a new entry. ``ug`` never searches:
 #: it only reads a page the reader names, and only when ``SONGLEAF_UG_URL=1`` (songleaf#28).
 WEB_SITES: dict[str, WebSite] = {
     "lrclib": LrclibSite(),
     "chordie": CHORDIE,
+    "azchords": AZCHORDS,
     "ug": UltimateGuitarURLSource(),
 }
 #: The sites asked when none are configured: those whose terms allow automated access.

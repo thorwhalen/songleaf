@@ -160,3 +160,19 @@ def test_imported_and_pasted_songs_are_found_by_local_search(monkeypatch):
     assert found == {"ug:424242", f"web:invented:{online.url_id(PAGE_URL)}"}  # not the cache
     rows = tools.search("lantern light", sources=sources, web="off")
     assert [(row["key"], row["source"]) for row in rows] == [(pasted["key"], "paste")]
+
+
+def test_a_site_with_no_search_reads_pages_by_url_only():
+    page_url = "https://www.azchords.com/i/inventedband-tabs-1/paperboats-tabs-2.html"
+    page = (
+        "<html><head><title>Paper Boats  Chords &ndash; Invented Band | Version #1</title>"
+        "</head><body><pre>Tuning: standard</pre>"
+        f"<pre id='content'>{CHART}</pre></body></html>"
+    )
+    site, candidate = site_for_url(page_url)
+    assert site is online.AZCHORDS and site.find("paper boats", limit=5, fetch=None) == []
+    kept = import_url(page_url, fetch=counting(page), store={})
+    assert (kept.song.title, kept.song.artist) == ("Paper Boats", "Invented Band")
+    assert kept.key == f"web:azchords:{online.url_id(page_url)}"
+    with pytest.raises(ValueError):  # an artist index page is not a song page
+        site_for_url("https://www.azchords.com/i/inventedband-chords-1.html", sites=[site])
