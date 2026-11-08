@@ -312,19 +312,22 @@ local command line only: off unless <code class="docutils literal notranslate"><
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.ultimate_guitar.URL_SOURCE_ENVVAR" title="songleaf.ultimate_guitar.URL_SOURCE_ENVVAR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">URL_SOURCE_ENVVAR</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.ultimate_guitar.SITE_NAME" title="songleaf.ultimate_guitar.SITE_NAME"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SITE_NAME</span></code></a></p></td>
+<td><p>The site's name in a song's provenance (<code class="docutils literal notranslate"><span class="pre">provenance.site</span></code>), by every route.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.ultimate_guitar.URL_SOURCE_ENVVAR" title="songleaf.ultimate_guitar.URL_SOURCE_ENVVAR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">URL_SOURCE_ENVVAR</span></code></a></p></td>
 <td><p>The environment variable that turns on <a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource" title="songleaf.ultimate_guitar.UltimateGuitarURLSource"><code class="xref py py-class docutils literal notranslate"><span class="pre">UltimateGuitarURLSource</span></code></a> (<code class="docutils literal notranslate"><span class="pre">&quot;1&quot;</span></code>).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.ultimate_guitar.REFUSED_TYPES" title="songleaf.ultimate_guitar.REFUSED_TYPES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">REFUSED_TYPES</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.ultimate_guitar.REFUSED_TYPES" title="songleaf.ultimate_guitar.REFUSED_TYPES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">REFUSED_TYPES</span></code></a></p></td>
 <td><p>Tab types whose page has no text chart songleaf may read (UG's own player, or video).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.ultimate_guitar.USER_AGENT" title="songleaf.ultimate_guitar.USER_AGENT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">USER_AGENT</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.ultimate_guitar.USER_AGENT" title="songleaf.ultimate_guitar.USER_AGENT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">USER_AGENT</span></code></a></p></td>
 <td><p>What a request for a page says it is (UG scores bots; songleaf does not pretend to be a browser).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.ultimate_guitar.FETCH_TIMEOUT_SECONDS" title="songleaf.ultimate_guitar.FETCH_TIMEOUT_SECONDS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FETCH_TIMEOUT_SECONDS</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.ultimate_guitar.FETCH_TIMEOUT_SECONDS" title="songleaf.ultimate_guitar.FETCH_TIMEOUT_SECONDS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FETCH_TIMEOUT_SECONDS</span></code></a></p></td>
 <td><p>Seconds before a page fetch gives up.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.ultimate_guitar.MAX_PAGE_BYTES" title="songleaf.ultimate_guitar.MAX_PAGE_BYTES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAX_PAGE_BYTES</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.ultimate_guitar.MAX_PAGE_BYTES" title="songleaf.ultimate_guitar.MAX_PAGE_BYTES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAX_PAGE_BYTES</span></code></a></p></td>
 <td><p>Bytes read from a page at most (a chart page is a few hundred KB).</p></td>
 </tr>
 </tbody>
@@ -410,6 +413,12 @@ local command line only: off unless <code class="docutils literal notranslate"><
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="songleaf.ultimate_guitar.SITE_NAME">
+<span class="sig-prename descclassname"><span class="pre">songleaf.ultimate_guitar.</span></span><span class="sig-name descname"><span class="pre">SITE_NAME</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ultimate-guitar'</span></span><a class="headerlink" href="#songleaf.ultimate_guitar.SITE_NAME" title="Link to this definition">¶</a></dt>
+<dd><p>The site’s name in a song’s provenance (<code class="docutils literal notranslate"><span class="pre">provenance.site</span></code>), by every route.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="songleaf.ultimate_guitar.URL_SOURCE_ENVVAR">
 <span class="sig-prename descclassname"><span class="pre">songleaf.ultimate_guitar.</span></span><span class="sig-name descname"><span class="pre">URL_SOURCE_ENVVAR</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'SONGLEAF_UG_URL'</span></span><a class="headerlink" href="#songleaf.ultimate_guitar.URL_SOURCE_ENVVAR" title="Link to this definition">¶</a></dt>
 <dd><p>The environment variable that turns on <a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource" title="songleaf.ultimate_guitar.UltimateGuitarURLSource"><code class="xref py py-class docutils literal notranslate"><span class="pre">UltimateGuitarURLSource</span></code></a> (<code class="docutils literal notranslate"><span class="pre">&quot;1&quot;</span></code>).</p>
@@ -426,18 +435,51 @@ local command line only: off unless <code class="docutils literal notranslate"><
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.ultimate_guitar.</span></span><span class="sig-name descname"><span class="pre">UltimateGuitarURLSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fetch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">fetch_page&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enabled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/ultimate_guitar.html#UltimateGuitarURLSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>One UG chord page, by URL: local command line only, off by default.</p>
-<p>It never searches (<a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.search" title="songleaf.ultimate_guitar.UltimateGuitarURLSource.search"><code class="xref py py-meth docutils literal notranslate"><span class="pre">search()</span></code></a> returns nothing) and is never among
-<a class="reference internal" href="songleaf.sources.html#songleaf.sources.default_sources" title="songleaf.sources.default_sources"><code class="xref py py-func docutils literal notranslate"><span class="pre">songleaf.sources.default_sources()</span></code></a>. <a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.get" title="songleaf.ultimate_guitar.UltimateGuitarURLSource.get"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get()</span></code></a> fetches the one page
+<p>It never searches (<a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.search" title="songleaf.ultimate_guitar.UltimateGuitarURLSource.search"><code class="xref py py-meth docutils literal notranslate"><span class="pre">search()</span></code></a> and <a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.find" title="songleaf.ultimate_guitar.UltimateGuitarURLSource.find"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find()</span></code></a> return nothing) and is never
+among <a class="reference internal" href="songleaf.sources.html#songleaf.sources.default_sources" title="songleaf.sources.default_sources"><code class="xref py py-func docutils literal notranslate"><span class="pre">songleaf.sources.default_sources()</span></code></a>. <a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.get" title="songleaf.ultimate_guitar.UltimateGuitarURLSource.get"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get()</span></code></a> fetches the one page
 it is given, refuses official and Pro pages, and returns the chart as a
 <a class="reference internal" href="songleaf.model.html#songleaf.model.Song" title="songleaf.model.Song"><code class="xref py py-class docutils literal notranslate"><span class="pre">Song</span></code></a> keyed <code class="docutils literal notranslate"><span class="pre">ug:&lt;id&gt;</span></code> (see <a class="reference internal" href="#songleaf.ultimate_guitar.ug_key" title="songleaf.ultimate_guitar.ug_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">ug_key()</span></code></a>).</p>
+<p>It is also the <code class="docutils literal notranslate"><span class="pre">ug</span></code> entry of <a class="reference internal" href="songleaf.online.html#songleaf.online.WEB_SITES" title="songleaf.online.WEB_SITES"><code class="xref py py-data docutils literal notranslate"><span class="pre">songleaf.online.WEB_SITES</span></code></a>, for
+<a class="reference internal" href="songleaf.online.html#songleaf.online.import_url" title="songleaf.online.import_url"><code class="xref py py-func docutils literal notranslate"><span class="pre">songleaf.online.import_url()</span></code></a>: <a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.candidate_for" title="songleaf.ultimate_guitar.UltimateGuitarURLSource.candidate_for"><code class="xref py py-meth docutils literal notranslate"><span class="pre">candidate_for()</span></code></a> claims a UG URL,
+<a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.extract" title="songleaf.ultimate_guitar.UltimateGuitarURLSource.extract"><code class="xref py py-meth docutils literal notranslate"><span class="pre">extract()</span></code></a> reads it. Its <code class="docutils literal notranslate"><span class="pre">fetch</span></code> is the one an import uses unless the
+caller gives another (one plain request that stays on UG).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>fetch</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code></a>[[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>], <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span>) – <code class="docutils literal notranslate"><span class="pre">url</span> <span class="pre">-&gt;</span> <span class="pre">html</span></code>; the default makes one plain HTTPS request.</p></li>
-<li><p><strong>enabled</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span>) – Whether fetching is allowed; defaults to <code class="docutils literal notranslate"><span class="pre">SONGLEAF_UG_URL=1</span></code>.</p></li>
+<li><p><strong>enabled</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span>) – Whether fetching is allowed; defaults to <code class="docutils literal notranslate"><span class="pre">SONGLEAF_UG_URL=1</span></code>,
+read when asked (so a process can turn it on after import).</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="songleaf.ultimate_guitar.UltimateGuitarURLSource.candidate_for">
+<span class="sig-name descname"><span class="pre">candidate_for</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/ultimate_guitar.html#UltimateGuitarURLSource.candidate_for"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.candidate_for" title="Link to this definition">¶</a></dt>
+<dd><p>The page at a UG <em>url</em>, to <a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.extract" title="songleaf.ultimate_guitar.UltimateGuitarURLSource.extract"><code class="xref py py-meth docutils literal notranslate"><span class="pre">extract()</span></code></a> (<code class="docutils literal notranslate"><span class="pre">None</span></code> for another host).</p>
+<p>Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> when the URL is not plain, and <a class="reference internal" href="#songleaf.ultimate_guitar.RefusedPage" title="songleaf.ultimate_guitar.RefusedPage"><code class="xref py py-class docutils literal notranslate"><span class="pre">RefusedPage</span></code></a> for
+an official or Pro page. Whether fetching is on is checked by <a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.extract" title="songleaf.ultimate_guitar.UltimateGuitarURLSource.extract"><code class="xref py py-meth docutils literal notranslate"><span class="pre">extract()</span></code></a>,
+so a page already kept is still found while it is off.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="songleaf.ultimate_guitar.UltimateGuitarURLSource.extract">
+<span class="sig-name descname"><span class="pre">extract</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">candidate</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">fetch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/ultimate_guitar.html#UltimateGuitarURLSource.extract"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.extract" title="Link to this definition">¶</a></dt>
+<dd><p>The chart of a <a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.candidate_for" title="songleaf.ultimate_guitar.UltimateGuitarURLSource.candidate_for"><code class="xref py py-meth docutils literal notranslate"><span class="pre">candidate_for()</span></code></a> page as a song (<code class="docutils literal notranslate"><span class="pre">ValueError</span></code> when off).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="songleaf.ultimate_guitar.UltimateGuitarURLSource.find">
+<span class="sig-name descname"><span class="pre">find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fetch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/ultimate_guitar.html#UltimateGuitarURLSource.find"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.find" title="Link to this definition">¶</a></dt>
+<dd><p>Nothing, as <a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.search" title="songleaf.ultimate_guitar.UltimateGuitarURLSource.search"><code class="xref py py-meth docutils literal notranslate"><span class="pre">search()</span></code></a>: a web search never asks UG.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="songleaf.ultimate_guitar.UltimateGuitarURLSource.get">
 <span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/ultimate_guitar.html#UltimateGuitarURLSource.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.get" title="Link to this definition">¶</a></dt>
@@ -621,9 +663,13 @@ whitespace or control characters (where URL parsers disagree).</p>
 <li><a class="reference internal" href="#songleaf.ultimate_guitar.MAX_PAGE_BYTES"><code class="docutils literal notranslate"><span class="pre">MAX_PAGE_BYTES</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.ultimate_guitar.REFUSED_TYPES"><code class="docutils literal notranslate"><span class="pre">REFUSED_TYPES</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.ultimate_guitar.RefusedPage"><code class="docutils literal notranslate"><span class="pre">RefusedPage</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.ultimate_guitar.SITE_NAME"><code class="docutils literal notranslate"><span class="pre">SITE_NAME</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.ultimate_guitar.URL_SOURCE_ENVVAR"><code class="docutils literal notranslate"><span class="pre">URL_SOURCE_ENVVAR</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.ultimate_guitar.USER_AGENT"><code class="docutils literal notranslate"><span class="pre">USER_AGENT</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource"><code class="docutils literal notranslate"><span class="pre">UltimateGuitarURLSource</span></code></a><ul>
+<li><a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.candidate_for"><code class="docutils literal notranslate"><span class="pre">UltimateGuitarURLSource.candidate_for()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.extract"><code class="docutils literal notranslate"><span class="pre">UltimateGuitarURLSource.extract()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.find"><code class="docutils literal notranslate"><span class="pre">UltimateGuitarURLSource.find()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.get"><code class="docutils literal notranslate"><span class="pre">UltimateGuitarURLSource.get()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.ultimate_guitar.UltimateGuitarURLSource.search"><code class="docutils literal notranslate"><span class="pre">UltimateGuitarURLSource.search()</span></code></a></li>
 </ul>
@@ -648,7 +694,7 @@ whitespace or control characters (where URL parsers disagree).</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=d8383de7"></script>
+</div><script src="../_static/documentation_options.js?v=71784981"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

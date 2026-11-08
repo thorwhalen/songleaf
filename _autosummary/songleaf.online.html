@@ -356,8 +356,14 @@ data directory, for personal use, and never belongs in a repository.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.URL_ID_CHARS" title="songleaf.online.URL_ID_CHARS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">URL_ID_CHARS</span></code></a></p></td>
 <td><p>Characters of a candidate id hashed from its URL (sites with no id of their own).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.CHORDIE" title="songleaf.online.CHORDIE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CHORDIE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.MAX_LABEL_CHARS" title="songleaf.online.MAX_LABEL_CHARS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAX_LABEL_CHARS</span></code></a></p></td>
+<td><p>Characters of a title-and-artist label kept at most (a page's &lt;title&gt; can be anything).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.CHORDIE" title="songleaf.online.CHORDIE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CHORDIE</span></code></a></p></td>
 <td><p>a chord search engine.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.AZCHORDS" title="songleaf.online.AZCHORDS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AZCHORDS</span></code></a></p></td>
+<td><p>chords over lyrics in <code class="docutils literal notranslate"><span class="pre">&lt;pre</span> <span class="pre">id=&quot;content&quot;&gt;</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.WEB_SITES" title="songleaf.online.WEB_SITES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WEB_SITES</span></code></a></p></td>
 <td><p>Every site songleaf knows, by name.</p></td>
@@ -368,6 +374,9 @@ data directory, for personal use, and never belongs in a repository.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.SAME_WORD_RATIO" title="songleaf.online.SAME_WORD_RATIO"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SAME_WORD_RATIO</span></code></a></p></td>
 <td><p>A word of the query and a word of a label are the same word from this fuzzy ratio (0-100), for words of <a class="reference internal" href="songleaf.match.html#songleaf.match.TYPO_MIN_LENGTH" title="songleaf.match.TYPO_MIN_LENGTH"><code class="xref py py-data docutils literal notranslate"><span class="pre">songleaf.match.TYPO_MIN_LENGTH</span></code></a> letters or more.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.KEPT_SOURCES" title="songleaf.online.KEPT_SOURCES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KEPT_SOURCES</span></code></a></p></td>
+<td><p>found on the web or imported by URL (<code class="docutils literal notranslate"><span class="pre">web:</span></code>), Ultimate Guitar charts (<code class="docutils literal notranslate"><span class="pre">ug:</span></code>), pasted songs (<code class="docutils literal notranslate"><span class="pre">paste:</span></code>).</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -375,26 +384,50 @@ data directory, for personal use, and never belongs in a repository.</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.chart_counts" title="songleaf.online.chart_counts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">chart_counts</span></code></a>(song)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.canonical_url" title="songleaf.online.canonical_url"><code class="xref py py-obj docutils literal notranslate"><span class="pre">canonical_url</span></code></a>(url, site_url)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">url</span></code> as one spelling: https, the host as <code class="docutils literal notranslate"><span class="pre">site_url</span></code> spells it, no <code class="docutils literal notranslate"><span class="pre">#fragment</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.chart_counts" title="songleaf.online.chart_counts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">chart_counts</span></code></a>(song)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">(lyric</span> <span class="pre">lines,</span> <span class="pre">chords)</span></code> of a song: what <a class="reference internal" href="#songleaf.online.chart_text" title="songleaf.online.chart_text"><code class="xref py py-func docutils literal notranslate"><span class="pre">chart_text()</span></code></a> and <a class="reference internal" href="#songleaf.online.is_usable" title="songleaf.online.is_usable"><code class="xref py py-func docutils literal notranslate"><span class="pre">is_usable()</span></code></a> weigh.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.chart_text" title="songleaf.online.chart_text"><code class="xref py py-obj docutils literal notranslate"><span class="pre">chart_text</span></code></a>(page)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.chart_text" title="songleaf.online.chart_text"><code class="xref py py-obj docutils literal notranslate"><span class="pre">chart_text</span></code></a>(page)</p></td>
 <td><p>The chord chart in a chord site's page: of its text blocks, the one that reads best.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.closeness" title="songleaf.online.closeness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">closeness</span></code></a>(query, candidate)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.closeness" title="songleaf.online.closeness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">closeness</span></code></a>(query, candidate)</p></td>
 <td><p>How well a candidate names the song the query asks for, 0-1, word by word.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.expand" title="songleaf.online.expand"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand</span></code></a>(query, *[, sites, fetch, store, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.expand" title="songleaf.online.expand"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand</span></code></a>(query, *[, sites, fetch, store, ...])</p></td>
 <td><p>Find <code class="docutils literal notranslate"><span class="pre">query</span></code> on the web sites, keep the best usable result, and return it.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.find_online" title="songleaf.online.find_online"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_online</span></code></a>(query, *[, sites, fetch, limit, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.find_online" title="songleaf.online.find_online"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_online</span></code></a>(query, *[, sites, fetch, limit, ...])</p></td>
 <td><p>Every site's candidates for <code class="docutils literal notranslate"><span class="pre">query</span></code>, best first: <code class="docutils literal notranslate"><span class="pre">(score,</span> <span class="pre">candidate,</span> <span class="pre">site)</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.import_url" title="songleaf.online.import_url"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_url</span></code></a>(url, *[, sites, fetch, store, ...])</p></td>
+<td><p>Read the song page at <code class="docutils literal notranslate"><span class="pre">url</span></code> and keep it, like a song a search found.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.is_usable" title="songleaf.online.is_usable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_usable</span></code></a>(song, *, chords[, ...])</p></td>
 <td><p>Whether an extracted song is worth keeping: enough lyrics, and chords if promised.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.kept_keys" title="songleaf.online.kept_keys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kept_keys</span></code></a>(store, *[, kinds])</p></td>
+<td><p>The keys of <code class="docutils literal notranslate"><span class="pre">store</span></code> holding songs the reader brought in (see <a class="reference internal" href="#songleaf.online.KEPT_SOURCES" title="songleaf.online.KEPT_SOURCES"><code class="xref py py-data docutils literal notranslate"><span class="pre">KEPT_SOURCES</span></code></a>).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.label_of" title="songleaf.online.label_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">label_of</span></code></a>(site_name)</p></td>
+<td><p>How a page names the site a kept song's provenance names (<code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> for none).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.page_heading" title="songleaf.online.page_heading"><code class="xref py py-obj docutils literal notranslate"><span class="pre">page_heading</span></code></a>(page)</p></td>
+<td><p>A song page's own label: its first <code class="docutils literal notranslate"><span class="pre">&lt;h1&gt;</span></code> (inner HTML), else <a class="reference internal" href="#songleaf.online.page_title" title="songleaf.online.page_title"><code class="xref py py-func docutils literal notranslate"><span class="pre">page_title()</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.page_title" title="songleaf.online.page_title"><code class="xref py py-obj docutils literal notranslate"><span class="pre">page_title</span></code></a>(page)</p></td>
+<td><p>The song a page's <code class="docutils literal notranslate"><span class="pre">&lt;title&gt;</span></code> names (<code class="docutils literal notranslate"><span class="pre">title</span> <span class="pre">-</span> <span class="pre">artist</span></code>), without the site's words.</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.polite_fetch" title="songleaf.online.polite_fetch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">polite_fetch</span></code></a>(url)</p></td>
 <td><p>The text at <code class="docutils literal notranslate"><span class="pre">url</span></code>: robots.txt obeyed, paced per host, honest User-Agent.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.site_for_url" title="songleaf.online.site_for_url"><code class="xref py py-obj docutils literal notranslate"><span class="pre">site_for_url</span></code></a>(url, *[, sites])</p></td>
+<td><p>The site that reads the page at <code class="docutils literal notranslate"><span class="pre">url</span></code>, and the page as a <a class="reference internal" href="#songleaf.online.Candidate" title="songleaf.online.Candidate"><code class="xref py py-class docutils literal notranslate"><span class="pre">Candidate</span></code></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.site_label" title="songleaf.online.site_label"><code class="xref py py-obj docutils literal notranslate"><span class="pre">site_label</span></code></a>(site)</p></td>
+<td><p>How a page names <code class="docutils literal notranslate"><span class="pre">site</span></code>: its <code class="docutils literal notranslate"><span class="pre">label</span></code> when it has one, else its name.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.site_names" title="songleaf.online.site_names"><code class="xref py py-obj docutils literal notranslate"><span class="pre">site_names</span></code></a>(spec)</p></td>
 <td><p>The site names in a comma-separated list (blanks dropped).</p></td>
@@ -402,16 +435,19 @@ data directory, for personal use, and never belongs in a repository.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.text_blocks" title="songleaf.online.text_blocks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">text_blocks</span></code></a>(page)</p></td>
 <td><p>The preformatted text of a page (<code class="docutils literal notranslate"><span class="pre">&lt;pre&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;textarea&gt;</span></code> elements), unescaped.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.url_id" title="songleaf.online.url_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">url_id</span></code></a>(url)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.unavailable_reason" title="songleaf.online.unavailable_reason"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unavailable_reason</span></code></a>()</p></td>
+<td><p>Why this process cannot fetch with <a class="reference internal" href="#songleaf.online.polite_fetch" title="songleaf.online.polite_fetch"><code class="xref py py-func docutils literal notranslate"><span class="pre">polite_fetch()</span></code></a> (no <code class="docutils literal notranslate"><span class="pre">online</span></code> extra), or <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.url_id" title="songleaf.online.url_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">url_id</span></code></a>(url)</p></td>
 <td><p>A short, stable id for a page with no id of its own (a hash of its URL).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.web_key" title="songleaf.online.web_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">web_key</span></code></a>(site, song_id)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.web_key" title="songleaf.online.web_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">web_key</span></code></a>(site, song_id)</p></td>
 <td><p>The store key of a song found on <code class="docutils literal notranslate"><span class="pre">site</span></code>: <code class="docutils literal notranslate"><span class="pre">web:&lt;site&gt;:&lt;id&gt;</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.web_mode" title="songleaf.online.web_mode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">web_mode</span></code></a>([mode])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.web_mode" title="songleaf.online.web_mode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">web_mode</span></code></a>([mode])</p></td>
 <td><p>The web mode: <code class="docutils literal notranslate"><span class="pre">mode</span></code>, else <code class="docutils literal notranslate"><span class="pre">$SONGLEAF_WEB_SEARCH</span></code>, else <code class="xref py py-data docutils literal notranslate"><span class="pre">DEFAULT_WEB_MODE</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.web_sites" title="songleaf.online.web_sites"><code class="xref py py-obj docutils literal notranslate"><span class="pre">web_sites</span></code></a>([sites, registry])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.web_sites" title="songleaf.online.web_sites"><code class="xref py py-obj docutils literal notranslate"><span class="pre">web_sites</span></code></a>([sites, registry])</p></td>
 <td><p>The sites to ask: <code class="docutils literal notranslate"><span class="pre">sites</span></code> (names, comma-separated or a list, or site objects), else <code class="docutils literal notranslate"><span class="pre">$SONGLEAF_WEB_SITES</span></code>, else <a class="reference internal" href="#songleaf.online.DEFAULT_WEB_SITES" title="songleaf.online.DEFAULT_WEB_SITES"><code class="xref py py-data docutils literal notranslate"><span class="pre">DEFAULT_WEB_SITES</span></code></a>.</p></td>
 </tr>
 </tbody>
@@ -430,11 +466,11 @@ data directory, for personal use, and never belongs in a repository.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.Found" title="songleaf.online.Found"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Found</span></code></a>(key, song, score, cached)</p></td>
 <td><p>The song <a class="reference internal" href="#songleaf.online.expand" title="songleaf.online.expand"><code class="xref py py-func docutils literal notranslate"><span class="pre">expand()</span></code></a> kept: its key, the song, and how it was found.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.LrclibSite" title="songleaf.online.LrclibSite"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LrclibSite</span></code></a>([name, license, chords, base_url])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.LrclibSite" title="songleaf.online.LrclibSite"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LrclibSite</span></code></a>([name, license, chords, ...])</p></td>
 <td><p>LRCLIB (lrclib.net): an open lyrics API, made for automated clients.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.StoredWebSource" title="songleaf.online.StoredWebSource"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StoredWebSource</span></code></a>([store])</p></td>
-<td><p>The songs found on the web and kept in the song store: searched locally.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.online.StoredWebSource" title="songleaf.online.StoredWebSource"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StoredWebSource</span></code></a>([store, kinds])</p></td>
+<td><p>The songs the reader brought in and kept in the song store: searched locally.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#songleaf.online.WebSite" title="songleaf.online.WebSite"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WebSite</span></code></a>(*args, **kwargs)</p></td>
 <td><p>A site songleaf may search: its own search, and one result as a <code class="xref py py-class docutils literal notranslate"><span class="pre">Song</span></code>.</p></td>
@@ -456,8 +492,21 @@ data directory, for personal use, and never belongs in a repository.</p>
 </table>
 </div>
 <dl class="py data">
+<dt class="sig sig-object py" id="songleaf.online.AZCHORDS">
+<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">AZCHORDS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">ChartPageSite(name='azchords',</span> <span class="pre">search_url='',</span> <span class="pre">result_link='',</span> <span class="pre">label_separator='\\s*\\xa0+\\s*|</span> <span class="pre">-</span> <span class="pre">',</span> <span class="pre">license='personal',</span> <span class="pre">chords=True,</span> <span class="pre">page_path='^/[a-z0-9]/[a-z0-9]+-tabs-\\d+/[a-z0-9]+-tabs-\\d+\\.html$',</span> <span class="pre">home='https://www.azchords.com/',</span> <span class="pre">heading='title',</span> <span class="pre">label='AZChords')</span></span><a class="headerlink" href="#songleaf.online.AZCHORDS" title="Link to this definition">¶</a></dt>
+<dd><p>chords over lyrics in <code class="docutils literal notranslate"><span class="pre">&lt;pre</span> <span class="pre">id=&quot;content&quot;&gt;</span></code>. Its robots.txt
+allows song pages; it publishes no terms beyond a footer limiting use to “private study,
+scholarship, research”. Its search box is Google’s, so it only reads pages named by URL.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>AZChords (azchords.com)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="songleaf.online.CHORDIE">
-<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">CHORDIE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">ChartPageSite(name='chordie',</span> <span class="pre">search_url='https://www.chordie.com/result.php?q={query}',</span> <span class="pre">result_link='&lt;a[^&gt;]+href=&quot;(?P&lt;url&gt;/(?:chord|song)\\.pere/[^&quot;]+)&quot;[^&gt;]*&gt;(?P&lt;label&gt;.*?)&lt;/a&gt;',</span> <span class="pre">label_separator='\\s*\\xa0+\\s*|</span> <span class="pre">-</span> <span class="pre">',</span> <span class="pre">license='personal',</span> <span class="pre">chords=True)</span></span><a class="headerlink" href="#songleaf.online.CHORDIE" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">CHORDIE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">ChartPageSite(name='chordie',</span> <span class="pre">search_url='https://www.chordie.com/result.php?q={query}',</span> <span class="pre">result_link='&lt;a[^&gt;]+href=&quot;(?P&lt;url&gt;/(?:chord|song)\\.pere/[^&quot;]+)&quot;[^&gt;]*&gt;(?P&lt;label&gt;.*?)&lt;/a&gt;',</span> <span class="pre">label_separator='\\s*\\xa0+\\s*|</span> <span class="pre">-</span> <span class="pre">',</span> <span class="pre">license='personal',</span> <span class="pre">chords=True,</span> <span class="pre">page_path='^/(?:chord|song)\\.pere/',</span> <span class="pre">home='',</span> <span class="pre">heading='h1',</span> <span class="pre">label='Chordie')</span></span><a class="headerlink" href="#songleaf.online.CHORDIE" title="Link to this definition">¶</a></dt>
 <dd><p>a chord search engine. Its robots.txt invites every robot and it
 publishes no terms, but many of its pages re-host other sites’ charts (some of which
 forbid stored copies), so it is not in the default list (see misc/docs/sources.md).</p>
@@ -476,34 +525,59 @@ forbid stored copies), so it is not in the default list (see misc/docs/sources.m
 
 <dl class="py class">
 <dt class="sig sig-object py" id="songleaf.online.Candidate">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">Candidate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">site</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">dict()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">license</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#Candidate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.Candidate" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">Candidate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">site</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">dict()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">license</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#Candidate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.Candidate" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>One search result on a site: what <code class="xref py py-meth docutils literal notranslate"><span class="pre">WebSite.extract()</span></code> turns into a song.</p>
 <p><code class="docutils literal notranslate"><span class="pre">payload</span></code> carries what the search already returned (an API that answers with the
 lyrics, say), so extracting it needs no second request. <code class="docutils literal notranslate"><span class="pre">license</span></code> overrides the
-site’s for this one result (a site that searches other hosts knows each one’s).</p>
+site’s for this one result (a site that searches other hosts knows each one’s).
+<code class="docutils literal notranslate"><span class="pre">store_key</span></code> overrides the <code class="docutils literal notranslate"><span class="pre">web:&lt;site&gt;:&lt;id&gt;</span></code> key (Ultimate Guitar keeps <code class="docutils literal notranslate"><span class="pre">ug:&lt;id&gt;</span></code>).</p>
 <dl class="field-list simple">
 </dl>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="songleaf.online.ChartPageSite">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">ChartPageSite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result_link</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_separator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\\s*\\xa0+\\s*|</span> <span class="pre">-</span> <span class="pre">'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">license</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'personal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#ChartPageSite"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.ChartPageSite" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">ChartPageSite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result_link</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_separator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\\s*\\xa0+\\s*|</span> <span class="pre">-</span> <span class="pre">'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">license</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'personal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">page_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">home</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'h1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#ChartPageSite"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.ChartPageSite" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>A chord site with a search page and one chart per page: most of them.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Registry name, and the <code class="docutils literal notranslate"><span class="pre">&lt;site&gt;</span></code> of its keys.</p></li>
-<li><p><strong>search_url</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – The search page, <code class="docutils literal notranslate"><span class="pre">{query}</span></code> standing for the URL-quoted query.</p></li>
+<li><p><strong>search_url</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – The search page, <code class="docutils literal notranslate"><span class="pre">{query}</span></code> standing for the URL-quoted query.
+<code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> for a site with no search of its own: it then only reads pages
+named by URL (<a class="reference internal" href="#songleaf.online.ChartPageSite.candidate_for" title="songleaf.online.ChartPageSite.candidate_for"><code class="xref py py-meth docutils literal notranslate"><span class="pre">candidate_for()</span></code></a>), on the host of <code class="docutils literal notranslate"><span class="pre">home</span></code>.</p></li>
 <li><p><strong>result_link</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – A regex over the search page with named groups <code class="docutils literal notranslate"><span class="pre">url</span></code> (the
 result’s href, relative or absolute) and <code class="docutils literal notranslate"><span class="pre">label</span></code> (the link’s inner HTML).</p></li>
 <li><p><strong>label_separator</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Splits a label’s text into title and artist (title first).</p></li>
 <li><p><strong>license</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – The licence tag stored with every song from here.</p></li>
 <li><p><strong>chords</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>) – Whether its pages carry chords.</p></li>
+<li><p><strong>page_path</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – A regex over the path of one of its song pages: a URL on its host
+whose path matches can be imported (<a class="reference internal" href="#songleaf.online.ChartPageSite.candidate_for" title="songleaf.online.ChartPageSite.candidate_for"><code class="xref py py-meth docutils literal notranslate"><span class="pre">candidate_for()</span></code></a>). <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>: none.</p></li>
+<li><p><strong>home</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – The site’s root URL; its host is the site’s when <code class="docutils literal notranslate"><span class="pre">search_url</span></code> is <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p></li>
+<li><p><strong>heading</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Where a page named by URL says its title and artist: <code class="docutils literal notranslate"><span class="pre">&quot;h1&quot;</span></code> (its first
+heading, else its <code class="docutils literal notranslate"><span class="pre">&lt;title&gt;</span></code>) or <code class="docutils literal notranslate"><span class="pre">&quot;title&quot;</span></code> (its <code class="docutils literal notranslate"><span class="pre">&lt;title&gt;</span></code>, for a site whose
+first heading is a breadcrumb, artist first).</p></li>
+<li><p><strong>label</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – How a page names the site (<code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>: its name).</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="songleaf.online.ChartPageSite.candidate_for">
+<span class="sig-name descname"><span class="pre">candidate_for</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#ChartPageSite.candidate_for"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.ChartPageSite.candidate_for" title="Link to this definition">¶</a></dt>
+<dd><p>The song page at <code class="docutils literal notranslate"><span class="pre">url</span></code>, when it is one of this site’s (else <code class="docutils literal notranslate"><span class="pre">None</span></code>).</p>
+<p>The URL is made canonical first (<a class="reference internal" href="#songleaf.online.canonical_url" title="songleaf.online.canonical_url"><code class="xref py py-func docutils literal notranslate"><span class="pre">canonical_url()</span></code></a>), as the search’s results
+are, so a song found by a search and the same page imported by URL (with or
+without <code class="docutils literal notranslate"><span class="pre">www.</span></code>, a <code class="docutils literal notranslate"><span class="pre">#fragment</span></code>, capitals in the host) are one song. Title and
+artist come from the page itself (<code class="xref py py-meth docutils literal notranslate"><span class="pre">extract()</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#songleaf.online.Candidate" title="songleaf.online.Candidate"><code class="xref py py-class docutils literal notranslate"><span class="pre">Candidate</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py data">
@@ -551,9 +625,21 @@ result’s href, relative or absolute) and <code class="docutils literal notrans
 
 </dd></dl>
 
+<dl class="py data">
+<dt class="sig sig-object py" id="songleaf.online.KEPT_SOURCES">
+<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">KEPT_SOURCES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('web',</span> <span class="pre">'ug',</span> <span class="pre">'paste')</span></span><a class="headerlink" href="#songleaf.online.KEPT_SOURCES" title="Link to this definition">¶</a></dt>
+<dd><p>found on the web
+or imported by URL (<code class="docutils literal notranslate"><span class="pre">web:</span></code>), Ultimate Guitar charts (<code class="docutils literal notranslate"><span class="pre">ug:</span></code>), pasted songs (<code class="docutils literal notranslate"><span class="pre">paste:</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The kinds of stored song the reader brought in, and local search finds</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="songleaf.online.LrclibSite">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">LrclibSite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lrclib'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">license</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'personal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'https://lrclib.net'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#LrclibSite"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.LrclibSite" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">LrclibSite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lrclib'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">license</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'personal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'https://lrclib.net'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'LRCLIB'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#LrclibSite"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.LrclibSite" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>LRCLIB (lrclib.net): an open lyrics API, made for automated clients. Lyrics, no chords.</p>
 <p>One search request answers with the lyrics, so extracting a result costs nothing more.
@@ -567,6 +653,12 @@ Synced lyrics, when there are any, become <code class="docutils literal notransl
 <dt class="sig sig-object py" id="songleaf.online.MAX_EXTRACTIONS">
 <span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">MAX_EXTRACTIONS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></span><a class="headerlink" href="#songleaf.online.MAX_EXTRACTIONS" title="Link to this definition">¶</a></dt>
 <dd><p>Candidates extracted at most before giving up on a query.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="songleaf.online.MAX_LABEL_CHARS">
+<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">MAX_LABEL_CHARS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">200</span></span><a class="headerlink" href="#songleaf.online.MAX_LABEL_CHARS" title="Link to this definition">¶</a></dt>
+<dd><p>Characters of a title-and-artist label kept at most (a page’s &lt;title&gt; can be anything).</p>
 </dd></dl>
 
 <dl class="py data">
@@ -626,12 +718,13 @@ for words of <a class="reference internal" href="songleaf.match.html#songleaf.ma
 
 <dl class="py class">
 <dt class="sig sig-object py" id="songleaf.online.StoredWebSource">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">StoredWebSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#StoredWebSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.StoredWebSource" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">StoredWebSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">kinds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('web',</span> <span class="pre">'ug',</span> <span class="pre">'paste')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#StoredWebSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.StoredWebSource" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<p>The songs found on the web and kept in the song store: searched locally.</p>
+<p>The songs the reader brought in and kept in the song store: searched locally.</p>
 <p>A source like any other (<code class="docutils literal notranslate"><span class="pre">name</span></code> <code class="docutils literal notranslate"><span class="pre">&quot;web&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">search</span></code>, <code class="docutils literal notranslate"><span class="pre">search_tiers</span></code>, <code class="docutils literal notranslate"><span class="pre">get</span></code>):
-it reads the <code class="docutils literal notranslate"><span class="pre">web:</span></code> keys of the store, so a song kept by <a class="reference internal" href="#songleaf.online.expand" title="songleaf.online.expand"><code class="xref py py-func docutils literal notranslate"><span class="pre">expand()</span></code></a> is found
-again with no request. Title and artist match word by word, as the corpus does
+it reads the store’s keys of the <code class="docutils literal notranslate"><span class="pre">kinds</span></code> the reader brought in (found on the web,
+imported by URL, pasted), so a song kept by <a class="reference internal" href="#songleaf.online.expand" title="songleaf.online.expand"><code class="xref py py-func docutils literal notranslate"><span class="pre">expand()</span></code></a>, <a class="reference internal" href="#songleaf.online.import_url" title="songleaf.online.import_url"><code class="xref py py-func docutils literal notranslate"><span class="pre">import_url()</span></code></a> or a
+paste is found again with no request. Each hit’s <code class="docutils literal notranslate"><span class="pre">source</span></code> is its key’s own prefix. Title and artist match word by word, as the corpus does
 (<a class="reference internal" href="songleaf.match.html#songleaf.match.WordIndex" title="songleaf.match.WordIndex"><code class="xref py py-class docutils literal notranslate"><span class="pre">WordIndex</span></code></a>: the query inside the title and artist, or the
 title and artist inside the query, typos forgiven); lyrics hold every word.</p>
 <p>Each kept song is read once per process (title, artist, words): a search lists the
@@ -639,8 +732,12 @@ store’s keys and reads only the new ones. A file that cannot be read is logged
 skipped, never fatal to a search.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>store</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">MutableMapping</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span>) – The song store (default: <a class="reference internal" href="songleaf.store.html#songleaf.store.song_store" title="songleaf.store.song_store"><code class="xref py py-func docutils literal notranslate"><span class="pre">songleaf.store.song_store()</span></code></a>, resolved on
-each use, since the data root may move).</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>store</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">MutableMapping</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span>) – The song store (default: <a class="reference internal" href="songleaf.store.html#songleaf.store.song_store" title="songleaf.store.song_store"><code class="xref py py-func docutils literal notranslate"><span class="pre">songleaf.store.song_store()</span></code></a>, resolved on
+each use, since the data root may move).</p></li>
+<li><p><strong>kinds</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code></a></span>) – The key prefixes searched (default <a class="reference internal" href="#songleaf.online.KEPT_SOURCES" title="songleaf.online.KEPT_SOURCES"><code class="xref py py-data docutils literal notranslate"><span class="pre">KEPT_SOURCES</span></code></a>). Corpus songs
+cached in the store are not among them: their own source finds them.</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py method">
@@ -722,8 +819,9 @@ search; <code class="docutils literal notranslate"><span class="pre">off</span><
 
 <dl class="py data">
 <dt class="sig sig-object py" id="songleaf.online.WEB_SITES">
-<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">WEB_SITES</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#songleaf.online.WebSite" title="songleaf.online.WebSite"><span class="pre">WebSite</span></a><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'chordie':</span> <span class="pre">ChartPageSite(name='chordie',</span> <span class="pre">search_url='https://www.chordie.com/result.php?q={query}',</span> <span class="pre">result_link='&lt;a[^&gt;]+href=&quot;(?P&lt;url&gt;/(?:chord|song)\\.pere/[^&quot;]+)&quot;[^&gt;]*&gt;(?P&lt;label&gt;.*?)&lt;/a&gt;',</span> <span class="pre">label_separator='\\s*\\xa0+\\s*|</span> <span class="pre">-</span> <span class="pre">',</span> <span class="pre">license='personal',</span> <span class="pre">chords=True),</span> <span class="pre">'lrclib':</span> <span class="pre">LrclibSite(name='lrclib',</span> <span class="pre">license='personal',</span> <span class="pre">chords=False,</span> <span class="pre">base_url='https://lrclib.net')}</span></span><a class="headerlink" href="#songleaf.online.WEB_SITES" title="Link to this definition">¶</a></dt>
-<dd><p>Every site songleaf knows, by name. A new site is a new entry.</p>
+<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">WEB_SITES</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#songleaf.online.WebSite" title="songleaf.online.WebSite"><span class="pre">WebSite</span></a><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'azchords':</span> <span class="pre">ChartPageSite(name='azchords',</span> <span class="pre">search_url='',</span> <span class="pre">result_link='',</span> <span class="pre">label_separator='\\s*\\xa0+\\s*|</span> <span class="pre">-</span> <span class="pre">',</span> <span class="pre">license='personal',</span> <span class="pre">chords=True,</span> <span class="pre">page_path='^/[a-z0-9]/[a-z0-9]+-tabs-\\d+/[a-z0-9]+-tabs-\\d+\\.html$',</span> <span class="pre">home='https://www.azchords.com/',</span> <span class="pre">heading='title',</span> <span class="pre">label='AZChords'),</span> <span class="pre">'chordie':</span> <span class="pre">ChartPageSite(name='chordie',</span> <span class="pre">search_url='https://www.chordie.com/result.php?q={query}',</span> <span class="pre">result_link='&lt;a[^&gt;]+href=&quot;(?P&lt;url&gt;/(?:chord|song)\\.pere/[^&quot;]+)&quot;[^&gt;]*&gt;(?P&lt;label&gt;.*?)&lt;/a&gt;',</span> <span class="pre">label_separator='\\s*\\xa0+\\s*|</span> <span class="pre">-</span> <span class="pre">',</span> <span class="pre">license='personal',</span> <span class="pre">chords=True,</span> <span class="pre">page_path='^/(?:chord|song)\\.pere/',</span> <span class="pre">home='',</span> <span class="pre">heading='h1',</span> <span class="pre">label='Chordie'),</span> <span class="pre">'lrclib':</span> <span class="pre">LrclibSite(name='lrclib',</span> <span class="pre">license='personal',</span> <span class="pre">chords=False,</span> <span class="pre">base_url='https://lrclib.net',</span> <span class="pre">label='LRCLIB'),</span> <span class="pre">'ug':</span> <span class="pre">&lt;songleaf.ultimate_guitar.UltimateGuitarURLSource</span> <span class="pre">object&gt;}</span></span><a class="headerlink" href="#songleaf.online.WEB_SITES" title="Link to this definition">¶</a></dt>
+<dd><p>Every site songleaf knows, by name. A new site is a new entry. <code class="docutils literal notranslate"><span class="pre">ug</span></code> never searches:
+it only reads a page the reader names, and only when <code class="docutils literal notranslate"><span class="pre">SONGLEAF_UG_URL=1</span></code> (songleaf#28).</p>
 </dd></dl>
 
 <dl class="py data">
@@ -748,6 +846,21 @@ search; <code class="docutils literal notranslate"><span class="pre">off</span><
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">WebSite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#WebSite"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.WebSite" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Protocol" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Protocol</span></code></a></p>
 <p>A site songleaf may search: its own search, and one result as a <code class="xref py py-class docutils literal notranslate"><span class="pre">Song</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="songleaf.online.canonical_url">
+<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">canonical_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site_url</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#canonical_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.canonical_url" title="Link to this definition">¶</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">url</span></code> as one spelling: https, the host as <code class="docutils literal notranslate"><span class="pre">site_url</span></code> spells it, no <code class="docutils literal notranslate"><span class="pre">#fragment</span></code>.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">canonical_url</span><span class="p">(</span><span class="s2">"https://WWW.Chords.example/a.html#top"</span><span class="p">,</span> <span class="s2">"https://chords.example/s"</span><span class="p">)</span>
+<span class="go">'https://chords.example/a.html'</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -833,6 +946,23 @@ and skipped.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="songleaf.online.import_url">
+<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">import_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sites</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fetch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#import_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.import_url" title="Link to this definition">¶</a></dt>
+<dd><p>Read the song page at <code class="docutils literal notranslate"><span class="pre">url</span></code> and keep it, like a song a search found.</p>
+<p>The site is found by <a class="reference internal" href="#songleaf.online.site_for_url" title="songleaf.online.site_for_url"><code class="xref py py-func docutils literal notranslate"><span class="pre">site_for_url()</span></code></a>; the song is stored under its key
+(<code class="docutils literal notranslate"><span class="pre">web:&lt;site&gt;:&lt;id&gt;</span></code>, or <code class="docutils literal notranslate"><span class="pre">ug:&lt;id&gt;</span></code> for Ultimate Guitar) with its provenance, and
+from then on found by local search (<a class="reference internal" href="#songleaf.online.StoredWebSource" title="songleaf.online.StoredWebSource"><code class="xref py py-class docutils literal notranslate"><span class="pre">StoredWebSource</span></code></a>). A page already kept
+is not fetched again unless <code class="docutils literal notranslate"><span class="pre">refresh</span></code>. <code class="docutils literal notranslate"><span class="pre">fetch</span></code> defaults to the site’s own
+(<code class="docutils literal notranslate"><span class="pre">site.fetch</span></code>) or <a class="reference internal" href="#songleaf.online.polite_fetch" title="songleaf.online.polite_fetch"><code class="xref py py-func docutils literal notranslate"><span class="pre">polite_fetch()</span></code></a>. Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> for a page with
+neither lyrics nor chords (no <a class="reference internal" href="#songleaf.online.is_usable" title="songleaf.online.is_usable"><code class="xref py py-func docutils literal notranslate"><span class="pre">is_usable()</span></code></a> bar: the reader chose this page).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#songleaf.online.Found" title="songleaf.online.Found"><code class="xref py py-class docutils literal notranslate"><span class="pre">Found</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="songleaf.online.is_usable">
 <span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">is_usable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">song</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">chords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_lyric_lines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_chords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#is_usable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.is_usable" title="Link to this definition">¶</a></dt>
 <dd><p>Whether an extracted song is worth keeping: enough lyrics, and chords if promised.</p>
@@ -844,12 +974,115 @@ and skipped.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="songleaf.online.kept_keys">
+<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">kept_keys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">kinds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('web',</span> <span class="pre">'ug',</span> <span class="pre">'paste')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#kept_keys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.kept_keys" title="Link to this definition">¶</a></dt>
+<dd><p>The keys of <code class="docutils literal notranslate"><span class="pre">store</span></code> holding songs the reader brought in (see <a class="reference internal" href="#songleaf.online.KEPT_SOURCES" title="songleaf.online.KEPT_SOURCES"><code class="xref py py-data docutils literal notranslate"><span class="pre">KEPT_SOURCES</span></code></a>).</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">kept_keys</span><span class="p">({</span><span class="s2">"web:lrclib:1"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"paste:ab"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"kaggle_chords:9"</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
+<span class="go">['web:lrclib:1', 'paste:ab']</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="songleaf.online.label_of">
+<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">label_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">site_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#label_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.label_of" title="Link to this definition">¶</a></dt>
+<dd><p>How a page names the site a kept song’s provenance names (<code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> for none).</p>
+<p>A registry name, or the name a site writes in provenance (<code class="docutils literal notranslate"><span class="pre">site_name</span></code>: Ultimate
+Guitar’s <code class="docutils literal notranslate"><span class="pre">ultimate-guitar</span></code>); an unknown name is shown as it is.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">label_of</span><span class="p">(</span><span class="s2">"lrclib"</span><span class="p">),</span> <span class="n">label_of</span><span class="p">(</span><span class="s2">"ultimate-guitar"</span><span class="p">),</span> <span class="n">label_of</span><span class="p">(</span><span class="s2">"elsewhere"</span><span class="p">),</span> <span class="n">label_of</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
+<span class="go">('LRCLIB', 'Ultimate Guitar', 'elsewhere', '')</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="songleaf.online.page_heading">
+<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">page_heading</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">page</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#page_heading"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.page_heading" title="Link to this definition">¶</a></dt>
+<dd><p>A song page’s own label: its first <code class="docutils literal notranslate"><span class="pre">&lt;h1&gt;</span></code> (inner HTML), else <a class="reference internal" href="#songleaf.online.page_title" title="songleaf.online.page_title"><code class="xref py py-func docutils literal notranslate"><span class="pre">page_title()</span></code></a>.</p>
+<p>Chord sites title a song page as their search results label it (title, then
+artist), so <code class="xref py py-meth docutils literal notranslate"><span class="pre">ChartPageSite._title_and_artist()</span></code> splits either the same way.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">page_heading</span><span class="p">(</span><span class="s2">"&lt;title&gt;x&lt;/title&gt;&lt;h1&gt;Paper Boats&amp;nbsp;&lt;a&gt;Invented Band&lt;/a&gt;&lt;/h1&gt;"</span><span class="p">)</span>
+<span class="go">'Paper Boats&amp;nbsp;&lt;a&gt;Invented Band&lt;/a&gt;'</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="songleaf.online.page_title">
+<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">page_title</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">page</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#page_title"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.page_title" title="Link to this definition">¶</a></dt>
+<dd><p>The song a page’s <code class="docutils literal notranslate"><span class="pre">&lt;title&gt;</span></code> names (<code class="docutils literal notranslate"><span class="pre">title</span> <span class="pre">-</span> <span class="pre">artist</span></code>), without the site’s words.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">page_title</span><span class="p">(</span><span class="s2">"&lt;title&gt;Paper Boats - Invented Band chords | Some Site&lt;/title&gt;"</span><span class="p">)</span>
+<span class="go">'Paper Boats - Invented Band'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">page_title</span><span class="p">(</span><span class="s2">"&lt;title&gt;Paper Boats  Chords &amp;ndash; Invented Band | Version #2&lt;/title&gt;"</span><span class="p">)</span>
+<span class="go">'Paper Boats - Invented Band'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">page_title</span><span class="p">(</span><span class="s2">"&lt;title&gt;Paper Boats Invented Band Chords and Lyrics for Guitar&lt;/title&gt;"</span><span class="p">)</span>
+<span class="go">'Paper Boats Invented Band'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">page_title</span><span class="p">(</span><span class="s2">"&lt;title&gt;Gentle Guitar Rain Chords - Invented Band | Version #1&lt;/title&gt;"</span><span class="p">)</span>
+<span class="go">'Gentle Guitar Rain - Invented Band'</span>
+</pre></div>
+</div>
+<p>The kind word that ends the song’s name is the first one followed only by `` - artist``
+or by the site’s own words: a “Guitar” inside the title does not cut it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="songleaf.online.polite_fetch">
 <span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">polite_fetch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#polite_fetch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.polite_fetch" title="Link to this definition">¶</a></dt>
 <dd><p>The text at <code class="docutils literal notranslate"><span class="pre">url</span></code>: robots.txt obeyed, paced per host, honest User-Agent.</p>
 <p>Raises <a class="reference internal" href="#songleaf.online.OnlineUnavailable" title="songleaf.online.OnlineUnavailable"><code class="xref py py-class docutils literal notranslate"><span class="pre">OnlineUnavailable</span></code></a> without the <code class="docutils literal notranslate"><span class="pre">online</span></code> extra, scraped’s
 <code class="docutils literal notranslate"><span class="pre">RobotsDisallowed</span></code> when robots.txt forbids the URL, and <a class="reference internal" href="#songleaf.online.FetchFailed" title="songleaf.online.FetchFailed"><code class="xref py py-class docutils literal notranslate"><span class="pre">FetchFailed</span></code></a> for a
 response that is not a page.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="songleaf.online.site_for_url">
+<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">site_for_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sites</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#site_for_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.site_for_url" title="Link to this definition">¶</a></dt>
+<dd><p>The site that reads the page at <code class="docutils literal notranslate"><span class="pre">url</span></code>, and the page as a <a class="reference internal" href="#songleaf.online.Candidate" title="songleaf.online.Candidate"><code class="xref py py-class docutils literal notranslate"><span class="pre">Candidate</span></code></a>.</p>
+<p>Every site with a <code class="docutils literal notranslate"><span class="pre">candidate_for</span></code> is asked, in order (default: all of
+<a class="reference internal" href="#songleaf.online.WEB_SITES" title="songleaf.online.WEB_SITES"><code class="xref py py-data docutils literal notranslate"><span class="pre">WEB_SITES</span></code></a>, whatever the search list says: naming a page is not a search).
+No request is made. Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> when no site reads that URL, or when its
+site refuses it (a URL that is not plain, an official Ultimate Guitar tab); whether
+Ultimate Guitar fetching is on is checked when the page is read.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference internal" href="#songleaf.online.WebSite" title="songleaf.online.WebSite"><code class="xref py py-class docutils literal notranslate"><span class="pre">WebSite</span></code></a>, <a class="reference internal" href="#songleaf.online.Candidate" title="songleaf.online.Candidate"><code class="xref py py-class docutils literal notranslate"><span class="pre">Candidate</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="songleaf.online.site_label">
+<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">site_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">site</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#site_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.site_label" title="Link to this definition">¶</a></dt>
+<dd><p>How a page names <code class="docutils literal notranslate"><span class="pre">site</span></code>: its <code class="docutils literal notranslate"><span class="pre">label</span></code> when it has one, else its name.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">site_label</span><span class="p">(</span><span class="n">LrclibSite</span><span class="p">()),</span> <span class="n">site_label</span><span class="p">(</span><span class="n">CHORDIE</span><span class="p">)</span>
+<span class="go">('LRCLIB', 'Chordie')</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
@@ -875,6 +1108,17 @@ response that is not a page.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="songleaf.online.unavailable_reason">
+<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">unavailable_reason</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#unavailable_reason"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.unavailable_reason" title="Link to this definition">¶</a></dt>
+<dd><p>Why this process cannot fetch with <a class="reference internal" href="#songleaf.online.polite_fetch" title="songleaf.online.polite_fetch"><code class="xref py py-func docutils literal notranslate"><span class="pre">polite_fetch()</span></code></a> (no <code class="docutils literal notranslate"><span class="pre">online</span></code> extra), or <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -914,7 +1158,7 @@ response that is not a page.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="songleaf.online.web_sites">
-<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">web_sites</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sites</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'chordie':</span> <span class="pre">ChartPageSite(name='chordie',</span> <span class="pre">search_url='https://www.chordie.com/result.php?q={query}',</span> <span class="pre">result_link='&lt;a[^&gt;]+href=&quot;(?P&lt;url&gt;/(?:chord|song)\\.pere/[^&quot;]+)&quot;[^&gt;]*&gt;(?P&lt;label&gt;.*?)&lt;/a&gt;',</span> <span class="pre">label_separator='\\s*\\xa0+\\s*|</span> <span class="pre">-</span> <span class="pre">',</span> <span class="pre">license='personal',</span> <span class="pre">chords=True),</span> <span class="pre">'lrclib':</span> <span class="pre">LrclibSite(name='lrclib',</span> <span class="pre">license='personal',</span> <span class="pre">chords=False,</span> <span class="pre">base_url='https://lrclib.net')}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#web_sites"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.web_sites" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">songleaf.online.</span></span><span class="sig-name descname"><span class="pre">web_sites</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sites</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'azchords':</span> <span class="pre">ChartPageSite(name='azchords'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result_link</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_separator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\\s*\\xa0+\\s*|</span> <span class="pre">-</span> <span class="pre">'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">license</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'personal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">page_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'^/[a-z0-9]/[a-z0-9]+-tabs-\\d+/[a-z0-9]+-tabs-\\d+\\.html$'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">home</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'https://www.azchords.com/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'title'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'AZChords')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">'chordie'</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ChartPageSite(name</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'chordie'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'https://www.chordie.com/result.php?q={query}'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result_link</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'&lt;a[^&gt;]+href=&quot;(?P&lt;url&gt;/(?:chord|song)\\.pere/[^&quot;]+)&quot;[^&gt;]*&gt;(?P&lt;label&gt;.*?)&lt;/a&gt;'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_separator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\\s*\\xa0+\\s*|</span> <span class="pre">-</span> <span class="pre">'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">license</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'personal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">page_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'^/(?:chord|song)\\.pere/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">home</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'h1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Chordie')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">'lrclib'</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">LrclibSite(name</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'lrclib'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">license</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'personal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'https://lrclib.net'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'LRCLIB')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">'ug'</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">&lt;songleaf.ultimate_guitar.UltimateGuitarURLSource</span> <span class="pre">object&gt;}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/online.html#web_sites"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.online.web_sites" title="Link to this definition">¶</a></dt>
 <dd><p>The sites to ask: <code class="docutils literal notranslate"><span class="pre">sites</span></code> (names, comma-separated or a list, or site objects),
 else <code class="docutils literal notranslate"><span class="pre">$SONGLEAF_WEB_SITES</span></code>, else <a class="reference internal" href="#songleaf.online.DEFAULT_WEB_SITES" title="songleaf.online.DEFAULT_WEB_SITES"><code class="xref py py-data docutils literal notranslate"><span class="pre">DEFAULT_WEB_SITES</span></code></a>.</p>
 <dl class="field-list simple">
@@ -978,10 +1222,14 @@ else <code class="docutils literal notranslate"><span class="pre">$SONGLEAF_WEB_
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">songleaf.online</a><ul>
+<li><a class="reference internal" href="#songleaf.online.AZCHORDS"><code class="docutils literal notranslate"><span class="pre">AZCHORDS</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.CHORDIE"><code class="docutils literal notranslate"><span class="pre">CHORDIE</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.CHORDS_BONUS"><code class="docutils literal notranslate"><span class="pre">CHORDS_BONUS</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.Candidate"><code class="docutils literal notranslate"><span class="pre">Candidate</span></code></a></li>
-<li><a class="reference internal" href="#songleaf.online.ChartPageSite"><code class="docutils literal notranslate"><span class="pre">ChartPageSite</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.online.ChartPageSite"><code class="docutils literal notranslate"><span class="pre">ChartPageSite</span></code></a><ul>
+<li><a class="reference internal" href="#songleaf.online.ChartPageSite.candidate_for"><code class="docutils literal notranslate"><span class="pre">ChartPageSite.candidate_for()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#songleaf.online.DEFAULT_WEB_SITES"><code class="docutils literal notranslate"><span class="pre">DEFAULT_WEB_SITES</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.Fetch"><code class="docutils literal notranslate"><span class="pre">Fetch</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.FetchFailed"><code class="docutils literal notranslate"><span class="pre">FetchFailed</span></code></a></li>
@@ -989,8 +1237,10 @@ else <code class="docutils literal notranslate"><span class="pre">$SONGLEAF_WEB_
 <li><a class="reference internal" href="#songleaf.online.Found.hit"><code class="docutils literal notranslate"><span class="pre">Found.hit()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#songleaf.online.KEPT_SOURCES"><code class="docutils literal notranslate"><span class="pre">KEPT_SOURCES</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.LrclibSite"><code class="docutils literal notranslate"><span class="pre">LrclibSite</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.MAX_EXTRACTIONS"><code class="docutils literal notranslate"><span class="pre">MAX_EXTRACTIONS</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.online.MAX_LABEL_CHARS"><code class="docutils literal notranslate"><span class="pre">MAX_LABEL_CHARS</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.MAX_PAGE_CHARS"><code class="docutils literal notranslate"><span class="pre">MAX_PAGE_CHARS</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.MIN_CHORDS"><code class="docutils literal notranslate"><span class="pre">MIN_CHORDS</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.MIN_CLOSENESS"><code class="docutils literal notranslate"><span class="pre">MIN_CLOSENESS</span></code></a></li>
@@ -1014,15 +1264,24 @@ else <code class="docutils literal notranslate"><span class="pre">$SONGLEAF_WEB_
 <li><a class="reference internal" href="#songleaf.online.WEB_SITES_ENVVAR"><code class="docutils literal notranslate"><span class="pre">WEB_SITES_ENVVAR</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.WEB_SOURCE"><code class="docutils literal notranslate"><span class="pre">WEB_SOURCE</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.WebSite"><code class="docutils literal notranslate"><span class="pre">WebSite</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.online.canonical_url"><code class="docutils literal notranslate"><span class="pre">canonical_url()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.chart_counts"><code class="docutils literal notranslate"><span class="pre">chart_counts()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.chart_text"><code class="docutils literal notranslate"><span class="pre">chart_text()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.closeness"><code class="docutils literal notranslate"><span class="pre">closeness()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.expand"><code class="docutils literal notranslate"><span class="pre">expand()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.find_online"><code class="docutils literal notranslate"><span class="pre">find_online()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.online.import_url"><code class="docutils literal notranslate"><span class="pre">import_url()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.is_usable"><code class="docutils literal notranslate"><span class="pre">is_usable()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.online.kept_keys"><code class="docutils literal notranslate"><span class="pre">kept_keys()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.online.label_of"><code class="docutils literal notranslate"><span class="pre">label_of()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.online.page_heading"><code class="docutils literal notranslate"><span class="pre">page_heading()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.online.page_title"><code class="docutils literal notranslate"><span class="pre">page_title()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.polite_fetch"><code class="docutils literal notranslate"><span class="pre">polite_fetch()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.online.site_for_url"><code class="docutils literal notranslate"><span class="pre">site_for_url()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.online.site_label"><code class="docutils literal notranslate"><span class="pre">site_label()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.site_names"><code class="docutils literal notranslate"><span class="pre">site_names()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.text_blocks"><code class="docutils literal notranslate"><span class="pre">text_blocks()</span></code></a></li>
+<li><a class="reference internal" href="#songleaf.online.unavailable_reason"><code class="docutils literal notranslate"><span class="pre">unavailable_reason()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.url_id"><code class="docutils literal notranslate"><span class="pre">url_id()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.web_key"><code class="docutils literal notranslate"><span class="pre">web_key()</span></code></a></li>
 <li><a class="reference internal" href="#songleaf.online.web_mode"><code class="docutils literal notranslate"><span class="pre">web_mode()</span></code></a></li>
@@ -1038,7 +1297,7 @@ else <code class="docutils literal notranslate"><span class="pre">$SONGLEAF_WEB_
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=d8383de7"></script>
+</div><script src="../_static/documentation_options.js?v=71784981"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

@@ -308,6 +308,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Mapping</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlsplit</span>
 
+<span class="c1">#: The site's name in a song's provenance (``provenance.site``), by every route.</span>
+<span class="n">SITE_NAME</span> <span class="o">=</span> <span class="s2">"ultimate-guitar"</span>
 <span class="c1">#: The environment variable that turns on :class:`UltimateGuitarURLSource` (``"1"``).</span>
 <span class="n">URL_SOURCE_ENVVAR</span> <span class="o">=</span> <span class="s2">"SONGLEAF_UG_URL"</span>
 <span class="c1">#: Tab types whose page has no text chart songleaf may read (UG's own player, or video).</span>
@@ -505,17 +507,27 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">UltimateGuitarURLSource</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""One UG chord page, by URL: local command line only, off by default.</span>
 
-<span class="sd">    It never searches (:meth:`search` returns nothing) and is never among</span>
-<span class="sd">    :func:`songleaf.sources.default_sources`. :meth:`get` fetches the one page</span>
+<span class="sd">    It never searches (:meth:`search` and :meth:`find` return nothing) and is never</span>
+<span class="sd">    among :func:`songleaf.sources.default_sources`. :meth:`get` fetches the one page</span>
 <span class="sd">    it is given, refuses official and Pro pages, and returns the chart as a</span>
 <span class="sd">    :class:`~songleaf.model.Song` keyed ``ug:&lt;id&gt;`` (see :func:`ug_key`).</span>
 
+<span class="sd">    It is also the ``ug`` entry of :data:`songleaf.online.WEB_SITES`, for</span>
+<span class="sd">    :func:`songleaf.online.import_url`: :meth:`candidate_for` claims a UG URL,</span>
+<span class="sd">    :meth:`extract` reads it. Its ``fetch`` is the one an import uses unless the</span>
+<span class="sd">    caller gives another (one plain request that stays on UG).</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        fetch: ``url -&gt; html``; the default makes one plain HTTPS request.</span>
-<span class="sd">        enabled: Whether fetching is allowed; defaults to ``SONGLEAF_UG_URL=1``.</span>
+<span class="sd">        enabled: Whether fetching is allowed; defaults to ``SONGLEAF_UG_URL=1``,</span>
+<span class="sd">            read when asked (so a process can turn it on after import).</span>
 <span class="sd">    """</span>
 
     <span class="n">name</span> <span class="o">=</span> <span class="s2">"ug"</span>
+    <span class="n">license</span> <span class="o">=</span> <span class="s2">"personal"</span>
+    <span class="n">chords</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">label</span> <span class="o">=</span> <span class="s2">"Ultimate Guitar"</span>
+    <span class="n">site_name</span> <span class="o">=</span> <span class="n">SITE_NAME</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -523,8 +535,16 @@
         <span class="n">fetch</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">fetch_page</span><span class="p">,</span>
         <span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_fetch</span> <span class="o">=</span> <span class="n">fetch</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="n">url_source_enabled</span><span class="p">()</span> <span class="k">if</span> <span class="n">enabled</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">enabled</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fetch</span> <span class="o">=</span> <span class="n">fetch</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_enabled</span> <span class="o">=</span> <span class="n">enabled</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">url_source_enabled</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enabled</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enabled</span>
+
+    <span class="nd">@enabled</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_enabled</span> <span class="o">=</span> <span class="n">value</span>
 
 <div class="viewcode-block" id="UltimateGuitarURLSource.search">
 <a class="viewcode-back" href="../../_autosummary/songleaf.ultimate_guitar.html#songleaf.ultimate_guitar.UltimateGuitarURLSource.search">[docs]</a>
@@ -533,23 +553,68 @@
         <span class="k">return</span> <span class="p">[]</span></div>
 
 
-<div class="viewcode-block" id="UltimateGuitarURLSource.get">
-<a class="viewcode-back" href="../../_autosummary/songleaf.ultimate_guitar.html#songleaf.ultimate_guitar.UltimateGuitarURLSource.get">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""The chart at *url* as a song (raises :class:`RefusedPage`, or ``ValueError`` when off)."""</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.importers</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_song</span>
+<div class="viewcode-block" id="UltimateGuitarURLSource.find">
+<a class="viewcode-back" href="../../_autosummary/songleaf.ultimate_guitar.html#songleaf.ultimate_guitar.UltimateGuitarURLSource.find">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">fetch</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Nothing, as :meth:`search`: a web search never asks UG."""</span>
+        <span class="k">return</span> <span class="p">[]</span></div>
 
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">"Fetching Ultimate Guitar pages is off. Paste the chart, or use the"</span>
                 <span class="s2">" bookmarklet from the page you opened; on your own machine,"</span>
                 <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">URL_SOURCE_ENVVAR</span><span class="si">}</span><span class="s2">=1 turns this on."</span>
             <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_checked</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">url</span> <span class="o">=</span> <span class="n">safe_page_url</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
         <span class="n">why</span> <span class="o">=</span> <span class="n">refusal</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">why</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">RefusedPage</span><span class="p">(</span><span class="n">why</span><span class="p">)</span>
-        <span class="n">chart</span> <span class="o">=</span> <span class="n">chart_from_html</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fetch</span><span class="p">(</span><span class="n">url</span><span class="p">),</span> <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">url</span>
+
+<div class="viewcode-block" id="UltimateGuitarURLSource.candidate_for">
+<a class="viewcode-back" href="../../_autosummary/songleaf.ultimate_guitar.html#songleaf.ultimate_guitar.UltimateGuitarURLSource.candidate_for">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">candidate_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""The page at a UG *url*, to :meth:`extract` (``None`` for another host).</span>
+
+<span class="sd">        Raises ``ValueError`` when the URL is not plain, and :class:`RefusedPage` for</span>
+<span class="sd">        an official or Pro page. Whether fetching is on is checked by :meth:`extract`,</span>
+<span class="sd">        so a page already kept is still found while it is off.</span>
+<span class="sd">        """</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.online</span><span class="w"> </span><span class="kn">import</span> <span class="n">Candidate</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_ultimate_guitar_url</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_checked</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="n">tab_id</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Not an Ultimate Guitar tab URL (no tab id): </span><span class="si">{</span><span class="n">url</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Candidate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">found</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">store_key</span><span class="o">=</span><span class="sa">f</span><span class="s2">"ug:</span><span class="si">{</span><span class="n">found</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="UltimateGuitarURLSource.extract">
+<a class="viewcode-back" href="../../_autosummary/songleaf.ultimate_guitar.html#songleaf.ultimate_guitar.UltimateGuitarURLSource.extract">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">candidate</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">fetch</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""The chart of a :meth:`candidate_for` page as a song (``ValueError`` when off)."""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_enabled</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_song</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_checked</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">url</span><span class="p">),</span> <span class="n">fetch</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="UltimateGuitarURLSource.get">
+<a class="viewcode-back" href="../../_autosummary/songleaf.ultimate_guitar.html#songleaf.ultimate_guitar.UltimateGuitarURLSource.get">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""The chart at *url* as a song (raises :class:`RefusedPage`, or ``ValueError`` when off)."""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_enabled</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_song</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_checked</span><span class="p">(</span><span class="n">url</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_song</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fetch</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.importers</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_song</span>
+
+        <span class="n">chart</span> <span class="o">=</span> <span class="n">chart_from_html</span><span class="p">(</span><span class="n">fetch</span><span class="p">(</span><span class="n">url</span><span class="p">),</span> <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">import_song</span><span class="p">(</span>
             <span class="n">chart</span><span class="p">[</span><span class="s2">"text"</span><span class="p">],</span>
             <span class="n">title</span><span class="o">=</span><span class="n">chart</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
@@ -559,7 +624,6 @@
             <span class="n">capo</span><span class="o">=</span><span class="n">chart</span><span class="p">[</span><span class="s2">"capo"</span><span class="p">],</span>
             <span class="nb">format</span><span class="o">=</span><span class="s2">"ultimate-guitar"</span><span class="p">,</span>
         <span class="p">)</span><span class="o">.</span><span class="n">song</span></div>
-</div>
 
 </pre></div>
         </article>
@@ -589,7 +653,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=d8383de7"></script>
+</div><script src="../../_static/documentation_options.js?v=71784981"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

@@ -308,8 +308,8 @@ than dicts uses <a class="reference internal" href="songleaf.sources.html#module
 <tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.tools.import_text" title="songleaf.tools.import_text"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_text</span></code></a>(text, *[, title, artist, url, ...])</p></td>
 <td><p>Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.tools.import_url" title="songleaf.tools.import_url"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_url</span></code></a>(url, *[, refresh, store, source])</p></td>
-<td><p>Fetch one community Ultimate Guitar chord page and store its chart as <code class="docutils literal notranslate"><span class="pre">ug:&lt;id&gt;</span></code>.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#songleaf.tools.import_url" title="songleaf.tools.import_url"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_url</span></code></a>(url, *[, refresh, web_sites, ...])</p></td>
+<td><p>Read one song page you name (a chord site's URL) and keep it, so search finds it.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#songleaf.tools.media" title="songleaf.tools.media"><code class="xref py py-obj docutils literal notranslate"><span class="pre">media</span></code></a>(query, *[, youtube, spotify, pick, ...])</p></td>
 <td><p>Link the song's recording: a YouTube video and/or a Spotify track, by id or link.</p></td>
@@ -426,12 +426,17 @@ and is then usable like any other: <code class="docutils literal notranslate"><s
 
 <dl class="py function">
 <dt class="sig sig-object py" id="songleaf.tools.import_url">
-<span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">import_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">refresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/tools.html#import_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.tools.import_url" title="Link to this definition">¶</a></dt>
-<dd><p>Fetch one community Ultimate Guitar chord page and store its chart as <code class="docutils literal notranslate"><span class="pre">ug:&lt;id&gt;</span></code>.</p>
-<p>Local command line only, and off unless <code class="docutils literal notranslate"><span class="pre">SONGLEAF_UG_URL=1</span></code> is set: prefer
-pasting, or the bookmarklet run on the page you opened (see
-<code class="docutils literal notranslate"><span class="pre">songleaf.ultimate_guitar</span></code>). Official and Pro pages are refused. A chart
-already stored is not fetched again unless <code class="docutils literal notranslate"><span class="pre">refresh</span></code>.</p>
+<span class="sig-prename descclassname"><span class="pre">songleaf.tools.</span></span><span class="sig-name descname"><span class="pre">import_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">refresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">web_sites</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fetch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/songleaf/tools.html#import_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#songleaf.tools.import_url" title="Link to this definition">¶</a></dt>
+<dd><p>Read one song page you name (a chord site’s URL) and keep it, so search finds it.</p>
+<p>The site is picked from the URL (<code class="docutils literal notranslate"><span class="pre">songleaf.online.WEB_SITES</span></code>: Chordie, and
+Ultimate Guitar community charts). The song is stored under <code class="docutils literal notranslate"><span class="pre">web:&lt;site&gt;:&lt;id&gt;</span></code>,
+or <code class="docutils literal notranslate"><span class="pre">ug:&lt;id&gt;</span></code> for Ultimate Guitar, and is found by local search from then on. A
+page already kept is not fetched again unless <code class="docutils literal notranslate"><span class="pre">refresh</span></code>. <code class="docutils literal notranslate"><span class="pre">web_sites</span></code> limits the
+sites that may read it (comma-separated names; default: every known one).</p>
+<p>Ultimate Guitar is local command line only and off unless <code class="docutils literal notranslate"><span class="pre">SONGLEAF_UG_URL=1</span></code>;
+official and Pro pages are refused (prefer pasting, or the bookmarklet run on the
+page you opened: <code class="docutils literal notranslate"><span class="pre">songleaf.ultimate_guitar</span></code>). <code class="docutils literal notranslate"><span class="pre">source</span></code> is a site object to read
+with instead of the registry’s (for tests or a site of your own).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -714,7 +719,7 @@ longer stored are left out. <code class="docutils literal notranslate"><span cla
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=d8383de7"></script>
+</div><script src="../_static/documentation_options.js?v=71784981"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

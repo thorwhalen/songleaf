@@ -39,12 +39,13 @@ All UG-derived songs carry `provenance.license = "personal"`.
 
 ### Module Attributes
 
-| [`URL_SOURCE_ENVVAR`](#songleaf.ultimate_guitar.URL_SOURCE_ENVVAR)     | The environment variable that turns on [`UltimateGuitarURLSource`](#songleaf.ultimate_guitar.UltimateGuitarURLSource) (`"1"`).   |
-|------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
-| [`REFUSED_TYPES`](#songleaf.ultimate_guitar.REFUSED_TYPES)         | Tab types whose page has no text chart songleaf may read (UG's own player, or video).                                      |
-| [`USER_AGENT`](#songleaf.ultimate_guitar.USER_AGENT)            | What a request for a page says it is (UG scores bots; songleaf does not pretend to be a browser).                          |
-| [`FETCH_TIMEOUT_SECONDS`](#songleaf.ultimate_guitar.FETCH_TIMEOUT_SECONDS) | Seconds before a page fetch gives up.                                                                                      |
-| [`MAX_PAGE_BYTES`](#songleaf.ultimate_guitar.MAX_PAGE_BYTES)        | Bytes read from a page at most (a chart page is a few hundred KB).                                                         |
+| [`SITE_NAME`](#songleaf.ultimate_guitar.SITE_NAME)             | The site's name in a song's provenance (`provenance.site`), by every route.                                              |
+|------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| [`URL_SOURCE_ENVVAR`](#songleaf.ultimate_guitar.URL_SOURCE_ENVVAR)     | The environment variable that turns on [`UltimateGuitarURLSource`](#songleaf.ultimate_guitar.UltimateGuitarURLSource) (`"1"`). |
+| [`REFUSED_TYPES`](#songleaf.ultimate_guitar.REFUSED_TYPES)         | Tab types whose page has no text chart songleaf may read (UG's own player, or video).                                    |
+| [`USER_AGENT`](#songleaf.ultimate_guitar.USER_AGENT)            | What a request for a page says it is (UG scores bots; songleaf does not pretend to be a browser).                        |
+| [`FETCH_TIMEOUT_SECONDS`](#songleaf.ultimate_guitar.FETCH_TIMEOUT_SECONDS) | Seconds before a page fetch gives up.                                                                                    |
+| [`MAX_PAGE_BYTES`](#songleaf.ultimate_guitar.MAX_PAGE_BYTES)        | Bytes read from a page at most (a chart page is a few hundred KB).                                                       |
 
 ### Functions
 
@@ -87,6 +88,10 @@ Bases: [`ValueError`](https://docs.python.org/3/builtins/exceptions.html#ValueEr
 
 A UG page songleaf will not read (official or Pro content, or no text chart).
 
+### songleaf.ultimate_guitar.SITE_NAME *= 'ultimate-guitar'*
+
+The site’s name in a song’s provenance (`provenance.site`), by every route.
+
 ### songleaf.ultimate_guitar.URL_SOURCE_ENVVAR *= 'SONGLEAF_UG_URL'*
 
 The environment variable that turns on [`UltimateGuitarURLSource`](#songleaf.ultimate_guitar.UltimateGuitarURLSource) (`"1"`).
@@ -101,14 +106,39 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 One UG chord page, by URL: local command line only, off by default.
 
-It never searches ([`search()`](#songleaf.ultimate_guitar.UltimateGuitarURLSource.search) returns nothing) and is never among
-[`songleaf.sources.default_sources()`](songleaf.sources.html.md#songleaf.sources.default_sources). [`get()`](#songleaf.ultimate_guitar.UltimateGuitarURLSource.get) fetches the one page
+It never searches ([`search()`](#songleaf.ultimate_guitar.UltimateGuitarURLSource.search) and [`find()`](#songleaf.ultimate_guitar.UltimateGuitarURLSource.find) return nothing) and is never
+among [`songleaf.sources.default_sources()`](songleaf.sources.html.md#songleaf.sources.default_sources). [`get()`](#songleaf.ultimate_guitar.UltimateGuitarURLSource.get) fetches the one page
 it is given, refuses official and Pro pages, and returns the chart as a
 [`Song`](songleaf.model.html.md#songleaf.model.Song) keyed `ug:<id>` (see [`ug_key()`](#songleaf.ultimate_guitar.ug_key)).
 
+It is also the `ug` entry of [`songleaf.online.WEB_SITES`](songleaf.online.html.md#songleaf.online.WEB_SITES), for
+[`songleaf.online.import_url()`](songleaf.online.html.md#songleaf.online.import_url): [`candidate_for()`](#songleaf.ultimate_guitar.UltimateGuitarURLSource.candidate_for) claims a UG URL,
+[`extract()`](#songleaf.ultimate_guitar.UltimateGuitarURLSource.extract) reads it. Its `fetch` is the one an import uses unless the
+caller gives another (one plain request that stays on UG).
+
 * **Parameters:**
   * **fetch** ([`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)], [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]) – `url -> html`; the default makes one plain HTTPS request.
-  * **enabled** ([`bool`](https://docs.python.org/3/builtins/functions.html#bool) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – Whether fetching is allowed; defaults to `SONGLEAF_UG_URL=1`.
+  * **enabled** ([`bool`](https://docs.python.org/3/builtins/functions.html#bool) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – Whether fetching is allowed; defaults to `SONGLEAF_UG_URL=1`,
+    read when asked (so a process can turn it on after import).
+
+#### candidate_for(url)
+
+The page at a UG *url*, to [`extract()`](#songleaf.ultimate_guitar.UltimateGuitarURLSource.extract) (`None` for another host).
+
+Raises `ValueError` when the URL is not plain, and [`RefusedPage`](#songleaf.ultimate_guitar.RefusedPage) for
+an official or Pro page. Whether fetching is on is checked by [`extract()`](#songleaf.ultimate_guitar.UltimateGuitarURLSource.extract),
+so a page already kept is still found while it is off.
+
+#### extract(candidate, , fetch=None)
+
+The chart of a [`candidate_for()`](#songleaf.ultimate_guitar.UltimateGuitarURLSource.candidate_for) page as a song (`ValueError` when off).
+
+#### find(query, , limit=0, fetch=None)
+
+Nothing, as [`search()`](#songleaf.ultimate_guitar.UltimateGuitarURLSource.search): a web search never asks UG.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)
 
 #### get(url)
 

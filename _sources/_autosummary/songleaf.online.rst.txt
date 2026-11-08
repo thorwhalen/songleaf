@@ -24,24 +24,36 @@ songleaf.online
       MIN_LYRIC_LINES
       MIN_CHORDS
       URL_ID_CHARS
+      MAX_LABEL_CHARS
       CHORDIE
+      AZCHORDS
       WEB_SITES
       DEFAULT_WEB_SITES
       SAME_WORD_RATIO
+      KEPT_SOURCES
    
    .. rubric:: Functions
 
    .. autosummary::
    
+      canonical_url
       chart_counts
       chart_text
       closeness
       expand
       find_online
+      import_url
       is_usable
+      kept_keys
+      label_of
+      page_heading
+      page_title
       polite_fetch
+      site_for_url
+      site_label
       site_names
       text_blocks
+      unavailable_reason
       url_id
       web_key
       web_mode

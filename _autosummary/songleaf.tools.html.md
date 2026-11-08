@@ -21,7 +21,7 @@ than dicts uses [`songleaf.sources`](songleaf.sources.html.md#module-songleaf.so
 | [`forget`](#songleaf.tools.forget)(key, \*[, store, library_root])            | Remove a song from the stored songs, from every list it was in, and from every Viewed list.                |
 | [`import_file`](#songleaf.tools.import_file)([path, title, artist, url, ...])      | Read pasted song text from a file (`-`: standard input) and store it; see `import_text`.                   |
 | [`import_text`](#songleaf.tools.import_text)(text, \*[, title, artist, url, ...])  | Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics. |
-| [`import_url`](#songleaf.tools.import_url)(url, \*[, refresh, store, source])     | Fetch one community Ultimate Guitar chord page and store its chart as `ug:<id>`.                           |
+| [`import_url`](#songleaf.tools.import_url)(url, \*[, refresh, web_sites, ...])    | Read one song page you name (a chord site's URL) and keep it, so search finds it.                          |
 | [`media`](#songleaf.tools.media)(query, \*[, youtube, spotify, pick, ...])   | Link the song's recording: a YouTube video and/or a Spotify track, by id or link.                          |
 | [`search`](#songleaf.tools.search)([query, title, artist, lyrics, ...])       | Find songs with one query: in your lists' names, then titles, artists and lyrics.                          |
 | [`sheet`](#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...])    | Make a one-page song sheet (PDF) for the best match of `query`.                                            |
@@ -93,14 +93,20 @@ and is then usable like any other: `sheet <key>`, `song <key>`.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### songleaf.tools.import_url(url, , refresh=False, store=None, source=None)
+### songleaf.tools.import_url(url, , refresh=False, web_sites='', store=None, source=None, fetch=None)
 
-Fetch one community Ultimate Guitar chord page and store its chart as `ug:<id>`.
+Read one song page you name (a chord site’s URL) and keep it, so search finds it.
 
-Local command line only, and off unless `SONGLEAF_UG_URL=1` is set: prefer
-pasting, or the bookmarklet run on the page you opened (see
-`songleaf.ultimate_guitar`). Official and Pro pages are refused. A chart
-already stored is not fetched again unless `refresh`.
+The site is picked from the URL (`songleaf.online.WEB_SITES`: Chordie, and
+Ultimate Guitar community charts). The song is stored under `web:<site>:<id>`,
+or `ug:<id>` for Ultimate Guitar, and is found by local search from then on. A
+page already kept is not fetched again unless `refresh`. `web_sites` limits the
+sites that may read it (comma-separated names; default: every known one).
+
+Ultimate Guitar is local command line only and off unless `SONGLEAF_UG_URL=1`;
+official and Pro pages are refused (prefer pasting, or the bookmarklet run on the
+page you opened: `songleaf.ultimate_guitar`). `source` is a site object to read
+with instead of the registry’s (for tests or a site of your own).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

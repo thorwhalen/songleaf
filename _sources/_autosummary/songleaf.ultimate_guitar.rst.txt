@@ -8,6 +8,7 @@ songleaf.ultimate\_guitar
 
    .. autosummary::
    
+      SITE_NAME
       URL_SOURCE_ENVVAR
       REFUSED_TYPES
       USER_AGENT

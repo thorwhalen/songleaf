@@ -1,4 +1,4 @@
-> built 2026-11-04 06:15 UTC from 77cb0c9 (main) · songleaf 0.0.30. Details: build_info.json
+> built 2026-11-08 18:19 UTC from 5b2f0c3 (main) · songleaf 0.0.31. Details: build_info.json
 
 # index.html.md
 
@@ -142,11 +142,22 @@ python -m songleaf search "paper boats" --web off                # never
 SONGLEAF_WEB_SITES=lrclib,chordie python -m songleaf search ...  # which sites to ask
 ```
 
-`sheet` takes the best local match, chords and all, so it goes online only when nothing here matches at all, or with `--web always`; to choose between a local near miss and the song online, `search` first and make the sheet from the key it shows. `--web` (or `SONGLEAF_WEB_SEARCH`) is `fallback` (the default), `always` or `off`; `--web-sites` (or `SONGLEAF_WEB_SITES`) names the sites, comma-separated. The default list is LRCLIB only, an open lyrics API made for automated clients: it gives lyrics (with their timings) but no chords. Chordie is known but off by default; why each site is in or out is in [`misc/docs/sources.md`](). Every request obeys the site’s robots.txt, waits at least a second between two requests to one host, and says it is songleaf (no browser disguise). The web app does not go online unless built with `mk_app(web_search="fallback")`: its page searches as you type.
+`sheet` takes the best local match, chords and all, so it goes online only when nothing here matches at all, or with `--web always`; to choose between a local near miss and the song online, `search` first and make the sheet from the key it shows. `--web` (or `SONGLEAF_WEB_SEARCH`) is `fallback` (the default), `always` or `off`; `--web-sites` (or `SONGLEAF_WEB_SITES`) names the sites, comma-separated. The default list is LRCLIB only, an open lyrics API made for automated clients: it gives lyrics (with their timings) but no chords. Chordie is known but off by default; why each site is in or out is in [`misc/docs/sources.md`](). Every request obeys the site’s robots.txt, waits at least a second between two requests to one host, and says it is songleaf (no browser disguise). The web app does not go online as you type unless built with `mk_app(web_search="fallback")`: its page searches on every keystroke. Built with `mk_app(web_on_request=True)` (and the `online` extra), the page instead shows a **Search the web for “…”** button after the results: one press asks the configured sites once (`/search?web=always`), and a song found there is kept and shown with where it came from ([songleaf#62](https://github.com/thorwhalen/songleaf/issues/62)). `GET /web` says whether it is available.
 
 Lyrics and chord charts are copyrighted. What songleaf fetches stays in your data directory, for your own use.
 
-A site is an entry in `songleaf.online.WEB_SITES`: a `ChartPageSite` (a search URL and a pattern for its result links) covers most chord sites, and any object with `name`, `license`, `chords`, `find(query, *, limit, fetch)` and `extract(candidate, *, fetch)` works. `fetch=` (`url -> text`) is the seam for the network.
+### A page you name
+
+`import-url` reads one song page you give it and keeps it the same way, so the next search finds it locally:
+
+```bash
+python -m songleaf import-url "https://www.chordie.com/chord.pere/..."           # web:chordie:<id>
+SONGLEAF_UG_URL=1 python -m songleaf import-url "https://tabs.ultimate-guitar.com/tab/<artist>/<song>-chords-<id>"   # ug:<id>
+```
+
+Pages on Chordie, AZChords and Ultimate Guitar are read. The site is picked from the URL (`songleaf.online.site_for_url`); a URL no known site reads is refused with the list of those that do, and pasting the chart (`import`) works for any site. Ultimate Guitar community charts are read only on your own machine with `SONGLEAF_UG_URL=1`, never from the web app, and official or Pro tabs are refused ([songleaf#28](https://github.com/thorwhalen/songleaf/issues/28)). A page already kept is not fetched again unless `--refresh`. Songs you pasted (`paste:`), imported (`ug:`, `web:`) or found online are all searched locally, first.
+
+A site is an entry in `songleaf.online.WEB_SITES`: a `ChartPageSite` (a search URL and a pattern for its result links) covers most chord sites, and any object with `name`, `license`, `chords`, `find(query, *, limit, fetch)` and `extract(candidate, *, fetch)` works. A site that can also read a page by URL has `candidate_for(url)` (a `ChartPageSite` has it when given `page_path=`, a regex over its song pages’ paths). `fetch=` (`url -> text`) is the seam for the network.
 
 ## Web app
 
@@ -1974,23 +1985,35 @@ data directory, for personal use, and never belongs in a repository.
 | [`MIN_LYRIC_LINES`](_autosummary/songleaf.online.html.md#songleaf.online.MIN_LYRIC_LINES)      | A usable song has at least this many lyric lines...                                                                                                                                                                                     |
 | [`MIN_CHORDS`](_autosummary/songleaf.online.html.md#songleaf.online.MIN_CHORDS)           | ...and, from a site that gives chords, at least this many chords.                                                                                                                                                                       |
 | [`URL_ID_CHARS`](_autosummary/songleaf.online.html.md#songleaf.online.URL_ID_CHARS)         | Characters of a candidate id hashed from its URL (sites with no id of their own).                                                                                                                                                       |
+| [`MAX_LABEL_CHARS`](_autosummary/songleaf.online.html.md#songleaf.online.MAX_LABEL_CHARS)      | Characters of a title-and-artist label kept at most (a page's <title> can be anything).                                                                                                                                                 |
 | [`CHORDIE`](_autosummary/songleaf.online.html.md#songleaf.online.CHORDIE)              | a chord search engine.                                                                                                                                                                                                                  |
+| [`AZCHORDS`](_autosummary/songleaf.online.html.md#songleaf.online.AZCHORDS)             | chords over lyrics in `<pre id="content">`.                                                                                                                                                                                             |
 | [`WEB_SITES`](_autosummary/songleaf.online.html.md#songleaf.online.WEB_SITES)            | Every site songleaf knows, by name.                                                                                                                                                                                                     |
 | [`DEFAULT_WEB_SITES`](_autosummary/songleaf.online.html.md#songleaf.online.DEFAULT_WEB_SITES)    | those whose terms allow automated access.                                                                                                                                                                                               |
 | [`SAME_WORD_RATIO`](_autosummary/songleaf.online.html.md#songleaf.online.SAME_WORD_RATIO)      | A word of the query and a word of a label are the same word from this fuzzy ratio (0-100), for words of [`songleaf.match.TYPO_MIN_LENGTH`](_autosummary/songleaf.match.html.md#songleaf.match.TYPO_MIN_LENGTH) letters or more. |
+| [`KEPT_SOURCES`](_autosummary/songleaf.online.html.md#songleaf.online.KEPT_SOURCES)         | found on the web or imported by URL (`web:`), Ultimate Guitar charts (`ug:`), pasted songs (`paste:`).                                                                                                                                  |
 
 ### Functions
 
-| [`chart_counts`](_autosummary/songleaf.online.html.md#songleaf.online.chart_counts)(song)                                 | `(lyric lines, chords)` of a song: what [`chart_text()`](_autosummary/songleaf.online.html.md#songleaf.online.chart_text) and [`is_usable()`](_autosummary/songleaf.online.html.md#songleaf.online.is_usable) weigh.       |
+| [`canonical_url`](_autosummary/songleaf.online.html.md#songleaf.online.canonical_url)(url, site_url)                       | `url` as one spelling: https, the host as `site_url` spells it, no `#fragment`.                                                                                                     |
 |-----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`chart_counts`](_autosummary/songleaf.online.html.md#songleaf.online.chart_counts)(song)                                 | `(lyric lines, chords)` of a song: what [`chart_text()`](_autosummary/songleaf.online.html.md#songleaf.online.chart_text) and [`is_usable()`](_autosummary/songleaf.online.html.md#songleaf.online.is_usable) weigh.       |
 | [`chart_text`](_autosummary/songleaf.online.html.md#songleaf.online.chart_text)(page)                                   | The chord chart in a chord site's page: of its text blocks, the one that reads best.                                                                                                |
 | [`closeness`](_autosummary/songleaf.online.html.md#songleaf.online.closeness)(query, candidate)                        | How well a candidate names the song the query asks for, 0-1, word by word.                                                                                                          |
 | [`expand`](_autosummary/songleaf.online.html.md#songleaf.online.expand)(query, \*[, sites, fetch, store, ...])      | Find `query` on the web sites, keep the best usable result, and return it.                                                                                                          |
 | [`find_online`](_autosummary/songleaf.online.html.md#songleaf.online.find_online)(query, \*[, sites, fetch, limit, ...]) | Every site's candidates for `query`, best first: `(score, candidate, site)`.                                                                                                        |
+| [`import_url`](_autosummary/songleaf.online.html.md#songleaf.online.import_url)(url, \*[, sites, fetch, store, ...])    | Read the song page at `url` and keep it, like a song a search found.                                                                                                                |
 | [`is_usable`](_autosummary/songleaf.online.html.md#songleaf.online.is_usable)(song, \*, chords[, ...])                 | Whether an extracted song is worth keeping: enough lyrics, and chords if promised.                                                                                                  |
+| [`kept_keys`](_autosummary/songleaf.online.html.md#songleaf.online.kept_keys)(store, \*[, kinds])                      | The keys of `store` holding songs the reader brought in (see [`KEPT_SOURCES`](_autosummary/songleaf.online.html.md#songleaf.online.KEPT_SOURCES)).                                                        |
+| [`label_of`](_autosummary/songleaf.online.html.md#songleaf.online.label_of)(site_name)                                | How a page names the site a kept song's provenance names (`""` for none).                                                                                                           |
+| [`page_heading`](_autosummary/songleaf.online.html.md#songleaf.online.page_heading)(page)                                 | A song page's own label: its first `<h1>` (inner HTML), else [`page_title()`](_autosummary/songleaf.online.html.md#songleaf.online.page_title).                                                         |
+| [`page_title`](_autosummary/songleaf.online.html.md#songleaf.online.page_title)(page)                                   | The song a page's `<title>` names (`title - artist`), without the site's words.                                                                                                     |
 | [`polite_fetch`](_autosummary/songleaf.online.html.md#songleaf.online.polite_fetch)(url)                                  | The text at `url`: robots.txt obeyed, paced per host, honest User-Agent.                                                                                                            |
+| [`site_for_url`](_autosummary/songleaf.online.html.md#songleaf.online.site_for_url)(url, \*[, sites])                     | The site that reads the page at `url`, and the page as a [`Candidate`](_autosummary/songleaf.online.html.md#songleaf.online.Candidate).                                                                |
+| [`site_label`](_autosummary/songleaf.online.html.md#songleaf.online.site_label)(site)                                   | How a page names `site`: its `label` when it has one, else its name.                                                                                                                |
 | [`site_names`](_autosummary/songleaf.online.html.md#songleaf.online.site_names)(spec)                                   | The site names in a comma-separated list (blanks dropped).                                                                                                                          |
 | [`text_blocks`](_autosummary/songleaf.online.html.md#songleaf.online.text_blocks)(page)                                  | The preformatted text of a page (`<pre>` and `<textarea>` elements), unescaped.                                                                                                     |
+| [`unavailable_reason`](_autosummary/songleaf.online.html.md#songleaf.online.unavailable_reason)()                               | Why this process cannot fetch with [`polite_fetch()`](_autosummary/songleaf.online.html.md#songleaf.online.polite_fetch) (no `online` extra), or `""`.                                                    |
 | [`url_id`](_autosummary/songleaf.online.html.md#songleaf.online.url_id)(url)                                        | A short, stable id for a page with no id of its own (a hash of its URL).                                                                                                            |
 | [`web_key`](_autosummary/songleaf.online.html.md#songleaf.online.web_key)(site, song_id)                             | The store key of a song found on `site`: `web:<site>:<id>`.                                                                                                                         |
 | [`web_mode`](_autosummary/songleaf.online.html.md#songleaf.online.web_mode)([mode])                                   | The web mode: `mode`, else `$SONGLEAF_WEB_SEARCH`, else `DEFAULT_WEB_MODE`.                                                                                                         |
@@ -2002,8 +2025,8 @@ data directory, for personal use, and never belongs in a repository.
 |---------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
 | [`ChartPageSite`](_autosummary/songleaf.online.html.md#songleaf.online.ChartPageSite)(name, search_url, result_link)     | A chord site with a search page and one chart per page: most of them.                                             |
 | [`Found`](_autosummary/songleaf.online.html.md#songleaf.online.Found)(key, song, score, cached)                  | The song [`expand()`](_autosummary/songleaf.online.html.md#songleaf.online.expand) kept: its key, the song, and how it was found. |
-| [`LrclibSite`](_autosummary/songleaf.online.html.md#songleaf.online.LrclibSite)([name, license, chords, base_url])    | LRCLIB (lrclib.net): an open lyrics API, made for automated clients.                                              |
-| [`StoredWebSource`](_autosummary/songleaf.online.html.md#songleaf.online.StoredWebSource)([store])                         | The songs found on the web and kept in the song store: searched locally.                                          |
+| [`LrclibSite`](_autosummary/songleaf.online.html.md#songleaf.online.LrclibSite)([name, license, chords, ...])         | LRCLIB (lrclib.net): an open lyrics API, made for automated clients.                                              |
+| [`StoredWebSource`](_autosummary/songleaf.online.html.md#songleaf.online.StoredWebSource)([store, kinds])                  | The songs the reader brought in and kept in the song store: searched locally.                                     |
 | [`WebSite`](_autosummary/songleaf.online.html.md#songleaf.online.WebSite)(\*args, \*\*kwargs)                      | A site songleaf may search: its own search, and one result as a `Song`.                                           |
 
 ### Exceptions
@@ -2012,7 +2035,16 @@ data directory, for personal use, and never belongs in a repository.
 |--------------------------------------------------------------------|--------------------------------------------------------------------------|
 | [`OnlineUnavailable`](_autosummary/songleaf.online.html.md#songleaf.online.OnlineUnavailable) | The web expansion cannot run here (the `online` extra is not installed). |
 
-### songleaf.online.CHORDIE *= ChartPageSite(name='chordie', search_url='https://www.chordie.com/result.php?q={query}', result_link='<a[^>]+href="(?P<url>/(?:chord|song)\\\\.pere/[^"]+)"[^>]\*>(?P<label>.\*?)</a>', label_separator='\\\\s\*\\\\xa0+\\\\s\*| - ', license='personal', chords=True)*
+### songleaf.online.AZCHORDS *= ChartPageSite(name='azchords', search_url='', result_link='', label_separator='\\\\s\*\\\\xa0+\\\\s\*| - ', license='personal', chords=True, page_path='^/[a-z0-9]/[a-z0-9]+-tabs-\\\\d+/[a-z0-9]+-tabs-\\\\d+\\\\.html$', home='https://www.azchords.com/', heading='title', label='AZChords')*
+
+chords over lyrics in `<pre id="content">`. Its robots.txt
+allows song pages; it publishes no terms beyond a footer limiting use to “private study,
+scholarship, research”. Its search box is Google’s, so it only reads pages named by URL.
+
+* **Type:**
+  AZChords (azchords.com)
+
+### songleaf.online.CHORDIE *= ChartPageSite(name='chordie', search_url='https://www.chordie.com/result.php?q={query}', result_link='<a[^>]+href="(?P<url>/(?:chord|song)\\\\.pere/[^"]+)"[^>]\*>(?P<label>.\*?)</a>', label_separator='\\\\s\*\\\\xa0+\\\\s\*| - ', license='personal', chords=True, page_path='^/(?:chord|song)\\\\.pere/', home='', heading='h1', label='Chordie')*
 
 a chord search engine. Its robots.txt invites every robot and it
 publishes no terms, but many of its pages re-host other sites’ charts (some of which
@@ -2025,7 +2057,7 @@ forbid stored copies), so it is not in the default list (see misc/docs/sources.m
 
 Added to a candidate’s closeness when its site gives chords, not lyrics alone.
 
-### *class* songleaf.online.Candidate(site, id, title, artist='', url='', payload=dict(), license='')
+### *class* songleaf.online.Candidate(site, id, title, artist='', url='', payload=dict(), license='', store_key='')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -2034,8 +2066,9 @@ One search result on a site: what `WebSite.extract()` turns into a song.
 `payload` carries what the search already returned (an API that answers with the
 lyrics, say), so extracting it needs no second request. `license` overrides the
 site’s for this one result (a site that searches other hosts knows each one’s).
+`store_key` overrides the `web:<site>:<id>` key (Ultimate Guitar keeps `ug:<id>`).
 
-### *class* songleaf.online.ChartPageSite(name, search_url, result_link, label_separator='\\\\s\*\\\\xa0+\\\\s\*| - ', license='personal', chords=True)
+### *class* songleaf.online.ChartPageSite(name, search_url, result_link, label_separator='\\\\s\*\\\\xa0+\\\\s\*| - ', license='personal', chords=True, page_path='', home='', heading='h1', label='')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -2044,11 +2077,32 @@ A chord site with a search page and one chart per page: most of them.
 * **Parameters:**
   * **name** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str)) – Registry name, and the `<site>` of its keys.
   * **search_url** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str)) – The search page, `{query}` standing for the URL-quoted query.
+    `""` for a site with no search of its own: it then only reads pages
+    named by URL ([`candidate_for()`](_autosummary/songleaf.online.html.md#songleaf.online.ChartPageSite.candidate_for)), on the host of `home`.
   * **result_link** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str)) – A regex over the search page with named groups `url` (the
     result’s href, relative or absolute) and `label` (the link’s inner HTML).
   * **label_separator** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str)) – Splits a label’s text into title and artist (title first).
   * **license** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str)) – The licence tag stored with every song from here.
   * **chords** ([`bool`](https://docs.python.org/3/builtins/functions.html#bool)) – Whether its pages carry chords.
+  * **page_path** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str)) – A regex over the path of one of its song pages: a URL on its host
+    whose path matches can be imported ([`candidate_for()`](_autosummary/songleaf.online.html.md#songleaf.online.ChartPageSite.candidate_for)). `""`: none.
+  * **home** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str)) – The site’s root URL; its host is the site’s when `search_url` is `""`.
+  * **heading** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str)) – Where a page named by URL says its title and artist: `"h1"` (its first
+    heading, else its `<title>`) or `"title"` (its `<title>`, for a site whose
+    first heading is a breadcrumb, artist first).
+  * **label** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str)) – How a page names the site (`""`: its name).
+
+#### candidate_for(url)
+
+The song page at `url`, when it is one of this site’s (else `None`).
+
+The URL is made canonical first ([`canonical_url()`](_autosummary/songleaf.online.html.md#songleaf.online.canonical_url)), as the search’s results
+are, so a song found by a search and the same page imported by URL (with or
+without `www.`, a `#fragment`, capitals in the host) are one song. Title and
+artist come from the page itself (`extract()`).
+
+* **Return type:**
+  [`Candidate`](_autosummary/songleaf.online.html.md#songleaf.online.Candidate) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
 ### songleaf.online.DEFAULT_WEB_SITES *= ('lrclib',)*
 
@@ -2082,7 +2136,15 @@ The song [`expand()`](_autosummary/songleaf.online.html.md#songleaf.online.expan
 
 The [`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit) a search reports for it.
 
-### *class* songleaf.online.LrclibSite(name='lrclib', license='personal', chords=False, base_url='https://lrclib.net')
+### songleaf.online.KEPT_SOURCES *= ('web', 'ug', 'paste')*
+
+found on the web
+or imported by URL (`web:`), Ultimate Guitar charts (`ug:`), pasted songs (`paste:`).
+
+* **Type:**
+  The kinds of stored song the reader brought in, and local search finds
+
+### *class* songleaf.online.LrclibSite(name='lrclib', license='personal', chords=False, base_url='https://lrclib.net', label='LRCLIB')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -2095,6 +2157,10 @@ Synced lyrics, when there are any, become `time` annotations (see
 ### songleaf.online.MAX_EXTRACTIONS *= 3*
 
 Candidates extracted at most before giving up on a query.
+
+### songleaf.online.MAX_LABEL_CHARS *= 200*
+
+Characters of a title-and-artist label kept at most (a page’s <title> can be anything).
 
 ### songleaf.online.MAX_PAGE_CHARS *= 3000000*
 
@@ -2134,15 +2200,16 @@ all of them are ranked, so this is not the number kept.
 A word of the query and a word of a label are the same word from this fuzzy ratio (0-100),
 for words of [`songleaf.match.TYPO_MIN_LENGTH`](_autosummary/songleaf.match.html.md#songleaf.match.TYPO_MIN_LENGTH) letters or more.
 
-### *class* songleaf.online.StoredWebSource(store=None)
+### *class* songleaf.online.StoredWebSource(store=None, , kinds=('web', 'ug', 'paste'))
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
-The songs found on the web and kept in the song store: searched locally.
+The songs the reader brought in and kept in the song store: searched locally.
 
 A source like any other (`name` `"web"`, `search`, `search_tiers`, `get`):
-it reads the `web:` keys of the store, so a song kept by [`expand()`](_autosummary/songleaf.online.html.md#songleaf.online.expand) is found
-again with no request. Title and artist match word by word, as the corpus does
+it reads the store’s keys of the `kinds` the reader brought in (found on the web,
+imported by URL, pasted), so a song kept by [`expand()`](_autosummary/songleaf.online.html.md#songleaf.online.expand), [`import_url()`](_autosummary/songleaf.online.html.md#songleaf.online.import_url) or a
+paste is found again with no request. Each hit’s `source` is its key’s own prefix. Title and artist match word by word, as the corpus does
 ([`WordIndex`](_autosummary/songleaf.match.html.md#songleaf.match.WordIndex): the query inside the title and artist, or the
 title and artist inside the query, typos forgiven); lyrics hold every word.
 
@@ -2151,8 +2218,10 @@ store’s keys and reads only the new ones. A file that cannot be read is logged
 skipped, never fatal to a search.
 
 * **Parameters:**
-  **store** ([`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – The song store (default: [`songleaf.store.song_store()`](_autosummary/songleaf.store.html.md#songleaf.store.song_store), resolved on
-  each use, since the data root may move).
+  * **store** ([`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – The song store (default: [`songleaf.store.song_store()`](_autosummary/songleaf.store.html.md#songleaf.store.song_store), resolved on
+    each use, since the data root may move).
+  * **kinds** ([`Sequence`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence)) – The key prefixes searched (default [`KEPT_SOURCES`](_autosummary/songleaf.online.html.md#songleaf.online.KEPT_SOURCES)). Corpus songs
+    cached in the store are not among them: their own source finds them.
 
 #### get(song_id)
 
@@ -2205,9 +2274,10 @@ search; `off`: never.
 
 The environment variable choosing the web mode (one of [`WEB_MODES`](_autosummary/songleaf.online.html.md#songleaf.online.WEB_MODES)).
 
-### songleaf.online.WEB_SITES *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [WebSite](_autosummary/songleaf.online.html.md#songleaf.online.WebSite)]* *= {'chordie': ChartPageSite(name='chordie', search_url='https://www.chordie.com/result.php?q={query}', result_link='<a[^>]+href="(?P<url>/(?:chord|song)\\\\.pere/[^"]+)"[^>]\*>(?P<label>.\*?)</a>', label_separator='\\\\s\*\\\\xa0+\\\\s\*| - ', license='personal', chords=True), 'lrclib': LrclibSite(name='lrclib', license='personal', chords=False, base_url='https://lrclib.net')}*
+### songleaf.online.WEB_SITES *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [WebSite](_autosummary/songleaf.online.html.md#songleaf.online.WebSite)]* *= {'azchords': ChartPageSite(name='azchords', search_url='', result_link='', label_separator='\\\\s\*\\\\xa0+\\\\s\*| - ', license='personal', chords=True, page_path='^/[a-z0-9]/[a-z0-9]+-tabs-\\\\d+/[a-z0-9]+-tabs-\\\\d+\\\\.html$', home='https://www.azchords.com/', heading='title', label='AZChords'), 'chordie': ChartPageSite(name='chordie', search_url='https://www.chordie.com/result.php?q={query}', result_link='<a[^>]+href="(?P<url>/(?:chord|song)\\\\.pere/[^"]+)"[^>]\*>(?P<label>.\*?)</a>', label_separator='\\\\s\*\\\\xa0+\\\\s\*| - ', license='personal', chords=True, page_path='^/(?:chord|song)\\\\.pere/', home='', heading='h1', label='Chordie'), 'lrclib': LrclibSite(name='lrclib', license='personal', chords=False, base_url='https://lrclib.net', label='LRCLIB'), 'ug': <songleaf.ultimate_guitar.UltimateGuitarURLSource object>}*
 
-Every site songleaf knows, by name. A new site is a new entry.
+Every site songleaf knows, by name. A new site is a new entry. `ug` never searches:
+it only reads a page the reader names, and only when `SONGLEAF_UG_URL=1` (songleaf#28).
 
 ### songleaf.online.WEB_SITES_ENVVAR *= 'SONGLEAF_WEB_SITES'*
 
@@ -2225,6 +2295,18 @@ their keys are `web:<site>:<id>`.
 Bases: [`Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol)
 
 A site songleaf may search: its own search, and one result as a `Song`.
+
+### songleaf.online.canonical_url(url, site_url)
+
+`url` as one spelling: https, the host as `site_url` spells it, no `#fragment`.
+
+```pycon
+>>> canonical_url("https://WWW.Chords.example/a.html#top", "https://chords.example/s")
+'https://chords.example/a.html'
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### songleaf.online.chart_counts(song)
 
@@ -2294,12 +2376,89 @@ and skipped.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`float`](https://docs.python.org/3/builtins/functions.html#float), [`Candidate`](_autosummary/songleaf.online.html.md#songleaf.online.Candidate), [`WebSite`](_autosummary/songleaf.online.html.md#songleaf.online.WebSite)]]
 
+### songleaf.online.import_url(url, , sites=None, fetch=None, store=None, refresh=False)
+
+Read the song page at `url` and keep it, like a song a search found.
+
+The site is found by [`site_for_url()`](_autosummary/songleaf.online.html.md#songleaf.online.site_for_url); the song is stored under its key
+(`web:<site>:<id>`, or `ug:<id>` for Ultimate Guitar) with its provenance, and
+from then on found by local search ([`StoredWebSource`](_autosummary/songleaf.online.html.md#songleaf.online.StoredWebSource)). A page already kept
+is not fetched again unless `refresh`. `fetch` defaults to the site’s own
+(`site.fetch`) or [`polite_fetch()`](_autosummary/songleaf.online.html.md#songleaf.online.polite_fetch). Raises `ValueError` for a page with
+neither lyrics nor chords (no [`is_usable()`](_autosummary/songleaf.online.html.md#songleaf.online.is_usable) bar: the reader chose this page).
+
+* **Return type:**
+  [`Found`](_autosummary/songleaf.online.html.md#songleaf.online.Found)
+
 ### songleaf.online.is_usable(song, , chords, min_lyric_lines=4, min_chords=4)
 
 Whether an extracted song is worth keeping: enough lyrics, and chords if promised.
 
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+### songleaf.online.kept_keys(store, , kinds=('web', 'ug', 'paste'))
+
+The keys of `store` holding songs the reader brought in (see [`KEPT_SOURCES`](_autosummary/songleaf.online.html.md#songleaf.online.KEPT_SOURCES)).
+
+```pycon
+>>> kept_keys({"web:lrclib:1": 0, "paste:ab": 0, "kaggle_chords:9": 0})
+['web:lrclib:1', 'paste:ab']
+```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### songleaf.online.label_of(site_name)
+
+How a page names the site a kept song’s provenance names (`""` for none).
+
+A registry name, or the name a site writes in provenance (`site_name`: Ultimate
+Guitar’s `ultimate-guitar`); an unknown name is shown as it is.
+
+```pycon
+>>> label_of("lrclib"), label_of("ultimate-guitar"), label_of("elsewhere"), label_of("")
+('LRCLIB', 'Ultimate Guitar', 'elsewhere', '')
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### songleaf.online.page_heading(page)
+
+A song page’s own label: its first `<h1>` (inner HTML), else [`page_title()`](_autosummary/songleaf.online.html.md#songleaf.online.page_title).
+
+Chord sites title a song page as their search results label it (title, then
+artist), so `ChartPageSite._title_and_artist()` splits either the same way.
+
+```pycon
+>>> page_heading("<title>x</title><h1>Paper Boats&nbsp;<a>Invented Band</a></h1>")
+'Paper Boats&nbsp;<a>Invented Band</a>'
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### songleaf.online.page_title(page)
+
+The song a page’s `<title>` names (`title - artist`), without the site’s words.
+
+```pycon
+>>> page_title("<title>Paper Boats - Invented Band chords | Some Site</title>")
+'Paper Boats - Invented Band'
+>>> page_title("<title>Paper Boats  Chords &ndash; Invented Band | Version #2</title>")
+'Paper Boats - Invented Band'
+>>> page_title("<title>Paper Boats Invented Band Chords and Lyrics for Guitar</title>")
+'Paper Boats Invented Band'
+>>> page_title("<title>Gentle Guitar Rain Chords - Invented Band | Version #1</title>")
+'Gentle Guitar Rain - Invented Band'
+```
+
+The kind word that ends the song’s name is the first one followed only by \`\` - artist\`\`
+or by the site’s own words: a “Guitar” inside the title does not cut it.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### songleaf.online.polite_fetch(url)
 
@@ -2308,6 +2467,31 @@ The text at `url`: robots.txt obeyed, paced per host, honest User-Agent.
 Raises [`OnlineUnavailable`](_autosummary/songleaf.online.html.md#songleaf.online.OnlineUnavailable) without the `online` extra, scraped’s
 `RobotsDisallowed` when robots.txt forbids the URL, and [`FetchFailed`](_autosummary/songleaf.online.html.md#songleaf.online.FetchFailed) for a
 response that is not a page.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### songleaf.online.site_for_url(url, , sites=None)
+
+The site that reads the page at `url`, and the page as a [`Candidate`](_autosummary/songleaf.online.html.md#songleaf.online.Candidate).
+
+Every site with a `candidate_for` is asked, in order (default: all of
+[`WEB_SITES`](_autosummary/songleaf.online.html.md#songleaf.online.WEB_SITES), whatever the search list says: naming a page is not a search).
+No request is made. Raises `ValueError` when no site reads that URL, or when its
+site refuses it (a URL that is not plain, an official Ultimate Guitar tab); whether
+Ultimate Guitar fetching is on is checked when the page is read.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`WebSite`](_autosummary/songleaf.online.html.md#songleaf.online.WebSite), [`Candidate`](_autosummary/songleaf.online.html.md#songleaf.online.Candidate)]
+
+### songleaf.online.site_label(site)
+
+How a page names `site`: its `label` when it has one, else its name.
+
+```pycon
+>>> site_label(LrclibSite()), site_label(CHORDIE)
+('LRCLIB', 'Chordie')
+```
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
@@ -2325,6 +2509,13 @@ The preformatted text of a page (`<pre>` and `<textarea>` elements), unescaped.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### songleaf.online.unavailable_reason()
+
+Why this process cannot fetch with [`polite_fetch()`](_autosummary/songleaf.online.html.md#songleaf.online.polite_fetch) (no `online` extra), or `""`.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### songleaf.online.url_id(url)
 
@@ -2347,7 +2538,7 @@ The web mode: `mode`, else `$SONGLEAF_WEB_SEARCH`, else `DEFAULT_WEB_MODE`.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### songleaf.online.web_sites(sites=None, , registry={'chordie': ChartPageSite(name='chordie', search_url='https://www.chordie.com/result.php?q={query}', result_link='<a[^>]+href="(?P<url>/(?:chord|song)\\\\.pere/[^"]+)"[^>]\*>(?P<label>.\*?)</a>', label_separator='\\\\s\*\\\\xa0+\\\\s\*| - ', license='personal', chords=True), 'lrclib': LrclibSite(name='lrclib', license='personal', chords=False, base_url='https://lrclib.net')})
+### songleaf.online.web_sites(sites=None, \*, registry={'azchords': ChartPageSite(name='azchords', search_url='', result_link='', label_separator='\\\\s\*\\\\xa0+\\\\s\*| - ', license='personal', chords=True, page_path='^/[a-z0-9]/[a-z0-9]+-tabs-\\\\d+/[a-z0-9]+-tabs-\\\\d+\\\\.html$', home='https://www.azchords.com/', heading='title', label='AZChords'), 'chordie': ChartPageSite(name = 'chordie', search_url='https://www.chordie.com/result.php?q={query}', result_link='<a[^>]+href="(?P<url>/(?:chord|song)\\\\.pere/[^"]+)"[^>]\*>(?P<label>.\*?)</a>', label_separator='\\\\s\*\\\\xa0+\\\\s\*| - ', license='personal', chords=True, page_path='^/(?:chord|song)\\\\.pere/', home='', heading='h1', label='Chordie'), 'lrclib': LrclibSite(name = 'lrclib', license='personal', chords=False, base_url='https://lrclib.net', label='LRCLIB'), 'ug': <songleaf.ultimate_guitar.UltimateGuitarURLSource object>})
 
 The sites to ask: `sites` (names, comma-separated or a list, or site objects),
 else `$SONGLEAF_WEB_SITES`, else [`DEFAULT_WEB_SITES`](_autosummary/songleaf.online.html.md#songleaf.online.DEFAULT_WEB_SITES).
@@ -3587,7 +3778,7 @@ than dicts uses [`songleaf.sources`](_autosummary/songleaf.sources.html.md#modul
 | [`forget`](_autosummary/songleaf.tools.html.md#songleaf.tools.forget)(key, \*[, store, library_root])            | Remove a song from the stored songs, from every list it was in, and from every Viewed list.                |
 | [`import_file`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_file)([path, title, artist, url, ...])      | Read pasted song text from a file (`-`: standard input) and store it; see `import_text`.                   |
 | [`import_text`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_text)(text, \*[, title, artist, url, ...])  | Store a song pasted from anywhere: Ultimate Guitar markup, ChordPro, OpenSong or plain chords over lyrics. |
-| [`import_url`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_url)(url, \*[, refresh, store, source])     | Fetch one community Ultimate Guitar chord page and store its chart as `ug:<id>`.                           |
+| [`import_url`](_autosummary/songleaf.tools.html.md#songleaf.tools.import_url)(url, \*[, refresh, web_sites, ...])    | Read one song page you name (a chord site's URL) and keep it, so search finds it.                          |
 | [`media`](_autosummary/songleaf.tools.html.md#songleaf.tools.media)(query, \*[, youtube, spotify, pick, ...])   | Link the song's recording: a YouTube video and/or a Spotify track, by id or link.                          |
 | [`search`](_autosummary/songleaf.tools.html.md#songleaf.tools.search)([query, title, artist, lyrics, ...])       | Find songs with one query: in your lists' names, then titles, artists and lyrics.                          |
 | [`sheet`](_autosummary/songleaf.tools.html.md#songleaf.tools.sheet)(query, \*[, output, pick, refresh, ...])    | Make a one-page song sheet (PDF) for the best match of `query`.                                            |
@@ -3659,14 +3850,20 @@ and is then usable like any other: `sheet <key>`, `song <key>`.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### songleaf.tools.import_url(url, , refresh=False, store=None, source=None)
+### songleaf.tools.import_url(url, , refresh=False, web_sites='', store=None, source=None, fetch=None)
 
-Fetch one community Ultimate Guitar chord page and store its chart as `ug:<id>`.
+Read one song page you name (a chord site’s URL) and keep it, so search finds it.
 
-Local command line only, and off unless `SONGLEAF_UG_URL=1` is set: prefer
-pasting, or the bookmarklet run on the page you opened (see
-`songleaf.ultimate_guitar`). Official and Pro pages are refused. A chart
-already stored is not fetched again unless `refresh`.
+The site is picked from the URL (`songleaf.online.WEB_SITES`: Chordie, and
+Ultimate Guitar community charts). The song is stored under `web:<site>:<id>`,
+or `ug:<id>` for Ultimate Guitar, and is found by local search from then on. A
+page already kept is not fetched again unless `refresh`. `web_sites` limits the
+sites that may read it (comma-separated names; default: every known one).
+
+Ultimate Guitar is local command line only and off unless `SONGLEAF_UG_URL=1`;
+official and Pro pages are refused (prefer pasting, or the bookmarklet run on the
+page you opened: `songleaf.ultimate_guitar`). `source` is a site object to read
+with instead of the registry’s (for tests or a site of your own).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -3878,12 +4075,13 @@ All UG-derived songs carry `provenance.license = "personal"`.
 
 ### Module Attributes
 
-| [`URL_SOURCE_ENVVAR`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.URL_SOURCE_ENVVAR)     | The environment variable that turns on [`UltimateGuitarURLSource`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource) (`"1"`).   |
-|------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
-| [`REFUSED_TYPES`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.REFUSED_TYPES)         | Tab types whose page has no text chart songleaf may read (UG's own player, or video).                                      |
-| [`USER_AGENT`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.USER_AGENT)            | What a request for a page says it is (UG scores bots; songleaf does not pretend to be a browser).                          |
-| [`FETCH_TIMEOUT_SECONDS`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.FETCH_TIMEOUT_SECONDS) | Seconds before a page fetch gives up.                                                                                      |
-| [`MAX_PAGE_BYTES`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.MAX_PAGE_BYTES)        | Bytes read from a page at most (a chart page is a few hundred KB).                                                         |
+| [`SITE_NAME`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.SITE_NAME)             | The site's name in a song's provenance (`provenance.site`), by every route.                                              |
+|------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| [`URL_SOURCE_ENVVAR`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.URL_SOURCE_ENVVAR)     | The environment variable that turns on [`UltimateGuitarURLSource`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource) (`"1"`). |
+| [`REFUSED_TYPES`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.REFUSED_TYPES)         | Tab types whose page has no text chart songleaf may read (UG's own player, or video).                                    |
+| [`USER_AGENT`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.USER_AGENT)            | What a request for a page says it is (UG scores bots; songleaf does not pretend to be a browser).                        |
+| [`FETCH_TIMEOUT_SECONDS`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.FETCH_TIMEOUT_SECONDS) | Seconds before a page fetch gives up.                                                                                    |
+| [`MAX_PAGE_BYTES`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.MAX_PAGE_BYTES)        | Bytes read from a page at most (a chart page is a few hundred KB).                                                       |
 
 ### Functions
 
@@ -3926,6 +4124,10 @@ Bases: [`ValueError`](https://docs.python.org/3/builtins/exceptions.html#ValueEr
 
 A UG page songleaf will not read (official or Pro content, or no text chart).
 
+### songleaf.ultimate_guitar.SITE_NAME *= 'ultimate-guitar'*
+
+The site’s name in a song’s provenance (`provenance.site`), by every route.
+
 ### songleaf.ultimate_guitar.URL_SOURCE_ENVVAR *= 'SONGLEAF_UG_URL'*
 
 The environment variable that turns on [`UltimateGuitarURLSource`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource) (`"1"`).
@@ -3940,14 +4142,39 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 One UG chord page, by URL: local command line only, off by default.
 
-It never searches ([`search()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource.search) returns nothing) and is never among
-[`songleaf.sources.default_sources()`](_autosummary/songleaf.sources.html.md#songleaf.sources.default_sources). [`get()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource.get) fetches the one page
+It never searches ([`search()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource.search) and [`find()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource.find) return nothing) and is never
+among [`songleaf.sources.default_sources()`](_autosummary/songleaf.sources.html.md#songleaf.sources.default_sources). [`get()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource.get) fetches the one page
 it is given, refuses official and Pro pages, and returns the chart as a
 [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song) keyed `ug:<id>` (see [`ug_key()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.ug_key)).
 
+It is also the `ug` entry of [`songleaf.online.WEB_SITES`](_autosummary/songleaf.online.html.md#songleaf.online.WEB_SITES), for
+[`songleaf.online.import_url()`](_autosummary/songleaf.online.html.md#songleaf.online.import_url): [`candidate_for()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource.candidate_for) claims a UG URL,
+[`extract()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource.extract) reads it. Its `fetch` is the one an import uses unless the
+caller gives another (one plain request that stays on UG).
+
 * **Parameters:**
   * **fetch** ([`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)], [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]) – `url -> html`; the default makes one plain HTTPS request.
-  * **enabled** ([`bool`](https://docs.python.org/3/builtins/functions.html#bool) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – Whether fetching is allowed; defaults to `SONGLEAF_UG_URL=1`.
+  * **enabled** ([`bool`](https://docs.python.org/3/builtins/functions.html#bool) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – Whether fetching is allowed; defaults to `SONGLEAF_UG_URL=1`,
+    read when asked (so a process can turn it on after import).
+
+#### candidate_for(url)
+
+The page at a UG *url*, to [`extract()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource.extract) (`None` for another host).
+
+Raises `ValueError` when the URL is not plain, and [`RefusedPage`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.RefusedPage) for
+an official or Pro page. Whether fetching is on is checked by [`extract()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource.extract),
+so a page already kept is still found while it is off.
+
+#### extract(candidate, , fetch=None)
+
+The chart of a [`candidate_for()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource.candidate_for) page as a song (`ValueError` when off).
+
+#### find(query, , limit=0, fetch=None)
+
+Nothing, as [`search()`](_autosummary/songleaf.ultimate_guitar.html.md#songleaf.ultimate_guitar.UltimateGuitarURLSource.search): a web search never asks UG.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)
 
 #### get(url)
 
@@ -4147,18 +4374,18 @@ True
 
 # About this build
 
-This documentation was built on **2026-11-04 06:15 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/77cb0c9d577463c0a7c4669b5f435b05e906b8c8"><code>77cb0c9</code></a> on branch <code>main</code>, for **songleaf 0.0.30** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-08 18:19 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/5b2f0c352d90b86fee2798d1d6e36af9d6270dc6"><code>5b2f0c3</code></a> on branch <code>main</code>, for **songleaf 0.0.31** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.30) is behind the latest release on PyPI (0.0.31): `pip install songleaf` gives newer code than these docs describe.
+- The documented version (0.0.31) is behind the latest release on PyPI (0.0.32): `pip install songleaf` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/77cb0c9d577463c0a7c4669b5f435b05e906b8c8"><code>77cb0c9d577463c0a7c4669b5f435b05e906b8c8</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/5b2f0c352d90b86fee2798d1d6e36af9d6270dc6"><code>5b2f0c352d90b86fee2798d1d6e36af9d6270dc6</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -4169,9 +4396,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/41784135547">41784135547</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/42509258783">42509258783</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>77cb0c9d577463c0a7c4669b5f435b05e906b8c8</code> (in the history of the built commit) |
+| Event commit | <code>5b2f0c352d90b86fee2798d1d6e36af9d6270dc6</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -4196,13 +4423,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.31/">0.0.31</a>, newer than the documented version (0.0.30).
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.32/">0.0.32</a>, newer than the documented version (0.0.31).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 77cb0c9d577463c0a7c4669b5f435b05e906b8c8
+git checkout 5b2f0c352d90b86fee2798d1d6e36af9d6270dc6
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

@@ -315,6 +315,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">quote_plus</span><span class="p">,</span> <span class="n">urljoin</span><span class="p">,</span> <span class="n">urlsplit</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Song</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.ultimate_guitar</span><span class="w"> </span><span class="kn">import</span> <span class="n">UltimateGuitarURLSource</span>
 
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -386,6 +387,7 @@
 <span class="sd">    ``payload`` carries what the search already returned (an API that answers with the</span>
 <span class="sd">    lyrics, say), so extracting it needs no second request. ``license`` overrides the</span>
 <span class="sd">    site's for this one result (a site that searches other hosts knows each one's).</span>
+<span class="sd">    ``store_key`` overrides the ``web:&lt;site&gt;:&lt;id&gt;`` key (Ultimate Guitar keeps ``ug:&lt;id&gt;``).</span>
 <span class="sd">    """</span>
 
     <span class="n">site</span><span class="p">:</span> <span class="nb">str</span>
@@ -395,10 +397,11 @@
     <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
     <span class="n">payload</span><span class="p">:</span> <span class="n">Mapping</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">,</span> <span class="n">compare</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="nb">repr</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">license</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">store_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">key</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">web_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">site</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_key</span> <span class="ow">or</span> <span class="n">web_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">site</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span></div>
 
 
 
@@ -416,6 +419,12 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">extract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">candidate</span><span class="p">:</span> <span class="n">Candidate</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">fetch</span><span class="p">:</span> <span class="n">Fetch</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Song</span><span class="p">:</span> <span class="o">...</span></div>
 
+
+
+<span class="c1"># A site that can also read a page the reader names has ``candidate_for(url)``: the</span>
+<span class="c1"># :class:`Candidate` for a URL on its host (raising ``ValueError`` for one it refuses), or</span>
+<span class="c1"># ``None`` for a URL that is not its own. A site may carry its own ``fetch`` too, used by</span>
+<span class="c1"># :func:`import_url` when the caller gives none (see :func:`site_for_url`).</span>
 
 
 <span class="c1"># --------------------------------------------------------------------------------------</span>
@@ -437,6 +446,7 @@
     <span class="n">license</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"personal"</span>
     <span class="n">chords</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"https://lrclib.net"</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"LRCLIB"</span>  <span class="c1"># how a page names it</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">fetch</span><span class="p">:</span> <span class="n">Fetch</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Candidate</span><span class="p">]:</span>
         <span class="n">records</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">fetch</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/api/search?q=</span><span class="si">{</span><span class="n">quote_plus</span><span class="p">(</span><span class="n">query</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">))</span>
@@ -485,11 +495,20 @@
 <span class="sd">    Args:</span>
 <span class="sd">        name: Registry name, and the ``&lt;site&gt;`` of its keys.</span>
 <span class="sd">        search_url: The search page, ``{query}`` standing for the URL-quoted query.</span>
+<span class="sd">            ``""`` for a site with no search of its own: it then only reads pages</span>
+<span class="sd">            named by URL (:meth:`candidate_for`), on the host of ``home``.</span>
 <span class="sd">        result_link: A regex over the search page with named groups ``url`` (the</span>
 <span class="sd">            result's href, relative or absolute) and ``label`` (the link's inner HTML).</span>
 <span class="sd">        label_separator: Splits a label's text into title and artist (title first).</span>
 <span class="sd">        license: The licence tag stored with every song from here.</span>
 <span class="sd">        chords: Whether its pages carry chords.</span>
+<span class="sd">        page_path: A regex over the path of one of its song pages: a URL on its host</span>
+<span class="sd">            whose path matches can be imported (:meth:`candidate_for`). ``""``: none.</span>
+<span class="sd">        home: The site's root URL; its host is the site's when ``search_url`` is ``""``.</span>
+<span class="sd">        heading: Where a page named by URL says its title and artist: ``"h1"`` (its first</span>
+<span class="sd">            heading, else its ``&lt;title&gt;``) or ``"title"`` (its ``&lt;title&gt;``, for a site whose</span>
+<span class="sd">            first heading is a breadcrumb, artist first).</span>
+<span class="sd">        label: How a page names the site (``""``: its name).</span>
 <span class="sd">    """</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
@@ -498,14 +517,27 @@
     <span class="n">label_separator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">"\s*\xa0+\s*| - "</span>
     <span class="n">license</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"personal"</span>
     <span class="n">chords</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">page_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">home</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">heading</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"h1"</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">site_url</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_url</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">home</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">fetch</span><span class="p">:</span> <span class="n">Fetch</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Candidate</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_url</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>  <span class="c1"># a site that only reads pages named by URL</span>
         <span class="n">page_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_url</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="n">quote_plus</span><span class="p">(</span><span class="n">query</span><span class="p">))</span>
         <span class="n">page</span> <span class="o">=</span> <span class="n">fetch</span><span class="p">(</span><span class="n">page_url</span><span class="p">)</span>
         <span class="n">found</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Candidate</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result_link</span><span class="p">,</span> <span class="n">page</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">):</span>
             <span class="n">url</span> <span class="o">=</span> <span class="n">urljoin</span><span class="p">(</span><span class="n">page_url</span><span class="p">,</span> <span class="n">_html</span><span class="o">.</span><span class="n">unescape</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">"url"</span><span class="p">)))</span>
-            <span class="k">if</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">found</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">_same_site</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">page_url</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_same_site</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">page_url</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="n">canonical_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_url</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">found</span><span class="p">:</span>
                 <span class="k">continue</span>
             <span class="n">title</span><span class="p">,</span> <span class="n">artist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_title_and_artist</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">"label"</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">title</span><span class="p">:</span>
@@ -515,19 +547,65 @@
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_title_and_artist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-        <span class="n">text</span> <span class="o">=</span> <span class="n">_html</span><span class="o">.</span><span class="n">unescape</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"&lt;[^&gt;]+&gt;"</span><span class="p">,</span> <span class="s2">" "</span><span class="p">,</span> <span class="n">label</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">_html</span><span class="o">.</span><span class="n">unescape</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"&lt;[^&gt;]+&gt;"</span><span class="p">,</span> <span class="s2">" "</span><span class="p">,</span> <span class="n">label</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()[:</span><span class="n">MAX_LABEL_CHARS</span><span class="p">]</span>
         <span class="n">title</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">artist</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">part</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">_split_once</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label_separator</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">title</span><span class="p">,</span> <span class="n">artist</span>
 
+<div class="viewcode-block" id="ChartPageSite.candidate_for">
+<a class="viewcode-back" href="../../_autosummary/songleaf.online.html#songleaf.online.ChartPageSite.candidate_for">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">candidate_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Candidate</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The song page at ``url``, when it is one of this site's (else ``None``).</span>
+
+<span class="sd">        The URL is made canonical first (:func:`canonical_url`), as the search's results</span>
+<span class="sd">        are, so a song found by a search and the same page imported by URL (with or</span>
+<span class="sd">        without ``www.``, a ``#fragment``, capitals in the host) are one song. Title and</span>
+<span class="sd">        artist come from the page itself (:meth:`extract`).</span>
+<span class="sd">        """</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">urlsplit</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">page_path</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">_same_site</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_url</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">parts</span><span class="o">.</span><span class="n">username</span> <span class="ow">or</span> <span class="n">parts</span><span class="o">.</span><span class="n">password</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">page_path</span><span class="p">,</span> <span class="n">parts</span><span class="o">.</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">canonical_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_url</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Candidate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">url_id</span><span class="p">(</span><span class="n">url</span><span class="p">),</span> <span class="s2">""</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span></div>
+
+
     <span class="k">def</span><span class="w"> </span><span class="nf">extract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">candidate</span><span class="p">:</span> <span class="n">Candidate</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">fetch</span><span class="p">:</span> <span class="n">Fetch</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Song</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.importers</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_song</span>
 
-        <span class="n">text</span> <span class="o">=</span> <span class="n">chart_text</span><span class="p">(</span><span class="n">fetch</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">url</span><span class="p">))</span>
+        <span class="n">page</span> <span class="o">=</span> <span class="n">fetch</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">chart_text</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No chord chart found on </span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">url</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">import_song</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">candidate</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">artist</span><span class="o">=</span><span class="n">candidate</span><span class="o">.</span><span class="n">artist</span><span class="p">)</span><span class="o">.</span><span class="n">song</span></div>
+        <span class="n">title</span><span class="p">,</span> <span class="n">artist</span> <span class="o">=</span> <span class="n">candidate</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">artist</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">title</span><span class="p">:</span>  <span class="c1"># a page named by URL: its heading (or &lt;title&gt;) says what it is</span>
+            <span class="n">named</span> <span class="o">=</span> <span class="n">page_title</span><span class="p">(</span><span class="n">page</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">heading</span> <span class="o">==</span> <span class="s2">"title"</span> <span class="k">else</span> <span class="n">page_heading</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+            <span class="n">title</span><span class="p">,</span> <span class="n">artist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_title_and_artist</span><span class="p">(</span><span class="n">named</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">import_song</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">artist</span><span class="o">=</span><span class="n">artist</span><span class="p">)</span><span class="o">.</span><span class="n">song</span></div>
+
+
+
+<span class="c1">#: Characters of a title-and-artist label kept at most (a page's &lt;title&gt; can be anything).</span>
+<span class="n">MAX_LABEL_CHARS</span> <span class="o">=</span> <span class="mi">200</span>
+
+
+<div class="viewcode-block" id="canonical_url">
+<a class="viewcode-back" href="../../_autosummary/songleaf.online.html#songleaf.online.canonical_url">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">canonical_url</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">site_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``url`` as one spelling: https, the host as ``site_url`` spells it, no ``#fragment``.</span>
+
+<span class="sd">    &gt;&gt;&gt; canonical_url("https://WWW.Chords.example/a.html#top", "https://chords.example/s")</span>
+<span class="sd">    'https://chords.example/a.html'</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlunsplit</span>
+
+    <span class="n">parts</span> <span class="o">=</span> <span class="n">urlsplit</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="n">host</span> <span class="o">=</span> <span class="n">urlsplit</span><span class="p">(</span><span class="n">site_url</span><span class="p">)</span><span class="o">.</span><span class="n">hostname</span> <span class="ow">or</span> <span class="n">parts</span><span class="o">.</span><span class="n">hostname</span> <span class="ow">or</span> <span class="s2">""</span>
+    <span class="n">netloc</span> <span class="o">=</span> <span class="n">host</span> <span class="k">if</span> <span class="n">parts</span><span class="o">.</span><span class="n">port</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">parts</span><span class="o">.</span><span class="n">port</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">return</span> <span class="n">urlunsplit</span><span class="p">((</span><span class="s2">"https"</span><span class="p">,</span> <span class="n">netloc</span><span class="p">,</span> <span class="n">parts</span><span class="o">.</span><span class="n">path</span> <span class="ow">or</span> <span class="s2">"/"</span><span class="p">,</span> <span class="n">parts</span><span class="o">.</span><span class="n">query</span><span class="p">,</span> <span class="s2">""</span><span class="p">))</span></div>
 
 
 
@@ -537,9 +615,83 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_same_site</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">page_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Whether ``url`` is an https page on the host of ``page_url`` (results never leave it)."""</span>
+<span class="w">    </span><span class="sd">"""Whether ``url`` is an https page on the host of ``page_url`` (results never leave it).</span>
+
+<span class="sd">    ``www.`` does not count: ``chordie.com`` and ``www.chordie.com`` are one host.</span>
+<span class="sd">    """</span>
     <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">urlsplit</span><span class="p">(</span><span class="n">url</span><span class="p">),</span> <span class="n">urlsplit</span><span class="p">(</span><span class="n">page_url</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">a</span><span class="o">.</span><span class="n">scheme</span> <span class="o">==</span> <span class="s2">"https"</span> <span class="ow">and</span> <span class="n">a</span><span class="o">.</span><span class="n">hostname</span> <span class="o">==</span> <span class="n">b</span><span class="o">.</span><span class="n">hostname</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">host</span><span class="p">(</span><span class="n">parts</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">parts</span><span class="o">.</span><span class="n">hostname</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">removeprefix</span><span class="p">(</span><span class="s2">"www."</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">a</span><span class="o">.</span><span class="n">scheme</span> <span class="o">==</span> <span class="s2">"https"</span> <span class="ow">and</span> <span class="nb">bool</span><span class="p">(</span><span class="n">host</span><span class="p">(</span><span class="n">a</span><span class="p">))</span> <span class="ow">and</span> <span class="n">host</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">==</span> <span class="n">host</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+
+
+<span class="n">_TITLE_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"&lt;title[^&gt;]*&gt;(.*?)&lt;/title\s*&gt;"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+<span class="n">_H1_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"&lt;h1\b[^&gt;]*&gt;(.*?)&lt;/h1\s*&gt;"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+<span class="c1">#: The ``| Site name`` (or ``| Version #2``) a page title ends with.</span>
+<span class="n">_TITLE_SITE_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\s*\|[^|]*$"</span><span class="p">)</span>
+<span class="c1">#: The kind of page a title names after the song (``chords``, ``tab``...).</span>
+<span class="n">_TITLE_KIND_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\s+\b(?:chords?|lyrics|tabs?|ukulele|bass|guitar)\b"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
+<span class="c1">#: After the kind, `` – Artist`` (kept as `` - Artist``).</span>
+<span class="n">_TITLE_ARTIST_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\s*[-\u2013\u2014]\s*(?P&lt;artist&gt;\S.*)$"</span><span class="p">)</span>
+<span class="c1">#: After the kind, only the site's own words ("and Lyrics for Guitar").</span>
+<span class="n">_TITLE_FILLER_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s2">"(?:\s*(?:chords?|lyrics|tabs?|ukulele|bass|guitar|and|for|with|&amp;|\+|,))*\s*$"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="page_heading">
+<a class="viewcode-back" href="../../_autosummary/songleaf.online.html#songleaf.online.page_heading">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">page_heading</span><span class="p">(</span><span class="n">page</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A song page's own label: its first ``&lt;h1&gt;`` (inner HTML), else :func:`page_title`.</span>
+
+<span class="sd">    Chord sites title a song page as their search results label it (title, then</span>
+<span class="sd">    artist), so :meth:`ChartPageSite._title_and_artist` splits either the same way.</span>
+
+<span class="sd">    &gt;&gt;&gt; page_heading("&lt;title&gt;x&lt;/title&gt;&lt;h1&gt;Paper Boats&amp;nbsp;&lt;a&gt;Invented Band&lt;/a&gt;&lt;/h1&gt;")</span>
+<span class="sd">    'Paper Boats&amp;nbsp;&lt;a&gt;Invented Band&lt;/a&gt;'</span>
+<span class="sd">    """</span>
+    <span class="n">found</span> <span class="o">=</span> <span class="n">_H1_RE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">found</span> <span class="ow">and</span> <span class="n">_TAG_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="n">found</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">found</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">page_title</span><span class="p">(</span><span class="n">page</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="page_title">
+<a class="viewcode-back" href="../../_autosummary/songleaf.online.html#songleaf.online.page_title">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">page_title</span><span class="p">(</span><span class="n">page</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The song a page's ``&lt;title&gt;`` names (``title - artist``), without the site's words.</span>
+
+<span class="sd">    &gt;&gt;&gt; page_title("&lt;title&gt;Paper Boats - Invented Band chords | Some Site&lt;/title&gt;")</span>
+<span class="sd">    'Paper Boats - Invented Band'</span>
+<span class="sd">    &gt;&gt;&gt; page_title("&lt;title&gt;Paper Boats  Chords &amp;ndash; Invented Band | Version #2&lt;/title&gt;")</span>
+<span class="sd">    'Paper Boats - Invented Band'</span>
+<span class="sd">    &gt;&gt;&gt; page_title("&lt;title&gt;Paper Boats Invented Band Chords and Lyrics for Guitar&lt;/title&gt;")</span>
+<span class="sd">    'Paper Boats Invented Band'</span>
+<span class="sd">    &gt;&gt;&gt; page_title("&lt;title&gt;Gentle Guitar Rain Chords - Invented Band | Version #1&lt;/title&gt;")</span>
+<span class="sd">    'Gentle Guitar Rain - Invented Band'</span>
+
+<span class="sd">    The kind word that ends the song's name is the first one followed only by `` - artist``</span>
+<span class="sd">    or by the site's own words: a "Guitar" inside the title does not cut it.</span>
+<span class="sd">    """</span>
+    <span class="n">found</span> <span class="o">=</span> <span class="n">_TITLE_RE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">""</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_html</span><span class="o">.</span><span class="n">unescape</span><span class="p">(</span><span class="n">_TAG_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="n">found</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)))</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">_TITLE_SITE_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="n">text</span><span class="p">)[:</span><span class="n">MAX_LABEL_CHARS</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">_TITLE_KIND_RE</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+        <span class="n">rest</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">kind</span><span class="o">.</span><span class="n">end</span><span class="p">()</span> <span class="p">:]</span>
+        <span class="n">artist</span> <span class="o">=</span> <span class="n">_TITLE_ARTIST_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">rest</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">artist</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">text</span><span class="p">[:</span><span class="w"> </span><span class="n">kind</span><span class="o">.</span><span class="n">start</span><span class="p">()]</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">artist</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">'artist'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+            <span class="k">break</span>
+        <span class="k">if</span> <span class="n">_TITLE_FILLER_RE</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">rest</span><span class="p">):</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="p">[:</span> <span class="n">kind</span><span class="o">.</span><span class="n">start</span><span class="p">()]</span>
+            <span class="k">break</span>
+    <span class="k">return</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">" -"</span><span class="p">)</span></div>
+
 
 
 <div class="viewcode-block" id="url_id">
@@ -557,12 +709,65 @@
     <span class="n">name</span><span class="o">=</span><span class="s2">"chordie"</span><span class="p">,</span>
     <span class="n">search_url</span><span class="o">=</span><span class="s2">"https://www.chordie.com/result.php?q=</span><span class="si">{query}</span><span class="s2">"</span><span class="p">,</span>
     <span class="n">result_link</span><span class="o">=</span><span class="sa">r</span><span class="s1">'&lt;a[^&gt;]+href="(?P&lt;url&gt;/(?:chord|song)\.pere/[^"]+)"[^&gt;]*&gt;(?P&lt;label&gt;.*?)&lt;/a&gt;'</span><span class="p">,</span>
+    <span class="n">page_path</span><span class="o">=</span><span class="sa">r</span><span class="s2">"^/(?:chord|song)\.pere/"</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="s2">"Chordie"</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="c1">#: Every site songleaf knows, by name. A new site is a new entry.</span>
-<span class="n">WEB_SITES</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">WebSite</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"lrclib"</span><span class="p">:</span> <span class="n">LrclibSite</span><span class="p">(),</span> <span class="s2">"chordie"</span><span class="p">:</span> <span class="n">CHORDIE</span><span class="p">}</span>
+<span class="c1">#: AZChords (azchords.com): chords over lyrics in ``&lt;pre id="content"&gt;``. Its robots.txt</span>
+<span class="c1">#: allows song pages; it publishes no terms beyond a footer limiting use to "private study,</span>
+<span class="c1">#: scholarship, research". Its search box is Google's, so it only reads pages named by URL.</span>
+<span class="n">AZCHORDS</span> <span class="o">=</span> <span class="n">ChartPageSite</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"azchords"</span><span class="p">,</span>
+    <span class="n">search_url</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
+    <span class="n">result_link</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
+    <span class="n">page_path</span><span class="o">=</span><span class="sa">r</span><span class="s2">"^/[a-z0-9]/[a-z0-9]+-tabs-\d+/[a-z0-9]+-tabs-\d+\.html$"</span><span class="p">,</span>
+    <span class="n">home</span><span class="o">=</span><span class="s2">"https://www.azchords.com/"</span><span class="p">,</span>
+    <span class="n">heading</span><span class="o">=</span><span class="s2">"title"</span><span class="p">,</span>  <span class="c1"># its first &lt;h1&gt; is a breadcrumb, artist first</span>
+    <span class="n">label</span><span class="o">=</span><span class="s2">"AZChords"</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1">#: Every site songleaf knows, by name. A new site is a new entry. ``ug`` never searches:</span>
+<span class="c1">#: it only reads a page the reader names, and only when ``SONGLEAF_UG_URL=1`` (songleaf#28).</span>
+<span class="n">WEB_SITES</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">WebSite</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"lrclib"</span><span class="p">:</span> <span class="n">LrclibSite</span><span class="p">(),</span>
+    <span class="s2">"chordie"</span><span class="p">:</span> <span class="n">CHORDIE</span><span class="p">,</span>
+    <span class="s2">"azchords"</span><span class="p">:</span> <span class="n">AZCHORDS</span><span class="p">,</span>
+    <span class="s2">"ug"</span><span class="p">:</span> <span class="n">UltimateGuitarURLSource</span><span class="p">(),</span>
+<span class="p">}</span>
 <span class="c1">#: The sites asked when none are configured: those whose terms allow automated access.</span>
 <span class="n">DEFAULT_WEB_SITES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"lrclib"</span><span class="p">,)</span>
+
+
+<div class="viewcode-block" id="site_label">
+<a class="viewcode-back" href="../../_autosummary/songleaf.online.html#songleaf.online.site_label">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">site_label</span><span class="p">(</span><span class="n">site</span><span class="p">:</span> <span class="n">WebSite</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""How a page names ``site``: its ``label`` when it has one, else its name.</span>
+
+<span class="sd">    &gt;&gt;&gt; site_label(LrclibSite()), site_label(CHORDIE)</span>
+<span class="sd">    ('LRCLIB', 'Chordie')</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="s2">"label"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="ow">or</span> <span class="n">site</span><span class="o">.</span><span class="n">name</span></div>
+
+
+
+<div class="viewcode-block" id="label_of">
+<a class="viewcode-back" href="../../_autosummary/songleaf.online.html#songleaf.online.label_of">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">label_of</span><span class="p">(</span><span class="n">site_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""How a page names the site a kept song's provenance names (``""`` for none).</span>
+
+<span class="sd">    A registry name, or the name a site writes in provenance (``site_name``: Ultimate</span>
+<span class="sd">    Guitar's ``ultimate-guitar``); an unknown name is shown as it is.</span>
+
+<span class="sd">    &gt;&gt;&gt; label_of("lrclib"), label_of("ultimate-guitar"), label_of("elsewhere"), label_of("")</span>
+<span class="sd">    ('LRCLIB', 'Ultimate Guitar', 'elsewhere', '')</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">site_name</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">""</span>
+    <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">WEB_SITES</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">site_name</span> <span class="ow">in</span> <span class="p">(</span><span class="n">site</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="s2">"site_name"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">site_label</span><span class="p">(</span><span class="n">site</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">site_name</span></div>
+
 
 
 <div class="viewcode-block" id="site_names">
@@ -643,6 +848,18 @@
         <span class="p">),</span>
         <span class="n">politeness</span><span class="o">=</span><span class="n">Politeness</span><span class="p">(</span><span class="n">min_interval</span><span class="o">=</span><span class="n">MIN_INTERVAL_SECONDS</span><span class="p">),</span>
     <span class="p">)</span>
+
+
+<div class="viewcode-block" id="unavailable_reason">
+<a class="viewcode-back" href="../../_autosummary/songleaf.online.html#songleaf.online.unavailable_reason">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">unavailable_reason</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Why this process cannot fetch with :func:`polite_fetch` (no ``online`` extra), or ``""``."""</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_polite_fetcher</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">OnlineUnavailable</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">""</span></div>
+
 
 
 <div class="viewcode-block" id="polite_fetch">
@@ -841,10 +1058,11 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_with_provenance</span><span class="p">(</span><span class="n">song</span><span class="p">:</span> <span class="n">Song</span><span class="p">,</span> <span class="n">candidate</span><span class="p">:</span> <span class="n">Candidate</span><span class="p">,</span> <span class="n">site</span><span class="p">:</span> <span class="n">WebSite</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Song</span><span class="p">:</span>
+    <span class="n">source</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">song_id</span> <span class="o">=</span> <span class="n">candidate</span><span class="o">.</span><span class="n">key</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)</span>
     <span class="n">provenance</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">"source"</span><span class="p">:</span> <span class="n">WEB_SOURCE</span><span class="p">,</span>
-        <span class="s2">"id"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">site</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
-        <span class="s2">"site"</span><span class="p">:</span> <span class="n">site</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="s2">"source"</span><span class="p">:</span> <span class="n">source</span><span class="p">,</span>
+        <span class="s2">"id"</span><span class="p">:</span> <span class="n">song_id</span><span class="p">,</span>
+        <span class="s2">"site"</span><span class="p">:</span> <span class="n">song</span><span class="o">.</span><span class="n">provenance</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"site"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">site</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>  <span class="c1"># UG: "ultimate-guitar", as pasted</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="n">candidate</span><span class="o">.</span><span class="n">url</span><span class="p">,</span>
         <span class="s2">"license"</span><span class="p">:</span> <span class="n">candidate</span><span class="o">.</span><span class="n">license</span> <span class="ow">or</span> <span class="n">site</span><span class="o">.</span><span class="n">license</span><span class="p">,</span>
         <span class="s2">"fetched_at"</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%SZ"</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">gmtime</span><span class="p">()),</span>
@@ -874,9 +1092,10 @@
         <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.sources</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hit</span>
 
         <span class="n">provenance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">song</span><span class="o">.</span><span class="n">provenance</span>
+        <span class="n">source</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">song_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Hit</span><span class="p">(</span>
-            <span class="n">source</span><span class="o">=</span><span class="n">WEB_SOURCE</span><span class="p">,</span>
-            <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)[</span><span class="mi">2</span><span class="p">],</span>
+            <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">,</span>
+            <span class="nb">id</span><span class="o">=</span><span class="n">song_id</span><span class="p">,</span>
             <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">song</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
             <span class="n">artist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">song</span><span class="o">.</span><span class="n">artist</span><span class="p">,</span>
             <span class="n">score</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
@@ -933,18 +1152,101 @@
 
 
 
+<div class="viewcode-block" id="site_for_url">
+<a class="viewcode-back" href="../../_autosummary/songleaf.online.html#songleaf.online.site_for_url">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">site_for_url</span><span class="p">(</span>
+    <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">sites</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">WebSite</span><span class="p">,</span> <span class="n">Candidate</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The site that reads the page at ``url``, and the page as a :class:`Candidate`.</span>
+
+<span class="sd">    Every site with a ``candidate_for`` is asked, in order (default: all of</span>
+<span class="sd">    :data:`WEB_SITES`, whatever the search list says: naming a page is not a search).</span>
+<span class="sd">    No request is made. Raises ``ValueError`` when no site reads that URL, or when its</span>
+<span class="sd">    site refuses it (a URL that is not plain, an official Ultimate Guitar tab); whether</span>
+<span class="sd">    Ultimate Guitar fetching is on is checked when the page is read.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">url</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No URL given"</span><span class="p">)</span>
+    <span class="n">asked</span> <span class="o">=</span> <span class="n">web_sites</span><span class="p">(</span><span class="n">sites</span><span class="p">)</span> <span class="k">if</span> <span class="n">sites</span> <span class="k">else</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">WEB_SITES</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">readers</span> <span class="o">=</span> <span class="p">[</span><span class="n">site</span> <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">asked</span> <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="s2">"candidate_for"</span><span class="p">,</span> <span class="kc">None</span><span class="p">))]</span>
+    <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">readers</span><span class="p">:</span>
+        <span class="n">candidate</span> <span class="o">=</span> <span class="n">site</span><span class="o">.</span><span class="n">candidate_for</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">candidate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">site</span><span class="p">,</span> <span class="n">candidate</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">site</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">readers</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">"none"</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"No known site reads </span><span class="si">{</span><span class="n">url</span><span class="si">!r}</span><span class="s2"> (sites that read pages: </span><span class="si">{</span><span class="n">names</span><span class="si">}</span><span class="s2">). Paste the"</span>
+        <span class="s2">" chart instead: songleaf import &lt;file&gt;, or the page's 'Paste a song'."</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="import_url">
+<a class="viewcode-back" href="../../_autosummary/songleaf.online.html#songleaf.online.import_url">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">import_url</span><span class="p">(</span>
+    <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">sites</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">fetch</span><span class="p">:</span> <span class="n">Fetch</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">refresh</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Found</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Read the song page at ``url`` and keep it, like a song a search found.</span>
+
+<span class="sd">    The site is found by :func:`site_for_url`; the song is stored under its key</span>
+<span class="sd">    (``web:&lt;site&gt;:&lt;id&gt;``, or ``ug:&lt;id&gt;`` for Ultimate Guitar) with its provenance, and</span>
+<span class="sd">    from then on found by local search (:class:`StoredWebSource`). A page already kept</span>
+<span class="sd">    is not fetched again unless ``refresh``. ``fetch`` defaults to the site's own</span>
+<span class="sd">    (``site.fetch``) or :func:`polite_fetch`. Raises ``ValueError`` for a page with</span>
+<span class="sd">    neither lyrics nor chords (no :func:`is_usable` bar: the reader chose this page).</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">song_store</span>
+
+    <span class="n">site</span><span class="p">,</span> <span class="n">candidate</span> <span class="o">=</span> <span class="n">site_for_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">sites</span><span class="o">=</span><span class="n">sites</span><span class="p">)</span>
+    <span class="n">store</span> <span class="o">=</span> <span class="n">song_store</span><span class="p">()</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">store</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">refresh</span> <span class="ow">and</span> <span class="n">candidate</span><span class="o">.</span><span class="n">key</span> <span class="ow">in</span> <span class="n">store</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Found</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">store</span><span class="p">[</span><span class="n">candidate</span><span class="o">.</span><span class="n">key</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">cached</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">fetch</span> <span class="o">=</span> <span class="n">fetch</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="s2">"fetch"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">polite_fetch</span>
+    <span class="n">song</span> <span class="o">=</span> <span class="n">site</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="n">fetch</span><span class="o">=</span><span class="n">fetch</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">chart_counts</span><span class="p">(</span><span class="n">song</span><span class="p">)):</span>  <span class="c1"># the reader chose this page: anything at all is kept</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">url</span><span class="si">}</span><span class="s2"> holds no lyrics and no chords"</span><span class="p">)</span>
+    <span class="n">song</span> <span class="o">=</span> <span class="n">_with_provenance</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">candidate</span><span class="p">,</span> <span class="n">site</span><span class="p">)</span>
+    <span class="n">store</span><span class="p">[</span><span class="n">candidate</span><span class="o">.</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">song</span>
+    <span class="k">return</span> <span class="n">Found</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">song</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">cached</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+
 <span class="c1"># --------------------------------------------------------------------------------------</span>
 <span class="c1"># The local source over what was found</span>
+
+
+<span class="c1">#: The kinds of stored song the reader brought in, and local search finds: found on the web</span>
+<span class="c1">#: or imported by URL (``web:``), Ultimate Guitar charts (``ug:``), pasted songs (``paste:``).</span>
+<span class="n">KEPT_SOURCES</span> <span class="o">=</span> <span class="p">(</span><span class="n">WEB_SOURCE</span><span class="p">,</span> <span class="s2">"ug"</span><span class="p">,</span> <span class="s2">"paste"</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="kept_keys">
+<a class="viewcode-back" href="../../_autosummary/songleaf.online.html#songleaf.online.kept_keys">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">kept_keys</span><span class="p">(</span><span class="n">store</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">kinds</span><span class="p">:</span> <span class="n">Iterable</span> <span class="o">=</span> <span class="n">KEPT_SOURCES</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The keys of ``store`` holding songs the reader brought in (see :data:`KEPT_SOURCES`).</span>
+
+<span class="sd">    &gt;&gt;&gt; kept_keys({"web:lrclib:1": 0, "paste:ab": 0, "kaggle_chords:9": 0})</span>
+<span class="sd">    ['web:lrclib:1', 'paste:ab']</span>
+<span class="sd">    """</span>
+    <span class="n">kinds</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">kinds</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">store</span> <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">kinds</span><span class="p">]</span></div>
+
 
 
 <div class="viewcode-block" id="StoredWebSource">
 <a class="viewcode-back" href="../../_autosummary/songleaf.online.html#songleaf.online.StoredWebSource">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">StoredWebSource</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""The songs found on the web and kept in the song store: searched locally.</span>
+<span class="w">    </span><span class="sd">"""The songs the reader brought in and kept in the song store: searched locally.</span>
 
 <span class="sd">    A source like any other (``name`` ``"web"``, ``search``, ``search_tiers``, ``get``):</span>
-<span class="sd">    it reads the ``web:`` keys of the store, so a song kept by :func:`expand` is found</span>
-<span class="sd">    again with no request. Title and artist match word by word, as the corpus does</span>
+<span class="sd">    it reads the store's keys of the ``kinds`` the reader brought in (found on the web,</span>
+<span class="sd">    imported by URL, pasted), so a song kept by :func:`expand`, :func:`import_url` or a</span>
+<span class="sd">    paste is found again with no request. Each hit's ``source`` is its key's own prefix. Title and artist match word by word, as the corpus does</span>
 <span class="sd">    (:class:`~songleaf.match.WordIndex`: the query inside the title and artist, or the</span>
 <span class="sd">    title and artist inside the query, typos forgiven); lyrics hold every word.</span>
 
@@ -955,12 +1257,17 @@
 <span class="sd">    Args:</span>
 <span class="sd">        store: The song store (default: :func:`songleaf.store.song_store`, resolved on</span>
 <span class="sd">            each use, since the data root may move).</span>
+<span class="sd">        kinds: The key prefixes searched (default :data:`KEPT_SOURCES`). Corpus songs</span>
+<span class="sd">            cached in the store are not among them: their own source finds them.</span>
 <span class="sd">    """</span>
 
     <span class="n">name</span> <span class="o">=</span> <span class="n">WEB_SOURCE</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">kinds</span><span class="p">:</span> <span class="n">Sequence</span> <span class="o">=</span> <span class="n">KEPT_SOURCES</span>
+    <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_store</span> <span class="o">=</span> <span class="n">store</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kinds</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">kinds</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_index</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># (store id, key) -&gt; (title, artist, lyric words, site)</span>
 
     <span class="nd">@property</span>
@@ -979,11 +1286,11 @@
         <span class="k">return</span> <span class="sa">f</span><span class="s2">"given:</span><span class="si">{</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_store</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_entries</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">frozenset</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">"""``(key, title, artist, lyric words, site)`` of every kept web song."""</span>
+<span class="w">        </span><span class="sd">"""``(key, title, artist, lyric words, site)`` of every kept song."""</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.match</span><span class="w"> </span><span class="kn">import</span> <span class="n">query_words</span>
 
-        <span class="n">store</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_store_id</span><span class="p">(),</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">WEB_SOURCE</span><span class="si">}</span><span class="s2">:"</span>
-        <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">store</span> <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)]</span>
+        <span class="n">store</span><span class="p">,</span> <span class="n">where</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_store_id</span><span class="p">()</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="n">kept_keys</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">kinds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kinds</span><span class="p">)</span>
         <span class="n">entries</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
             <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">where</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
@@ -1009,9 +1316,10 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_hit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">artist</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">score</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">site</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">):</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.sources</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hit</span>
 
+        <span class="n">source</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">song_id</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Hit</span><span class="p">(</span>
-            <span class="n">source</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-            <span class="nb">id</span><span class="o">=</span><span class="n">key</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)[</span><span class="mi">2</span><span class="p">],</span>
+            <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">,</span>
+            <span class="nb">id</span><span class="o">=</span><span class="n">song_id</span><span class="p">,</span>
             <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
             <span class="n">artist</span><span class="o">=</span><span class="n">artist</span><span class="p">,</span>
             <span class="n">score</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
@@ -1132,7 +1440,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=d8383de7"></script>
+</div><script src="../../_static/documentation_options.js?v=71784981"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
