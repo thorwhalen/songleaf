@@ -264,6 +264,10 @@ def mk_app(
             if not web_on_request:
                 raise HTTPException(403, "This app does not search the web on request")
             reason = "" if fetch else online.unavailable_reason()
+            try:
+                online.web_sites()
+            except ValueError as error:  # a misspelt $SONGLEAF_WEB_SITES
+                reason = reason or str(error)
             if reason:
                 raise HTTPException(503, reason)
             mode = web

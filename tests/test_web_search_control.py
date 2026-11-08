@@ -77,3 +77,11 @@ def test_only_always_is_a_web_mode_a_request_may_ask_for(memory_source, fetch):
     client = TestClient(mk_app(sources=[memory_source], store={}, web_on_request=True, fetch=fetch))
     for mode in ("fallback", "off", "sometimes"):
         assert client.get("/search", params={"q": "x", "web": mode}).status_code == 422
+
+
+def test_a_misspelt_site_list_is_a_503_that_names_it(memory_source, fetch, monkeypatch):
+    monkeypatch.setenv("SONGLEAF_WEB_SITES", "lrclibb")
+    client = TestClient(mk_app(sources=[memory_source], store={}, web_on_request=True, fetch=fetch))
+    response = client.get("/search", params={"q": "willow lanterns", "web": "always"})
+    assert response.status_code == 503 and "lrclibb" in response.json()["detail"]
+    assert client.get("/web").json()["available"] is False

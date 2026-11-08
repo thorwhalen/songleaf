@@ -220,6 +220,10 @@ class ChartPageSite:
         page_path: A regex over the path of one of its song pages: a URL on its host
             whose path matches can be imported (:meth:`candidate_for`). ``""``: none.
         home: The site's root URL; its host is the site's when ``search_url`` is ``""``.
+        heading: Where a page named by URL says its title and artist: ``"h1"`` (its first
+            heading, else its ``<title>``) or ``"title"`` (its ``<title>``, for a site whose
+            first heading is a breadcrumb, artist first).
+        label: How a page names the site (``""``: its name).
     """
 
     name: str
@@ -230,6 +234,12 @@ class ChartPageSite:
     chords: bool = True
     page_path: str = ""
     home: str = ""
+    heading: str = "h1"
+    label: str = ""
+
+    @property
+    def site_url(self) -> str:
+        return self.search_url or self.home
 
     def find(self, query: str, *, limit: int, fetch: Fetch) -> list[Candidate]:
         if not self.search_url:
@@ -239,7 +249,10 @@ class ChartPageSite:
         found: dict[str, Candidate] = {}
         for match in re.finditer(self.result_link, page, re.DOTALL | re.IGNORECASE):
             url = urljoin(page_url, _html.unescape(match.group("url")))
-            if url in found or not _same_site(url, page_url):
+            if not _same_site(url, page_url):
+                continue
+            url = canonical_url(url, self.site_url)
+            if url in found:
                 continue
             title, artist = self._title_and_artist(match.group("label"))
             if title:
@@ -249,7 +262,7 @@ class ChartPageSite:
         return list(found.values())
 
     def _title_and_artist(self, label: str) -> tuple[str, str]:
-        text = _html.unescape(re.sub(r"<[^>]+>", " ", label)).strip()
+        text = _html.unescape(re.sub(r"<[^>]+>", " ", label)).strip()[:MAX_LABEL_CHARS]
         title, _, artist = (
             part.strip() for part in _split_once(self.label_separator, text)
         )
@@ -258,16 +271,18 @@ class ChartPageSite:
     def candidate_for(self, url: str) -> Candidate | None:
         """The song page at ``url``, when it is one of this site's (else ``None``).
 
-        Its id is the same :func:`url_id` its search gives that page, so a song found by
-        a search and the same page imported by URL are one song. Title and artist come
-        from the page itself (:meth:`extract`).
+        The URL is made canonical first (:func:`canonical_url`), as the search's results
+        are, so a song found by a search and the same page imported by URL (with or
+        without ``www.``, a ``#fragment``, capitals in the host) are one song. Title and
+        artist come from the page itself (:meth:`extract`).
         """
         url = url.strip()
         parts = urlsplit(url)
-        if not self.page_path or not _same_site(url, self.search_url or self.home):
+        if not self.page_path or not _same_site(url, self.site_url):
             return None
         if parts.username or parts.password or not re.search(self.page_path, parts.path):
             return None
+        url = canonical_url(url, self.site_url)
         return Candidate(self.name, url_id(url), "", url=url)
 
     def extract(self, candidate: Candidate, *, fetch: Fetch) -> Song:
@@ -279,8 +294,27 @@ class ChartPageSite:
             raise ValueError(f"No chord chart found on {candidate.url}")
         title, artist = candidate.title, candidate.artist
         if not title:  # a page named by URL: its heading (or <title>) says what it is
-            title, artist = self._title_and_artist(page_heading(page))
+            named = page_title(page) if self.heading == "title" else page_heading(page)
+            title, artist = self._title_and_artist(named)
         return import_song(text, title=title, artist=artist).song
+
+
+#: Characters of a title-and-artist label kept at most (a page's <title> can be anything).
+MAX_LABEL_CHARS = 200
+
+
+def canonical_url(url: str, site_url: str) -> str:
+    """``url`` as one spelling: https, the host as ``site_url`` spells it, no ``#fragment``.
+
+    >>> canonical_url("https://WWW.Chords.example/a.html#top", "https://chords.example/s")
+    'https://chords.example/a.html'
+    """
+    from urllib.parse import urlunsplit
+
+    parts = urlsplit(url)
+    host = urlsplit(site_url).hostname or parts.hostname or ""
+    netloc = host if parts.port is None else f"{host}:{parts.port}"
+    return urlunsplit(("https", netloc, parts.path or "/", parts.query, ""))
 
 
 def _split_once(pattern: str, text: str) -> tuple[str, str, str]:
@@ -305,12 +339,14 @@ _TITLE_RE = re.compile(r"<title[^>]*>(.*?)</title\s*>", re.DOTALL | re.IGNORECAS
 _H1_RE = re.compile(r"<h1\b[^>]*>(.*?)</h1\s*>", re.DOTALL | re.IGNORECASE)
 #: The ``| Site name`` (or ``| Version #2``) a page title ends with.
 _TITLE_SITE_RE = re.compile(r"\s*\|[^|]*$")
-#: The kind of page a title names after the song (``chords``, ``tab``...), and what follows.
-_TITLE_KIND_RE = re.compile(
-    r"\s+\b(?:chords?|lyrics|tabs?|ukulele|bass|guitar)\b(?P<rest>.*)$", re.IGNORECASE
-)
-#: After the kind, `` – Artist`` (kept as `` - Artist``); anything else is the site's words.
+#: The kind of page a title names after the song (``chords``, ``tab``...).
+_TITLE_KIND_RE = re.compile(r"\s+\b(?:chords?|lyrics|tabs?|ukulele|bass|guitar)\b", re.I)
+#: After the kind, `` – Artist`` (kept as `` - Artist``).
 _TITLE_ARTIST_RE = re.compile(r"\s*[-\u2013\u2014]\s*(?P<artist>\S.*)$")
+#: After the kind, only the site's own words ("and Lyrics for Guitar").
+_TITLE_FILLER_RE = re.compile(
+    r"(?:\s*(?:chords?|lyrics|tabs?|ukulele|bass|guitar|and|for|with|&|\+|,))*\s*$", re.I
+)
 
 
 def page_heading(page: str) -> str:
@@ -337,16 +373,26 @@ def page_title(page: str) -> str:
     'Paper Boats - Invented Band'
     >>> page_title("<title>Paper Boats Invented Band Chords and Lyrics for Guitar</title>")
     'Paper Boats Invented Band'
+    >>> page_title("<title>Gentle Guitar Rain Chords - Invented Band | Version #1</title>")
+    'Gentle Guitar Rain - Invented Band'
+
+    The kind word that ends the song's name is the first one followed only by `` - artist``
+    or by the site's own words: a "Guitar" inside the title does not cut it.
     """
     found = _TITLE_RE.search(page)
     if not found:
         return ""
     text = " ".join(_html.unescape(_TAG_RE.sub("", found.group(1))).split())
-    text = _TITLE_SITE_RE.sub("", text)
-    kind = _TITLE_KIND_RE.search(text)
-    if kind:
-        artist = _TITLE_ARTIST_RE.match(kind.group("rest"))
-        text = text[: kind.start()] + (f" - {artist.group('artist')}" if artist else "")
+    text = _TITLE_SITE_RE.sub("", text)[:MAX_LABEL_CHARS]
+    for kind in _TITLE_KIND_RE.finditer(text):
+        rest = text[kind.end() :]
+        artist = _TITLE_ARTIST_RE.match(rest)
+        if artist:
+            text = f"{text[: kind.start()]} - {artist.group('artist')}"
+            break
+        if _TITLE_FILLER_RE.fullmatch(rest):
+            text = text[: kind.start()]
+            break
     return text.strip(" -")
 
 
@@ -363,6 +409,7 @@ CHORDIE = ChartPageSite(
     search_url="https://www.chordie.com/result.php?q={query}",
     result_link=r'<a[^>]+href="(?P<url>/(?:chord|song)\.pere/[^"]+)"[^>]*>(?P<label>.*?)</a>',
     page_path=r"^/(?:chord|song)\.pere/",
+    label="Chordie",
 )
 
 #: AZChords (azchords.com): chords over lyrics in ``<pre id="content">``. Its robots.txt
@@ -374,6 +421,8 @@ AZCHORDS = ChartPageSite(
     result_link="",
     page_path=r"^/[a-z0-9]/[a-z0-9]+-tabs-\d+/[a-z0-9]+-tabs-\d+\.html$",
     home="https://www.azchords.com/",
+    heading="title",  # its first <h1> is a breadcrumb, artist first
+    label="AZChords",
 )
 
 #: Every site songleaf knows, by name. A new site is a new entry. ``ug`` never searches:
@@ -392,9 +441,26 @@ def site_label(site: WebSite) -> str:
     """How a page names ``site``: its ``label`` when it has one, else its name.
 
     >>> site_label(LrclibSite()), site_label(CHORDIE)
-    ('LRCLIB', 'chordie')
+    ('LRCLIB', 'Chordie')
     """
     return getattr(site, "label", "") or site.name
+
+
+def label_of(site_name: str) -> str:
+    """How a page names the site a kept song's provenance names (``""`` for none).
+
+    A registry name, or the name a site writes in provenance (``site_name``: Ultimate
+    Guitar's ``ultimate-guitar``); an unknown name is shown as it is.
+
+    >>> label_of("lrclib"), label_of("ultimate-guitar"), label_of("elsewhere"), label_of("")
+    ('LRCLIB', 'Ultimate Guitar', 'elsewhere', '')
+    """
+    if not site_name:
+        return ""
+    for site in WEB_SITES.values():
+        if site_name in (site.name, getattr(site, "site_name", "")):
+            return site_label(site)
+    return site_name
 
 
 def site_names(spec: str) -> list[str]:
@@ -745,7 +811,8 @@ def site_for_url(
     Every site with a ``candidate_for`` is asked, in order (default: all of
     :data:`WEB_SITES`, whatever the search list says: naming a page is not a search).
     No request is made. Raises ``ValueError`` when no site reads that URL, or when its
-    site refuses it (Ultimate Guitar while ``SONGLEAF_UG_URL`` is off, an official tab).
+    site refuses it (a URL that is not plain, an official Ultimate Guitar tab); whether
+    Ultimate Guitar fetching is on is checked when the page is read.
     """
     if not url.strip():
         raise ValueError("No URL given")
@@ -803,6 +870,16 @@ def import_url(
 KEPT_SOURCES = (WEB_SOURCE, "ug", "paste")
 
 
+def kept_keys(store: Mapping, *, kinds: Iterable = KEPT_SOURCES) -> list[str]:
+    """The keys of ``store`` holding songs the reader brought in (see :data:`KEPT_SOURCES`).
+
+    >>> kept_keys({"web:lrclib:1": 0, "paste:ab": 0, "kaggle_chords:9": 0})
+    ['web:lrclib:1', 'paste:ab']
+    """
+    kinds = frozenset(kinds)
+    return [key for key in store if key.partition(":")[0] in kinds]
+
+
 class StoredWebSource:
     """The songs the reader brought in and kept in the song store: searched locally.
 
@@ -853,7 +930,7 @@ class StoredWebSource:
         from songleaf.match import query_words
 
         store, where = self.store, self._store_id()
-        keys = [key for key in store if key.partition(":")[0] in self.kinds]
+        keys = kept_keys(store, kinds=self.kinds)
         entries = []
         for key in keys:
             entry = self._index.get((where, key))

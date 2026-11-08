@@ -25,7 +25,7 @@ CHART = "\n".join(
         "let the river know",
     ]
 )
-PAGE_URL = "https://chords.example/song.pere/paper-boats-1.html"
+PAGE_URL = "https://www.chords.example/song.pere/paper-boats-1.html"
 SITE = ChartPageSite(
     name="invented",
     search_url="https://www.chords.example/search?q={query}",
@@ -82,7 +82,12 @@ def test_a_chart_site_claims_only_its_own_song_pages():
     claimed = SITE.candidate_for(PAGE_URL)
     assert claimed.site == "invented" and claimed.url == PAGE_URL
     assert claimed.id == online.url_id(PAGE_URL)  # what its search gives the same page
-    assert SITE.candidate_for("https://www.chords.example/song.pere/x.html")  # www. or not
+    for spelling in [  # one page, however its URL is written: one id
+        "https://chords.example/song.pere/paper-boats-1.html",
+        "https://WWW.CHORDS.EXAMPLE/song.pere/paper-boats-1.html",
+        f"{PAGE_URL}#chorus",
+    ]:
+        assert SITE.candidate_for(spelling).key == claimed.key
     for other in [
         "https://elsewhere.example/song.pere/x.html",
         "http://chords.example/song.pere/x.html",
@@ -166,7 +171,7 @@ def test_a_site_with_no_search_reads_pages_by_url_only():
     page_url = "https://www.azchords.com/i/inventedband-tabs-1/paperboats-tabs-2.html"
     page = (
         "<html><head><title>Paper Boats  Chords &ndash; Invented Band | Version #1</title>"
-        "</head><body><pre>Tuning: standard</pre>"
+        "</head><body><h1>Invented Band - Paper Boats  Chords</h1><pre>Tuning: standard</pre>"
         f"<pre id='content'>{CHART}</pre></body></html>"
     )
     site, candidate = site_for_url(page_url)
@@ -176,3 +181,26 @@ def test_a_site_with_no_search_reads_pages_by_url_only():
     assert kept.key == f"web:azchords:{online.url_id(page_url)}"
     with pytest.raises(ValueError):  # an artist index page is not a song page
         site_for_url("https://www.azchords.com/i/inventedband-chords-1.html", sites=[site])
+
+
+def test_a_kind_word_inside_a_title_does_not_cut_it():
+    page = "<title>Gentle Guitar Rain  Chords &ndash; Invented Band | Version #1</title>"
+    assert online.page_title(page) == "Gentle Guitar Rain - Invented Band"
+    assert len(online.page_title(f"<title>{'x' * 100_000}</title>")) <= online.MAX_LABEL_CHARS
+
+
+def test_refreshing_a_kept_song_keeps_it_rather_than_asking_a_source_for_it():
+    store = {}
+    pasted = tools.import_text(CHART, title="Lantern Light", store=store)
+    key, song = tools._resolve(
+        "lantern light", pick=1, refresh=True, sources=[StoredWebSource(store)], store=store
+    )
+    assert key == pasted["key"] and song.title == "Lantern Light"
+
+
+def test_rows_say_in_words_where_a_kept_song_came_from(monkeypatch):
+    monkeypatch.setenv(ug.URL_SOURCE_ENVVAR, "1")
+    store = {}
+    tools.import_url(UG_URL, store=store, fetch=counting(ug_page()))
+    rows = tools.search("paper boats", sources=[StoredWebSource(store)], web="off")
+    assert [(row["source"], row["site_label"]) for row in rows] == [("ug", "Ultimate Guitar")]

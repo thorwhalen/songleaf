@@ -43,6 +43,8 @@ import re
 from collections.abc import Callable, Mapping
 from urllib.parse import urlsplit
 
+#: The site's name in a song's provenance (``provenance.site``), by every route.
+SITE_NAME = "ultimate-guitar"
 #: The environment variable that turns on :class:`UltimateGuitarURLSource` (``"1"``).
 URL_SOURCE_ENVVAR = "SONGLEAF_UG_URL"
 #: Tab types whose page has no text chart songleaf may read (UG's own player, or video).
@@ -227,6 +229,8 @@ class UltimateGuitarURLSource:
     name = "ug"
     license = "personal"
     chords = True
+    label = "Ultimate Guitar"
+    site_name = SITE_NAME
 
     def __init__(
         self,
@@ -240,6 +244,10 @@ class UltimateGuitarURLSource:
     @property
     def enabled(self) -> bool:
         return url_source_enabled() if self._enabled is None else self._enabled
+
+    @enabled.setter
+    def enabled(self, value: bool | None) -> None:
+        self._enabled = value
 
     def search(self, *args, **kwargs) -> list:
         """Nothing: this source reads the one page it is given and never searches UG."""

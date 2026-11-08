@@ -843,7 +843,12 @@
   // next search finds it here. Shown only when the app allows it (`GET /web`, asked once).
   let webStatus = null;
   function webAvailability() {
-    if (!webStatus) webStatus = getJSON("/web").catch(() => ({ available: false, sites: [] }));
+    if (!webStatus) {
+      webStatus = getJSON("/web").catch(() => {
+        webStatus = null; // a failed ask is asked again by the next search, not kept
+        return { available: false, sites: [] };
+      });
+    }
     return webStatus;
   }
 
@@ -883,7 +888,7 @@
             `Nothing new found on the web for “${route.q}”.`));
           return;
         }
-        const nothingHere = results.querySelector(".empty"); // "No title matches…" is no longer the news
+        const nothingHere = results.querySelector(".empty > p"); // "No … matches" is no longer the news
         if (nothingHere) nothingHere.remove();
         box.replaceChildren(h("h2", { class: "section-head" }, "From the web"), songList(found, { fromLabel: "Results" }),
           h("p", { class: "muted", role: "status" }, "Kept with your songs: a search finds it here from now on."));
@@ -1457,7 +1462,7 @@
   // Where a song the reader brought in came from (a web site, Ultimate Guitar): its site, said
   // in words. The row is a link, so the page's URL is not a second link inside it.
   function originLine(song) {
-    const site = song.meta && song.meta.site;
+    const site = song.site_label || (song.meta && song.meta.site);
     return site ? h("span", { class: "origin muted" }, `from ${site}`) : null;
   }
 

@@ -181,6 +181,11 @@ def _expand_online(query: str, *, mode: str, sites="", store=None, fetch=None):
 def _tagged(row: dict, kind: str, query: str) -> dict:
     from songleaf.match import word_spans
 
+    site = (row.get("meta") or {}).get("site")
+    if site:  # a song the reader brought in: how a page names where it came from
+        from songleaf.online import label_of
+
+        row["site_label"] = label_of(site)
     row["match"] = kind
     row["highlight"] = {
         "title": word_spans(row["title"], query),
@@ -484,9 +489,17 @@ def _resolve(query: str, *, pick: int, refresh: bool, sources, store, web="off")
             found = f"only {len(hits)} match" if hits else "nothing matches"
             raise _sources.SongNotFound(f"No song number {pick} for {query!r}: {found}")
         key = hits[pick - 1].key
-    if refresh or not _is_stored(store, key):
+    if not _is_stored(store, key) or (refresh and not _is_kept(key)):
         store[key] = _sources.get_song(key, sources=sources)
     return key, store[key]
+
+
+def _is_kept(key: str) -> bool:
+    """Whether ``key`` names a song the reader brought in: the store is its only copy, so
+    there is no source to refresh it from (``import-url --refresh`` re-reads a page)."""
+    from songleaf.online import KEPT_SOURCES
+
+    return key.partition(":")[0] in KEPT_SOURCES
 
 
 def _web_mode(web) -> str:
