@@ -164,6 +164,7 @@ class LrclibSite:
     license: str = "personal"
     chords: bool = False
     base_url: str = "https://lrclib.net"
+    label: str = "LRCLIB"  # how a page names it
 
     def find(self, query: str, *, limit: int, fetch: Fetch) -> list[Candidate]:
         records = json.loads(fetch(f"{self.base_url}/api/search?q={quote_plus(query)}"))
@@ -387,6 +388,15 @@ WEB_SITES: dict[str, WebSite] = {
 DEFAULT_WEB_SITES = ("lrclib",)
 
 
+def site_label(site: WebSite) -> str:
+    """How a page names ``site``: its ``label`` when it has one, else its name.
+
+    >>> site_label(LrclibSite()), site_label(CHORDIE)
+    ('LRCLIB', 'chordie')
+    """
+    return getattr(site, "label", "") or site.name
+
+
 def site_names(spec: str) -> list[str]:
     """The site names in a comma-separated list (blanks dropped)."""
     return [name.strip() for name in spec.split(",") if name.strip()]
@@ -456,6 +466,15 @@ def _polite_fetcher():
         ),
         politeness=Politeness(min_interval=MIN_INTERVAL_SECONDS),
     )
+
+
+def unavailable_reason() -> str:
+    """Why this process cannot fetch with :func:`polite_fetch` (no ``online`` extra), or ``""``."""
+    try:
+        _polite_fetcher()
+    except OnlineUnavailable as error:
+        return str(error)
+    return ""
 
 
 def polite_fetch(url: str) -> str:
