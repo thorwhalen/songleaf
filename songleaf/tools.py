@@ -576,26 +576,36 @@ def import_file(
 import_file.__name__ = "import"  # the CLI command is ``songleaf import``
 
 
-def import_url(url: str, *, refresh: bool = False, store=None, source=None) -> dict:
-    """Fetch one community Ultimate Guitar chord page and store its chart as ``ug:<id>``.
+def import_url(
+    url: str,
+    *,
+    refresh: bool = False,
+    web_sites: str = "",
+    store=None,
+    source=None,
+    fetch=None,
+) -> dict:
+    """Read one song page you name (a chord site's URL) and keep it, so search finds it.
 
-    Local command line only, and off unless ``SONGLEAF_UG_URL=1`` is set: prefer
-    pasting, or the bookmarklet run on the page you opened (see
-    ``songleaf.ultimate_guitar``). Official and Pro pages are refused. A chart
-    already stored is not fetched again unless ``refresh``.
+    The site is picked from the URL (``songleaf.online.WEB_SITES``: Chordie, and
+    Ultimate Guitar community charts). The song is stored under ``web:<site>:<id>``,
+    or ``ug:<id>`` for Ultimate Guitar, and is found by local search from then on. A
+    page already kept is not fetched again unless ``refresh``. ``web_sites`` limits the
+    sites that may read it (comma-separated names; default: every known one).
+
+    Ultimate Guitar is local command line only and off unless ``SONGLEAF_UG_URL=1``;
+    official and Pro pages are refused (prefer pasting, or the bookmarklet run on the
+    page you opened: ``songleaf.ultimate_guitar``). ``source`` is a site object to read
+    with instead of the registry's (for tests or a site of your own).
     """
-    from songleaf.ultimate_guitar import UltimateGuitarURLSource, ug_key
+    from songleaf import online
 
-    store = song_store() if store is None else store
-    key = ug_key(url)
-    if not key:
-        raise ValueError(f"Not an Ultimate Guitar tab URL (no tab id): {url!r}")
-    if not refresh and _is_stored(store, key):
-        song = store[key]
-        return {**_summary(key, song, "ultimate-guitar"), "cached": True}
-    source = UltimateGuitarURLSource() if source is None else source
-    song = source.get(url)
-    return {**_stored(key, song, "ultimate-guitar", store=store), "cached": False}
+    sites = [source] if source is not None else (web_sites or None)
+    found = online.import_url(
+        url, sites=sites, fetch=fetch, store=store, refresh=refresh
+    )
+    site = found.song.provenance.get("site", "")
+    return {**_summary(found.key, found.song, site), "site": site, "cached": found.cached}
 
 
 def forget(key: str, *, store=None, library_root=None) -> dict:

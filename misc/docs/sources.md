@@ -29,7 +29,7 @@ The routes, in the order songleaf prefers them:
 
 1. **Paste** (the default): copy the chart from the page and paste it into "Paste a song". No contact with UG.
 2. **Bookmarklet**: "Send to songleaf", offered under "Paste a song". Run in the reader's own browser on a community "Chords" or "Tabs" page they opened, it reads the chart from that page (`.js-store`, `page.data.tab_view.wiki_tab.content`, plus tonality and capo) and opens songleaf's paste form filled in with it, through the URL fragment (never seen by a server). Nothing is stored until the reader presses Import. Official and Pro pages get an explanation instead.
-3. **`UltimateGuitarURLSource`** / `songleaf import-url <url>`: local command line only, off unless `SONGLEAF_UG_URL=1`, one URL per call, cached as `ug:<id>` (a stored chart is not fetched again), never searches, never in `default_sources()`, never behind an HTTP route, so never in the deployed app.
+3. **`UltimateGuitarURLSource`** / `songleaf import-url <url>`: local command line only, off unless `SONGLEAF_UG_URL=1`, one URL per call, cached as `ug:<id>` (a stored chart is not fetched again), never searches, never in `default_sources()`, never behind an HTTP route, so never in the deployed app. Since 2026-11-08 it is the `ug` entry of `songleaf.online.WEB_SITES`, so `import-url` reads UG and Chordie pages through one registry (`online.site_for_url`); its `find` returns nothing, so a web search never asks UG, whatever `SONGLEAF_WEB_SITES` says.
 
 Charts from a UG URL, by any route, are stored as `ug:<id>`.
 

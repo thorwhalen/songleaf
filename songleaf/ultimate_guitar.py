@@ -208,17 +208,25 @@ def url_source_enabled() -> bool:
 class UltimateGuitarURLSource:
     """One UG chord page, by URL: local command line only, off by default.
 
-    It never searches (:meth:`search` returns nothing) and is never among
-    :func:`songleaf.sources.default_sources`. :meth:`get` fetches the one page
+    It never searches (:meth:`search` and :meth:`find` return nothing) and is never
+    among :func:`songleaf.sources.default_sources`. :meth:`get` fetches the one page
     it is given, refuses official and Pro pages, and returns the chart as a
     :class:`~songleaf.model.Song` keyed ``ug:<id>`` (see :func:`ug_key`).
 
+    It is also the ``ug`` entry of :data:`songleaf.online.WEB_SITES`, for
+    :func:`songleaf.online.import_url`: :meth:`candidate_for` claims a UG URL,
+    :meth:`extract` reads it. Its ``fetch`` is the one an import uses unless the
+    caller gives another (one plain request that stays on UG).
+
     Args:
         fetch: ``url -> html``; the default makes one plain HTTPS request.
-        enabled: Whether fetching is allowed; defaults to ``SONGLEAF_UG_URL=1``.
+        enabled: Whether fetching is allowed; defaults to ``SONGLEAF_UG_URL=1``,
+            read when asked (so a process can turn it on after import).
     """
 
     name = "ug"
+    license = "personal"
+    chords = True
 
     def __init__(
         self,
@@ -226,28 +234,67 @@ class UltimateGuitarURLSource:
         fetch: Callable[[str], str] = fetch_page,
         enabled: bool | None = None,
     ):
-        self._fetch = fetch
-        self.enabled = url_source_enabled() if enabled is None else enabled
+        self.fetch = fetch
+        self._enabled = enabled
+
+    @property
+    def enabled(self) -> bool:
+        return url_source_enabled() if self._enabled is None else self._enabled
 
     def search(self, *args, **kwargs) -> list:
         """Nothing: this source reads the one page it is given and never searches UG."""
         return []
 
-    def get(self, url: str):
-        """The chart at *url* as a song (raises :class:`RefusedPage`, or ``ValueError`` when off)."""
-        from songleaf.importers import import_song
+    def find(self, query: str, *, limit: int = 0, fetch=None) -> list:
+        """Nothing, as :meth:`search`: a web search never asks UG."""
+        return []
 
+    def _check_enabled(self) -> None:
         if not self.enabled:
             raise ValueError(
                 "Fetching Ultimate Guitar pages is off. Paste the chart, or use the"
                 " bookmarklet from the page you opened; on your own machine,"
                 f" {URL_SOURCE_ENVVAR}=1 turns this on."
             )
+
+    def _checked(self, url: str) -> str:
         url = safe_page_url(url)
         why = refusal(url)
         if why:
             raise RefusedPage(why)
-        chart = chart_from_html(self._fetch(url), url=url)
+        return url
+
+    def candidate_for(self, url: str):
+        """The page at a UG *url*, to :meth:`extract` (``None`` for another host).
+
+        Raises ``ValueError`` when the URL is not plain, and :class:`RefusedPage` for
+        an official or Pro page. Whether fetching is on is checked by :meth:`extract`,
+        so a page already kept is still found while it is off.
+        """
+        from songleaf.online import Candidate
+
+        if not is_ultimate_guitar_url(url):
+            return None
+        url = self._checked(url)
+        found = tab_id(url)
+        if not found:
+            raise ValueError(f"Not an Ultimate Guitar tab URL (no tab id): {url!r}")
+        return Candidate(self.name, found, "", url=url, store_key=f"ug:{found}")
+
+    def extract(self, candidate, *, fetch=None):
+        """The chart of a :meth:`candidate_for` page as a song (``ValueError`` when off)."""
+        self._check_enabled()
+        return self._song(self._checked(candidate.url), fetch or self.fetch)
+
+    def get(self, url: str):
+        """The chart at *url* as a song (raises :class:`RefusedPage`, or ``ValueError`` when off)."""
+        self._check_enabled()
+        return self._song(self._checked(url), self.fetch)
+
+    def _song(self, url: str, fetch: Callable[[str], str]):
+        from songleaf.importers import import_song
+
+        chart = chart_from_html(fetch(url), url=url)
         return import_song(
             chart["text"],
             title=chart["title"],

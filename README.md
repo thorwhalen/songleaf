@@ -141,7 +141,18 @@ SONGLEAF_WEB_SITES=lrclib,chordie python -m songleaf search ...  # which sites t
 
 Lyrics and chord charts are copyrighted. What songleaf fetches stays in your data directory, for your own use.
 
-A site is an entry in `songleaf.online.WEB_SITES`: a `ChartPageSite` (a search URL and a pattern for its result links) covers most chord sites, and any object with `name`, `license`, `chords`, `find(query, *, limit, fetch)` and `extract(candidate, *, fetch)` works. `fetch=` (`url -> text`) is the seam for the network.
+### A page you name
+
+`import-url` reads one song page you give it and keeps it the same way, so the next search finds it locally:
+
+```bash
+python -m songleaf import-url "https://www.chordie.com/chord.pere/..."           # web:chordie:<id>
+SONGLEAF_UG_URL=1 python -m songleaf import-url "https://tabs.ultimate-guitar.com/tab/<artist>/<song>-chords-<id>"   # ug:<id>
+```
+
+The site is picked from the URL (`songleaf.online.site_for_url`); a URL no known site reads is refused with the list of those that do, and pasting the chart (`import`) works for any site. Ultimate Guitar community charts are read only on your own machine with `SONGLEAF_UG_URL=1`, never from the web app, and official or Pro tabs are refused ([songleaf#28](https://github.com/thorwhalen/songleaf/issues/28)). A page already kept is not fetched again unless `--refresh`. Songs you pasted (`paste:`), imported (`ug:`, `web:`) or found online are all searched locally, first.
+
+A site is an entry in `songleaf.online.WEB_SITES`: a `ChartPageSite` (a search URL and a pattern for its result links) covers most chord sites, and any object with `name`, `license`, `chords`, `find(query, *, limit, fetch)` and `extract(candidate, *, fetch)` works. A site that can also read a page by URL has `candidate_for(url)` (a `ChartPageSite` has it when given `page_path=`, a regex over its song pages' paths). `fetch=` (`url -> text`) is the seam for the network.
 
 ## Web app
 

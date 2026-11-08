@@ -50,6 +50,7 @@ from typing import Protocol, runtime_checkable
 from urllib.parse import quote_plus, urljoin, urlsplit
 
 from songleaf.model import Song
+from songleaf.ultimate_guitar import UltimateGuitarURLSource
 
 log = logging.getLogger(__name__)
 
@@ -110,6 +111,7 @@ class Candidate:
     ``payload`` carries what the search already returned (an API that answers with the
     lyrics, say), so extracting it needs no second request. ``license`` overrides the
     site's for this one result (a site that searches other hosts knows each one's).
+    ``store_key`` overrides the ``web:<site>:<id>`` key (Ultimate Guitar keeps ``ug:<id>``).
     """
 
     site: str
@@ -119,10 +121,11 @@ class Candidate:
     url: str = ""
     payload: Mapping = field(default_factory=dict, compare=False, repr=False)
     license: str = ""
+    store_key: str = ""
 
     @property
     def key(self) -> str:
-        return web_key(self.site, self.id)
+        return self.store_key or web_key(self.site, self.id)
 
 
 @runtime_checkable
@@ -136,6 +139,12 @@ class WebSite(Protocol):
     def find(self, query: str, *, limit: int, fetch: Fetch) -> list[Candidate]: ...
 
     def extract(self, candidate: Candidate, *, fetch: Fetch) -> Song: ...
+
+
+# A site that can also read a page the reader names has ``candidate_for(url)``: the
+# :class:`Candidate` for a URL on its host (raising ``ValueError`` for one it refuses), or
+# ``None`` for a URL that is not its own. A site may carry its own ``fetch`` too, used by
+# :func:`import_url` when the caller gives none (see :func:`site_for_url`).
 
 
 # --------------------------------------------------------------------------------------
@@ -205,6 +214,8 @@ class ChartPageSite:
         label_separator: Splits a label's text into title and artist (title first).
         license: The licence tag stored with every song from here.
         chords: Whether its pages carry chords.
+        page_path: A regex over the path of one of its song pages: a URL on its host
+            whose path matches can be imported (:meth:`candidate_for`). ``""``: none.
     """
 
     name: str
@@ -213,6 +224,7 @@ class ChartPageSite:
     label_separator: str = r"\s*\xa0+\s*| - "
     license: str = "personal"
     chords: bool = True
+    page_path: str = ""
 
     def find(self, query: str, *, limit: int, fetch: Fetch) -> list[Candidate]:
         page_url = self.search_url.format(query=quote_plus(query))
@@ -236,13 +248,32 @@ class ChartPageSite:
         )
         return title, artist
 
+    def candidate_for(self, url: str) -> Candidate | None:
+        """The song page at ``url``, when it is one of this site's (else ``None``).
+
+        Its id is the same :func:`url_id` its search gives that page, so a song found by
+        a search and the same page imported by URL are one song. Title and artist come
+        from the page itself (:meth:`extract`).
+        """
+        url = url.strip()
+        parts = urlsplit(url)
+        if not self.page_path or not _same_site(url, self.search_url):
+            return None
+        if parts.username or parts.password or not re.search(self.page_path, parts.path):
+            return None
+        return Candidate(self.name, url_id(url), "", url=url)
+
     def extract(self, candidate: Candidate, *, fetch: Fetch) -> Song:
         from songleaf.importers import import_song
 
-        text = chart_text(fetch(candidate.url))
+        page = fetch(candidate.url)
+        text = chart_text(page)
         if not text:
             raise ValueError(f"No chord chart found on {candidate.url}")
-        return import_song(text, title=candidate.title, artist=candidate.artist).song
+        title, artist = candidate.title, candidate.artist
+        if not title:  # a page named by URL: its heading (or <title>) says what it is
+            title, artist = self._title_and_artist(page_heading(page))
+        return import_song(text, title=title, artist=artist).song
 
 
 def _split_once(pattern: str, text: str) -> tuple[str, str, str]:
@@ -251,9 +282,54 @@ def _split_once(pattern: str, text: str) -> tuple[str, str, str]:
 
 
 def _same_site(url: str, page_url: str) -> bool:
-    """Whether ``url`` is an https page on the host of ``page_url`` (results never leave it)."""
+    """Whether ``url`` is an https page on the host of ``page_url`` (results never leave it).
+
+    ``www.`` does not count: ``chordie.com`` and ``www.chordie.com`` are one host.
+    """
     a, b = urlsplit(url), urlsplit(page_url)
-    return a.scheme == "https" and a.hostname == b.hostname
+
+    def host(parts):
+        return (parts.hostname or "").removeprefix("www.")
+
+    return a.scheme == "https" and bool(host(a)) and host(a) == host(b)
+
+
+_TITLE_RE = re.compile(r"<title[^>]*>(.*?)</title\s*>", re.DOTALL | re.IGNORECASE)
+_H1_RE = re.compile(r"<h1\b[^>]*>(.*?)</h1\s*>", re.DOTALL | re.IGNORECASE)
+#: Words a page title adds after the song's name (``... chords``, ``| Site``), dropped.
+_TITLE_TAIL_RE = re.compile(
+    r"\s*(?:[|:\u2013\u2014]\s*[^|:\u2013\u2014]*$"
+    r"|\b(?:chords?|lyrics|tabs?|ukulele|guitar)\b.*$)",
+    re.IGNORECASE,
+)
+
+
+def page_heading(page: str) -> str:
+    """A song page's own label: its first ``<h1>`` (inner HTML), else :func:`page_title`.
+
+    Chord sites title a song page as their search results label it (title, then
+    artist), so :meth:`ChartPageSite._title_and_artist` splits either the same way.
+
+    >>> page_heading("<title>x</title><h1>Paper Boats&nbsp;<a>Invented Band</a></h1>")
+    'Paper Boats&nbsp;<a>Invented Band</a>'
+    """
+    found = _H1_RE.search(page)
+    if found and _TAG_RE.sub("", found.group(1)).strip():
+        return found.group(1).strip()
+    return page_title(page)
+
+
+def page_title(page: str) -> str:
+    """The song name a page's ``<title>`` gives, without the site's name or "chords".
+
+    >>> page_title("<title>Paper Boats - Invented Band chords | Some Site</title>")
+    'Paper Boats - Invented Band'
+    """
+    found = _TITLE_RE.search(page)
+    if not found:
+        return ""
+    text = " ".join(_html.unescape(_TAG_RE.sub("", found.group(1))).split())
+    return _TITLE_TAIL_RE.sub("", text).strip(" -")
 
 
 def url_id(url: str) -> str:
@@ -268,10 +344,16 @@ CHORDIE = ChartPageSite(
     name="chordie",
     search_url="https://www.chordie.com/result.php?q={query}",
     result_link=r'<a[^>]+href="(?P<url>/(?:chord|song)\.pere/[^"]+)"[^>]*>(?P<label>.*?)</a>',
+    page_path=r"^/(?:chord|song)\.pere/",
 )
 
-#: Every site songleaf knows, by name. A new site is a new entry.
-WEB_SITES: dict[str, WebSite] = {"lrclib": LrclibSite(), "chordie": CHORDIE}
+#: Every site songleaf knows, by name. A new site is a new entry. ``ug`` never searches:
+#: it only reads a page the reader names, and only when ``SONGLEAF_UG_URL=1`` (songleaf#28).
+WEB_SITES: dict[str, WebSite] = {
+    "lrclib": LrclibSite(),
+    "chordie": CHORDIE,
+    "ug": UltimateGuitarURLSource(),
+}
 #: The sites asked when none are configured: those whose terms allow automated access.
 DEFAULT_WEB_SITES = ("lrclib",)
 
@@ -522,10 +604,11 @@ def find_online(
 
 
 def _with_provenance(song: Song, candidate: Candidate, site: WebSite) -> Song:
+    source, _, song_id = candidate.key.partition(":")
     provenance = {
-        "source": WEB_SOURCE,
-        "id": f"{candidate.site}:{candidate.id}",
-        "site": site.name,
+        "source": source,
+        "id": song_id,
+        "site": song.provenance.get("site") or site.name,  # UG: "ultimate-guitar", as pasted
         "url": candidate.url,
         "license": candidate.license or site.license,
         "fetched_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -551,9 +634,10 @@ class Found:
         from songleaf.sources import Hit
 
         provenance = self.song.provenance
+        source, _, song_id = self.key.partition(":")
         return Hit(
-            source=WEB_SOURCE,
-            id=self.key.partition(":")[2],
+            source=source,
+            id=song_id,
             title=self.song.title,
             artist=self.song.artist,
             score=min(self.score, 1.0),
@@ -605,16 +689,79 @@ def expand(
     return None
 
 
+def site_for_url(
+    url: str, *, sites: str | Sequence | None = None
+) -> tuple[WebSite, Candidate]:
+    """The site that reads the page at ``url``, and the page as a :class:`Candidate`.
+
+    Every site with a ``candidate_for`` is asked, in order (default: all of
+    :data:`WEB_SITES`, whatever the search list says: naming a page is not a search).
+    No request is made. Raises ``ValueError`` when no site reads that URL, or when its
+    site refuses it (Ultimate Guitar while ``SONGLEAF_UG_URL`` is off, an official tab).
+    """
+    if not url.strip():
+        raise ValueError("No URL given")
+    asked = web_sites(sites) if sites else tuple(WEB_SITES.values())
+    readers = [site for site in asked if callable(getattr(site, "candidate_for", None))]
+    for site in readers:
+        candidate = site.candidate_for(url)
+        if candidate is not None:
+            return site, candidate
+    names = ", ".join(site.name for site in readers) or "none"
+    raise ValueError(
+        f"No known site reads {url!r} (sites that read pages: {names}). Paste the"
+        " chart instead: songleaf import <file>, or the page's 'Paste a song'."
+    )
+
+
+def import_url(
+    url: str,
+    *,
+    sites: str | Sequence | None = None,
+    fetch: Fetch | None = None,
+    store: MutableMapping | None = None,
+    refresh: bool = False,
+) -> Found:
+    """Read the song page at ``url`` and keep it, like a song a search found.
+
+    The site is found by :func:`site_for_url`; the song is stored under its key
+    (``web:<site>:<id>``, or ``ug:<id>`` for Ultimate Guitar) with its provenance, and
+    from then on found by local search (:class:`StoredWebSource`). A page already kept
+    is not fetched again unless ``refresh``. ``fetch`` defaults to the site's own
+    (``site.fetch``) or :func:`polite_fetch`. Raises ``ValueError`` for a page with
+    neither lyrics nor chords (no :func:`is_usable` bar: the reader chose this page).
+    """
+    from songleaf.store import song_store
+
+    site, candidate = site_for_url(url, sites=sites)
+    store = song_store() if store is None else store
+    if not refresh and candidate.key in store:
+        return Found(candidate.key, store[candidate.key], 1.0, cached=True)
+    fetch = fetch or getattr(site, "fetch", None) or polite_fetch
+    song = site.extract(candidate, fetch=fetch)
+    if not any(chart_counts(song)):  # the reader chose this page: anything at all is kept
+        raise ValueError(f"{candidate.url} holds no lyrics and no chords")
+    song = _with_provenance(song, candidate, site)
+    store[candidate.key] = song
+    return Found(candidate.key, song, 1.0, cached=False)
+
+
 # --------------------------------------------------------------------------------------
 # The local source over what was found
 
 
+#: The kinds of stored song the reader brought in, and local search finds: found on the web
+#: or imported by URL (``web:``), Ultimate Guitar charts (``ug:``), pasted songs (``paste:``).
+KEPT_SOURCES = (WEB_SOURCE, "ug", "paste")
+
+
 class StoredWebSource:
-    """The songs found on the web and kept in the song store: searched locally.
+    """The songs the reader brought in and kept in the song store: searched locally.
 
     A source like any other (``name`` ``"web"``, ``search``, ``search_tiers``, ``get``):
-    it reads the ``web:`` keys of the store, so a song kept by :func:`expand` is found
-    again with no request. Title and artist match word by word, as the corpus does
+    it reads the store's keys of the ``kinds`` the reader brought in (found on the web,
+    imported by URL, pasted), so a song kept by :func:`expand`, :func:`import_url` or a
+    paste is found again with no request. Each hit's ``source`` is its key's own prefix. Title and artist match word by word, as the corpus does
     (:class:`~songleaf.match.WordIndex`: the query inside the title and artist, or the
     title and artist inside the query, typos forgiven); lyrics hold every word.
 
@@ -625,12 +772,17 @@ class StoredWebSource:
     Args:
         store: The song store (default: :func:`songleaf.store.song_store`, resolved on
             each use, since the data root may move).
+        kinds: The key prefixes searched (default :data:`KEPT_SOURCES`). Corpus songs
+            cached in the store are not among them: their own source finds them.
     """
 
     name = WEB_SOURCE
 
-    def __init__(self, store: MutableMapping | None = None):
+    def __init__(
+        self, store: MutableMapping | None = None, *, kinds: Sequence = KEPT_SOURCES
+    ):
         self._store = store
+        self.kinds = frozenset(kinds)
         self._index: dict = {}  # (store id, key) -> (title, artist, lyric words, site)
 
     @property
@@ -649,11 +801,11 @@ class StoredWebSource:
         return f"given:{id(self._store)}"
 
     def _entries(self) -> list[tuple[str, str, str, frozenset, str]]:
-        """``(key, title, artist, lyric words, site)`` of every kept web song."""
+        """``(key, title, artist, lyric words, site)`` of every kept song."""
         from songleaf.match import query_words
 
-        store, where, prefix = self.store, self._store_id(), f"{WEB_SOURCE}:"
-        keys = [key for key in store if key.startswith(prefix)]
+        store, where = self.store, self._store_id()
+        keys = [key for key in store if key.partition(":")[0] in self.kinds]
         entries = []
         for key in keys:
             entry = self._index.get((where, key))
@@ -679,9 +831,10 @@ class StoredWebSource:
     def _hit(self, key: str, title: str, artist: str, score: float, site: str = ""):
         from songleaf.sources import Hit
 
+        source, _, song_id = key.partition(":")
         return Hit(
-            source=self.name,
-            id=key.partition(":")[2],
+            source=source,
+            id=song_id,
             title=title,
             artist=artist,
             score=round(score, 4),
