@@ -280,7 +280,11 @@ class ChartPageSite:
         parts = urlsplit(url)
         if not self.page_path or not _same_site(url, self.site_url):
             return None
-        if parts.username or parts.password or not re.search(self.page_path, parts.path):
+        if (
+            parts.username
+            or parts.password
+            or not re.search(self.page_path, parts.path)
+        ):
             return None
         url = canonical_url(url, self.site_url)
         return Candidate(self.name, url_id(url), "", url=url)
@@ -340,12 +344,15 @@ _H1_RE = re.compile(r"<h1\b[^>]*>(.*?)</h1\s*>", re.DOTALL | re.IGNORECASE)
 #: The ``| Site name`` (or ``| Version #2``) a page title ends with.
 _TITLE_SITE_RE = re.compile(r"\s*\|[^|]*$")
 #: The kind of page a title names after the song (``chords``, ``tab``...).
-_TITLE_KIND_RE = re.compile(r"\s+\b(?:chords?|lyrics|tabs?|ukulele|bass|guitar)\b", re.I)
+_TITLE_KIND_RE = re.compile(
+    r"\s+\b(?:chords?|lyrics|tabs?|ukulele|bass|guitar)\b", re.I
+)
 #: After the kind, `` – Artist`` (kept as `` - Artist``).
 _TITLE_ARTIST_RE = re.compile(r"\s*[-\u2013\u2014]\s*(?P<artist>\S.*)$")
 #: After the kind, only the site's own words ("and Lyrics for Guitar").
 _TITLE_FILLER_RE = re.compile(
-    r"(?:\s*(?:chords?|lyrics|tabs?|ukulele|bass|guitar|and|for|with|&|\+|,))*\s*$", re.I
+    r"(?:\s*(?:chords?|lyrics|tabs?|ukulele|bass|guitar|and|for|with|&|\+|,))*\s*$",
+    re.I,
 )
 
 
@@ -722,7 +729,8 @@ def _with_provenance(song: Song, candidate: Candidate, site: WebSite) -> Song:
     provenance = {
         "source": source,
         "id": song_id,
-        "site": song.provenance.get("site") or site.name,  # UG: "ultimate-guitar", as pasted
+        "site": song.provenance.get("site")
+        or site.name,  # UG: "ultimate-guitar", as pasted
         "url": candidate.url,
         "license": candidate.license or site.license,
         "fetched_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -854,7 +862,9 @@ def import_url(
         return Found(candidate.key, store[candidate.key], 1.0, cached=True)
     fetch = fetch or getattr(site, "fetch", None) or polite_fetch
     song = site.extract(candidate, fetch=fetch)
-    if not any(chart_counts(song)):  # the reader chose this page: anything at all is kept
+    if not any(
+        chart_counts(song)
+    ):  # the reader chose this page: anything at all is kept
         raise ValueError(f"{candidate.url} holds no lyrics and no chords")
     song = _with_provenance(song, candidate, site)
     store[candidate.key] = song

@@ -618,7 +618,11 @@ def import_url(
         url, sites=sites, fetch=fetch, store=store, refresh=refresh
     )
     site = found.song.provenance.get("site", "")
-    return {**_summary(found.key, found.song, site), "site": site, "cached": found.cached}
+    return {
+        **_summary(found.key, found.song, site),
+        "site": site,
+        "cached": found.cached,
+    }
 
 
 def forget(key: str, *, store=None, library_root=None) -> dict:
