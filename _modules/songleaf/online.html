@@ -567,7 +567,11 @@
         <span class="n">parts</span> <span class="o">=</span> <span class="n">urlsplit</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">page_path</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">_same_site</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_url</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">parts</span><span class="o">.</span><span class="n">username</span> <span class="ow">or</span> <span class="n">parts</span><span class="o">.</span><span class="n">password</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">page_path</span><span class="p">,</span> <span class="n">parts</span><span class="o">.</span><span class="n">path</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">username</span>
+            <span class="ow">or</span> <span class="n">parts</span><span class="o">.</span><span class="n">password</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">page_path</span><span class="p">,</span> <span class="n">parts</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+        <span class="p">):</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="n">url</span> <span class="o">=</span> <span class="n">canonical_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_url</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Candidate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">url_id</span><span class="p">(</span><span class="n">url</span><span class="p">),</span> <span class="s2">""</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span></div>
@@ -632,12 +636,15 @@
 <span class="c1">#: The ``| Site name`` (or ``| Version #2``) a page title ends with.</span>
 <span class="n">_TITLE_SITE_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\s*\|[^|]*$"</span><span class="p">)</span>
 <span class="c1">#: The kind of page a title names after the song (``chords``, ``tab``...).</span>
-<span class="n">_TITLE_KIND_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\s+\b(?:chords?|lyrics|tabs?|ukulele|bass|guitar)\b"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
+<span class="n">_TITLE_KIND_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s2">"\s+\b(?:chords?|lyrics|tabs?|ukulele|bass|guitar)\b"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span>
+<span class="p">)</span>
 <span class="c1">#: After the kind, `` – Artist`` (kept as `` - Artist``).</span>
 <span class="n">_TITLE_ARTIST_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\s*[-\u2013\u2014]\s*(?P&lt;artist&gt;\S.*)$"</span><span class="p">)</span>
 <span class="c1">#: After the kind, only the site's own words ("and Lyrics for Guitar").</span>
 <span class="n">_TITLE_FILLER_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
-    <span class="sa">r</span><span class="s2">"(?:\s*(?:chords?|lyrics|tabs?|ukulele|bass|guitar|and|for|with|&amp;|\+|,))*\s*$"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span>
+    <span class="sa">r</span><span class="s2">"(?:\s*(?:chords?|lyrics|tabs?|ukulele|bass|guitar|and|for|with|&amp;|\+|,))*\s*$"</span><span class="p">,</span>
+    <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">,</span>
 <span class="p">)</span>
 
 
@@ -1062,7 +1069,8 @@
     <span class="n">provenance</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">"source"</span><span class="p">:</span> <span class="n">source</span><span class="p">,</span>
         <span class="s2">"id"</span><span class="p">:</span> <span class="n">song_id</span><span class="p">,</span>
-        <span class="s2">"site"</span><span class="p">:</span> <span class="n">song</span><span class="o">.</span><span class="n">provenance</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"site"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">site</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>  <span class="c1"># UG: "ultimate-guitar", as pasted</span>
+        <span class="s2">"site"</span><span class="p">:</span> <span class="n">song</span><span class="o">.</span><span class="n">provenance</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"site"</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="n">site</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>  <span class="c1"># UG: "ultimate-guitar", as pasted</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="n">candidate</span><span class="o">.</span><span class="n">url</span><span class="p">,</span>
         <span class="s2">"license"</span><span class="p">:</span> <span class="n">candidate</span><span class="o">.</span><span class="n">license</span> <span class="ow">or</span> <span class="n">site</span><span class="o">.</span><span class="n">license</span><span class="p">,</span>
         <span class="s2">"fetched_at"</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%SZ"</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">gmtime</span><span class="p">()),</span>
@@ -1208,7 +1216,9 @@
         <span class="k">return</span> <span class="n">Found</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">store</span><span class="p">[</span><span class="n">candidate</span><span class="o">.</span><span class="n">key</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">cached</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">fetch</span> <span class="o">=</span> <span class="n">fetch</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="s2">"fetch"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">polite_fetch</span>
     <span class="n">song</span> <span class="o">=</span> <span class="n">site</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="n">fetch</span><span class="o">=</span><span class="n">fetch</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">chart_counts</span><span class="p">(</span><span class="n">song</span><span class="p">)):</span>  <span class="c1"># the reader chose this page: anything at all is kept</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span>
+        <span class="n">chart_counts</span><span class="p">(</span><span class="n">song</span><span class="p">)</span>
+    <span class="p">):</span>  <span class="c1"># the reader chose this page: anything at all is kept</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">url</span><span class="si">}</span><span class="s2"> holds no lyrics and no chords"</span><span class="p">)</span>
     <span class="n">song</span> <span class="o">=</span> <span class="n">_with_provenance</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">candidate</span><span class="p">,</span> <span class="n">site</span><span class="p">)</span>
     <span class="n">store</span><span class="p">[</span><span class="n">candidate</span><span class="o">.</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">song</span>
@@ -1440,7 +1450,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=71784981"></script>
+</div><script src="../../_static/documentation_options.js?v=51c9d36a"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

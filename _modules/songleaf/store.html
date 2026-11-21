@@ -351,10 +351,10 @@
     <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">rootdir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">wrap_kvs</span><span class="p">(</span>
         <span class="n">filt_iter</span><span class="p">(</span><span class="n">Files</span><span class="p">(</span><span class="n">rootdir</span><span class="p">),</span> <span class="n">filt</span><span class="o">=</span><span class="n">_is_song_file</span><span class="p">),</span>
-        <span class="n">key_of_id</span><span class="o">=</span><span class="n">_key_of_file_name</span><span class="p">,</span>
-        <span class="n">id_of_key</span><span class="o">=</span><span class="n">file_name_of_key</span><span class="p">,</span>
-        <span class="n">obj_of_data</span><span class="o">=</span><span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">Song</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">_json_loads</span><span class="p">(</span><span class="n">data</span><span class="p">)),</span>
-        <span class="n">data_of_obj</span><span class="o">=</span><span class="k">lambda</span> <span class="n">song</span><span class="p">:</span> <span class="n">_json_dumps</span><span class="p">(</span><span class="n">song</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()),</span>
+        <span class="n">key_decoder</span><span class="o">=</span><span class="n">_key_of_file_name</span><span class="p">,</span>
+        <span class="n">key_encoder</span><span class="o">=</span><span class="n">file_name_of_key</span><span class="p">,</span>
+        <span class="n">value_decoder</span><span class="o">=</span><span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">Song</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">_json_loads</span><span class="p">(</span><span class="n">data</span><span class="p">)),</span>
+        <span class="n">value_encoder</span><span class="o">=</span><span class="k">lambda</span> <span class="n">song</span><span class="p">:</span> <span class="n">_json_dumps</span><span class="p">(</span><span class="n">song</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()),</span>
     <span class="p">)</span></div>
 
 
@@ -397,7 +397,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=71784981"></script>
+</div><script src="../../_static/documentation_options.js?v=51c9d36a"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

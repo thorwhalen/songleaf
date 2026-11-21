@@ -906,7 +906,11 @@
         <span class="n">url</span><span class="p">,</span> <span class="n">sites</span><span class="o">=</span><span class="n">sites</span><span class="p">,</span> <span class="n">fetch</span><span class="o">=</span><span class="n">fetch</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">refresh</span><span class="o">=</span><span class="n">refresh</span>
     <span class="p">)</span>
     <span class="n">site</span> <span class="o">=</span> <span class="n">found</span><span class="o">.</span><span class="n">song</span><span class="o">.</span><span class="n">provenance</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"site"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">_summary</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">found</span><span class="o">.</span><span class="n">song</span><span class="p">,</span> <span class="n">site</span><span class="p">),</span> <span class="s2">"site"</span><span class="p">:</span> <span class="n">site</span><span class="p">,</span> <span class="s2">"cached"</span><span class="p">:</span> <span class="n">found</span><span class="o">.</span><span class="n">cached</span><span class="p">}</span></div>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="o">**</span><span class="n">_summary</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">found</span><span class="o">.</span><span class="n">song</span><span class="p">,</span> <span class="n">site</span><span class="p">),</span>
+        <span class="s2">"site"</span><span class="p">:</span> <span class="n">site</span><span class="p">,</span>
+        <span class="s2">"cached"</span><span class="p">:</span> <span class="n">found</span><span class="o">.</span><span class="n">cached</span><span class="p">,</span>
+    <span class="p">}</span></div>
 
 
 
@@ -1197,7 +1201,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=71784981"></script>
+</div><script src="../../_static/documentation_options.js?v=51c9d36a"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

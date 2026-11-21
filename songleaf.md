@@ -1,4 +1,4 @@
-> built 2026-11-08 18:19 UTC from 5b2f0c3 (main) · songleaf 0.0.31. Details: build_info.json
+> built 2026-11-21 18:25 UTC from 54a60d1 (main) · songleaf 0.0.32. Details: build_info.json
 
 # index.html.md
 
@@ -4374,18 +4374,18 @@ True
 
 # About this build
 
-This documentation was built on **2026-11-08 18:19 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/5b2f0c352d90b86fee2798d1d6e36af9d6270dc6"><code>5b2f0c3</code></a> on branch <code>main</code>, for **songleaf 0.0.31** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-21 18:25 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/54a60d1e4352e333ff7bbad944e04dc16e288ca5"><code>54a60d1</code></a> on branch <code>main</code>, for **songleaf 0.0.32** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.31) is behind the latest release on PyPI (0.0.32): `pip install songleaf` gives newer code than these docs describe.
+- The documented version (0.0.32) is behind the latest release on PyPI (0.0.33): `pip install songleaf` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/5b2f0c352d90b86fee2798d1d6e36af9d6270dc6"><code>5b2f0c352d90b86fee2798d1d6e36af9d6270dc6</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/54a60d1e4352e333ff7bbad944e04dc16e288ca5"><code>54a60d1e4352e333ff7bbad944e04dc16e288ca5</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -4396,15 +4396,15 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/42509258783">42509258783</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/44935259912">44935259912</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>5b2f0c352d90b86fee2798d1d6e36af9d6270dc6</code> (in the history of the built commit) |
+| Event commit | <code>54a60d1e4352e333ff7bbad944e04dc16e288ca5</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.22  |
+| epythet  | 0.2.23  |
 | Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
 | Python   | 3.12.16 |
@@ -4423,14 +4423,14 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.32/">0.0.32</a>, newer than the documented version (0.0.31).
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.33/">0.0.33</a>, newer than the documented version (0.0.32).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 5b2f0c352d90b86fee2798d1d6e36af9d6270dc6
-pip install "epythet==0.2.22"
+git checkout 54a60d1e4352e333ff7bbad944e04dc16e288ca5
+pip install "epythet==0.2.23"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 
