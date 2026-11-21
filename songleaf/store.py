@@ -78,10 +78,10 @@ def song_store(rootdir: str | None = None) -> MutableMapping[str, Song]:
     os.makedirs(rootdir, exist_ok=True)
     return wrap_kvs(
         filt_iter(Files(rootdir), filt=_is_song_file),
-        key_of_id=_key_of_file_name,
-        id_of_key=file_name_of_key,
-        obj_of_data=lambda data: Song.from_dict(_json_loads(data)),
-        data_of_obj=lambda song: _json_dumps(song.to_dict()),
+        key_decoder=_key_of_file_name,
+        key_encoder=file_name_of_key,
+        value_decoder=lambda data: Song.from_dict(_json_loads(data)),
+        value_encoder=lambda song: _json_dumps(song.to_dict()),
     )
 
 
