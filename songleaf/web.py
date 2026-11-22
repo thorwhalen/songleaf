@@ -47,6 +47,13 @@ The page is a two-path shell (:func:`page_shell`) that loads its script and
 style from ``/ui/``, so it changes with this package, not with the host. The app
 carries no authentication: the host gates it.
 
+Run alone, ``/ui/{name}`` serves the page. Under enlace, a host can instead have enlace
+serve it: ``[page_from_package]`` in the host's ``app.toml`` with ``package = "songleaf"``,
+``assets = "data/web"`` and ``shell = "songleaf.web:page_shell"`` (so the shell stays
+this package's own, the one place it lives), and no committed ``frontend/index.html``.
+enlace answers first; anything it does not serve falls through to this app, so the
+``/ui/`` route stays. A UI change then ships by bumping the host's songleaf pin alone.
+
 A rendered sheet and its page images are kept in memory (the last
 ``sheet_cache_size`` of each), so the page's requests for one sheet render it once.
 
