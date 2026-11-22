@@ -1,32 +1,32 @@
 {
   "schema_version": 1,
-  "built_at": "2026-11-21T18:25:25Z",
+  "built_at": "2026-11-22T16:31:42Z",
   "package": {
     "name": "songleaf",
-    "version": "0.0.32",
+    "version": "0.0.33",
     "display_name": "songleaf",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "54a60d1e4352e333ff7bbad944e04dc16e288ca5",
-    "short_commit": "54a60d1",
+    "commit": "e7be7c06bc4ecd93f15d358389fa1707819eb73f",
+    "short_commit": "e7be7c0",
     "branch": "main",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/thorwhalen/songleaf",
-    "commit_url": "https://github.com/thorwhalen/songleaf/commit/54a60d1e4352e333ff7bbad944e04dc16e288ca5",
+    "commit_url": "https://github.com/thorwhalen/songleaf/commit/e7be7c06bc4ecd93f15d358389fa1707819eb73f",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "thorwhalen/songleaf",
-    "sha": "54a60d1e4352e333ff7bbad944e04dc16e288ca5",
+    "sha": "e7be7c06bc4ecd93f15d358389fa1707819eb73f",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "44935259912",
-    "run_url": "https://github.com/thorwhalen/songleaf/actions/runs/44935259912",
+    "run_id": "45044122233",
+    "run_url": "https://github.com/thorwhalen/songleaf/actions/runs/45044122233",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -61,15 +61,13 @@
   "pypi": {
     "checked": true,
     "latest": "0.0.33",
-    "relation": "behind",
+    "relation": "same",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/songleaf && cd songleaf\ngit checkout 54a60d1e4352e333ff7bbad944e04dc16e288ca5\npip install \"epythet==0.2.23\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/songleaf && cd songleaf\ngit checkout e7be7c06bc4ecd93f15d358389fa1707819eb73f\npip install \"epythet==0.2.23\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
-    "aligned": false,
-    "notes": [
-      "The documented version (0.0.32) is behind the latest release on PyPI (0.0.33): `pip install songleaf` gives newer code than these docs describe."
-    ]
+    "aligned": true,
+    "notes": []
   }
 }
