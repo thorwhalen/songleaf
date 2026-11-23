@@ -66,7 +66,7 @@ from pathlib import Path
 from typing import Protocol
 
 from songleaf.harmony import chord_function, estimate_key
-from songleaf.model import Song
+from songleaf.model import Annotation, Song
 from songleaf.packing import line_break_costs, pack_greedy, pack_structured
 
 #: Page margin in points (5 mm), about the least a printer leaves blank anyway.
@@ -322,6 +322,69 @@ def _pieces(song: Song) -> list[_Piece]:
         sung.add(words)
         new_paragraph = False
     return pieces
+
+
+#: A section marker that is only a structure word (``Verse 2``, ``Chorus x2``), never lyric text.
+_GENERIC_LABEL_RE = re.compile(
+    r"^\s*(?:intro|verse|chorus|pre-?\s?chorus|post-?\s?chorus|bridge|outro|interlude|"
+    r"instrumental|solo|refrain|hook|tag|coda|ending|break|riff|part)\b[\s\d:xX×()-]*$",
+    re.IGNORECASE,
+)
+
+
+def _generic_label(label: str, number: int) -> str:
+    """``label`` if it is a structure word, else ``"Part <number>"`` (a marker can hold anything)."""
+    return label if _GENERIC_LABEL_RE.match(label) else f"Part {number}"
+
+
+def chords_only(song: Song) -> Song:
+    """``song`` with its lyrics replaced by its chord symbols, one line of symbols per chord line.
+
+    Sections keep their structure-word labels (``Verse 1``, ``Chorus``); any other marker
+    becomes ``Part n``, and a song with no markers numbers its paragraphs ``Part n``, so
+    no lyric text survives. Lines with no chords are dropped. Title, key, capo and
+    provenance are kept; the chords are no longer annotations, they *are* the text.
+
+    >>> from songleaf.parse import parse_chords_over_lyrics
+    >>> song = parse_chords_over_lyrics("[Verse]\\nC   G\\nla la la\\n\\n[Chorus]\\nAm  F\\nna na")
+    >>> chords_only(song).text
+    'C G\\n\\nAm F'
+    """
+    pieces = _pieces(song)
+    numbered = not song.of_kind("section")
+    lines: list[str] = []
+    sections: list[list] = []  # [label, first line, last line, marker]
+    paragraphs = 0
+    for piece in pieces:
+        symbols = [symbol for _, symbol, _ in piece.chords if symbol]
+        starts = bool(piece.label) or (numbered and piece.new_paragraph and symbols)
+        if not (symbols or piece.label):
+            continue
+        if piece.new_paragraph and lines and lines[-1] != "":
+            lines.append("")
+        if starts:
+            paragraphs += 1
+            raw = piece.section if piece.label else ""
+            label = _generic_label(raw, paragraphs) if raw else f"Part {paragraphs}"
+            sections.append([label, len(lines), len(lines), not symbols])
+        lines.append(" ".join(symbols))
+        if sections:
+            sections[-1][2] = len(lines) - 1
+    offsets, at = [], 0
+    for line in lines:
+        offsets.append(at)
+        at += len(line) + 1
+    annotations = []
+    for label, first, last, marker in sections:
+        start, end = offsets[first], offsets[last] + len(lines[last])
+        body = {"label": label, **({"marker": True} if marker and first == last else {})}
+        annotations.append(Annotation("section", start, end, body))
+    return Song(
+        "\n".join(lines),
+        annotations,
+        meta=dict(song.meta),
+        provenance=dict(song.provenance),
+    )
 
 
 def _heading(song: Song) -> str:
@@ -904,6 +967,8 @@ class SheetLayout:
         diagrams: ``"piano"`` or ``"guitar"`` draws the song's chords as a strip
             of diagrams at the foot of the first page (:mod:`songleaf.diagrams`);
             the lyrics shrink to make room. ``None``: no diagrams.
+        lyrics: ``False`` draws a chords-only sheet (:func:`chords_only`): per section,
+            its generic label and its chord symbols, no lyric text (songleaf#68).
         score: Draw the song's score snippet, if its provider has one, above
             the line it belongs to (:mod:`songleaf.snippets`); the lyrics shrink
             to make room.
@@ -917,6 +982,7 @@ class SheetLayout:
     diagrams: str | None = None
     style: DenseStyle = field(default_factory=DenseStyle)
     score: bool = False
+    lyrics: bool = True
 
     def __post_init__(self):  # a bad layout fails here, not mid-render
         from songleaf.diagrams import DIAGRAM_KINDS
@@ -932,6 +998,8 @@ class SheetLayout:
             raise ValueError(f"shading must be True or False, got {self.shading!r}")
         if not isinstance(self.score, bool):
             raise ValueError(f"score must be True or False, got {self.score!r}")
+        if not isinstance(self.lyrics, bool):
+            raise ValueError(f"lyrics must be True or False, got {self.lyrics!r}")
         methods = ("extent", "fitting_length", "items")
         if not all(callable(getattr(self.placement, name, None)) for name in methods):
             raise ValueError(
@@ -979,8 +1047,11 @@ LAYOUT_OPTIONS: dict[str, dict] = {
     "piano": {"diagrams": "piano"},
     "guitar": {"diagrams": "guitar"},
     "score": {"score": True},
+    "chords-only": {"lyrics": False},
 }
 _OPTION_ALIASES = {
+    "chords_only": "chords-only",
+    "nolyrics": "chords-only",
     "2col": "two-column",
     "two_column": "two-column",
     "structured": "packed",
@@ -1150,6 +1221,11 @@ def _snippet(song: Song, layout: SheetLayout, provider) -> tuple | None:
     return found, line
 
 
+def _drawn(song: Song, layout: SheetLayout) -> Song:
+    """The song as the layout draws it: itself, or its chords alone."""
+    return song if layout.lyrics else chords_only(song)
+
+
 def fit_font_size(
     song: Song,
     *,
@@ -1178,7 +1254,7 @@ def fit_font_size(
             f"{layout.columns} column(s) do not fit across a {page_width:g} pt page "
             f"with {margin:g} pt margins, even at {min_font_size:g} pt"
         )
-    pieces, heading = _pieces(song), _heading(song)
+    pieces, heading = _pieces(_drawn(song, layout)), _heading(song)
     paint = _paint(song, layout.style, layout.shading)
     diagram_chords = _diagram_chords(song, layout)
     snippet = _snippet(song, layout, snippets)
@@ -1287,7 +1363,7 @@ def render_sheet(
     diagram_chords = _diagram_chords(song, layout)
     snippet = _snippet(song, layout, snippets)
     flow = _flow(
-        _pieces(song),
+        _pieces(_drawn(song, layout)),
         heading,
         size,
         width=width,
