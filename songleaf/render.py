@@ -377,7 +377,10 @@ def chords_only(song: Song) -> Song:
     annotations = []
     for label, first, last, marker in sections:
         start, end = offsets[first], offsets[last] + len(lines[last])
-        body = {"label": label, **({"marker": True} if marker and first == last else {})}
+        body = {
+            "label": label,
+            **({"marker": True} if marker and first == last else {}),
+        }
         annotations.append(Annotation("section", start, end, body))
     return Song(
         "\n".join(lines),
