@@ -203,6 +203,14 @@ class LrclibSite:
         return with_lrc(song, synced, source=self.name) if synced else song
 
 
+#: The licence of a search result whose chart songleaf may link to but not keep.
+LINK_ONLY = "link-only"
+
+
+class LinkOnly(ValueError):
+    """A page whose chart may be opened but not kept (its host forbids stored copies)."""
+
+
 @dataclass(frozen=True)
 class ChartPageSite:
     """A chord site with a search page and one chart per page: most of them.
@@ -224,6 +232,11 @@ class ChartPageSite:
             heading, else its ``<title>``) or ``"title"`` (its ``<title>``, for a site whose
             first heading is a breadcrumb, artist first).
         label: How a page names the site (``""``: its name).
+        rehost_path: A regex over a page's path with a named group ``host``: the site a
+            page re-hosts (Chordie's ``/chord.pere/<host>/...``). ``""``: pages are its own.
+        link_only_hosts: Re-hosted sites whose terms forbid a kept copy. A page from one
+            is a link, never a stored chart: its search result is marked
+            :data:`LINK_ONLY` and :meth:`extract` refuses it (:class:`LinkOnly`).
     """
 
     name: str
@@ -236,6 +249,27 @@ class ChartPageSite:
     home: str = ""
     heading: str = "h1"
     label: str = ""
+    rehost_path: str = ""
+    link_only_hosts: tuple[str, ...] = ()
+
+    def link_only(self, url: str) -> bool:
+        """Whether ``url`` is a page re-hosting a site that forbids kept copies.
+
+        >>> chordie = ChartPageSite("c", "", "", rehost_path=r"^/chord\\.pere/(?P<host>[^/]+)/",
+        ...                         link_only_hosts=("copies.example",))
+        >>> chordie.link_only("https://c.example/chord.pere/www.copies.example/a.html")
+        True
+        >>> chordie.link_only("https://c.example/chord.pere/other.example/a.html")
+        False
+        """
+        found = self.rehost_path and re.search(self.rehost_path, urlsplit(url).path)
+        if not found:
+            return False
+        host = found.group("host").lower().removeprefix("www.")
+        return any(
+            host == blocked or host.endswith(f".{blocked}")
+            for blocked in self.link_only_hosts
+        )
 
     @property
     def site_url(self) -> str:
@@ -256,7 +290,14 @@ class ChartPageSite:
                 continue
             title, artist = self._title_and_artist(match.group("label"))
             if title:
-                found[url] = Candidate(self.name, url_id(url), title, artist, url)
+                found[url] = Candidate(
+                    self.name,
+                    url_id(url),
+                    title,
+                    artist,
+                    url,
+                    license=LINK_ONLY if self.link_only(url) else "",
+                )
             if len(found) >= limit:
                 break
         return list(found.values())
@@ -292,6 +333,11 @@ class ChartPageSite:
     def extract(self, candidate: Candidate, *, fetch: Fetch) -> Song:
         from songleaf.importers import import_song
 
+        if self.link_only(candidate.url):
+            raise LinkOnly(
+                f"{candidate.url} re-hosts a site that forbids kept copies: "
+                "open it in a browser, songleaf keeps no copy"
+            )
         page = fetch(candidate.url)
         text = chart_text(page)
         if not text:
@@ -415,19 +461,149 @@ CHORDIE = ChartPageSite(
     name="chordie",
     search_url="https://www.chordie.com/result.php?q={query}",
     result_link=r'<a[^>]+href="(?P<url>/(?:chord|song)\.pere/[^"]+)"[^>]*>(?P<label>.*?)</a>',
+    # the title and the artist are two spans apart by &nbsp;: a " - " inside a title is not the split
+    label_separator=r"\s*\xa0+\s*",
     page_path=r"^/(?:chord|song)\.pere/",
+    # /chord.pere/<host>/... re-hosts <host>; some of those forbid kept copies (sources.md)
+    rehost_path=r"^/(?:chord|song)\.pere/(?:chordiearchive\.chordie\.com/chord\.pere/)?(?P<host>[^/]+)/",
+    link_only_hosts=("guitartabs.cc", "guitaretab.com"),
     label="Chordie",
 )
 
+#: Words of a query that name neither a title nor an artist (``"X by Y chords"``).
+QUERY_NOISE = frozenset({"by", "chord", "chords", "lyrics", "tab", "tabs", "song"})
+#: How long the list of AZChords artists is kept before it is fetched again (seconds).
+ARTISTS_MAX_AGE = 30 * 24 * 3600
+_AZ_ARTIST_URL = re.compile(
+    r"/(?P<letter>[a-z0-9])/(?P<slug>[a-z0-9]+)-(?:tabs|chords|guitarpro|ukulele|bass)-(?P<id>\d+)\.html$"
+)
+_AZ_SONG_LINK = re.compile(
+    r'<a(?P<attrs>[^>]*)href="(?P<url>/[a-z0-9]/[a-z0-9]+-tabs-\d+/[a-z0-9]+-tabs-\d+\.html)"[^>]*>'
+    r"(?P<label>.*?)</a>",
+    re.DOTALL | re.IGNORECASE,
+)
+_AZ_ROW = re.compile(r"<tr\b.*?</tr>", re.DOTALL | re.IGNORECASE)
+_AZ_ROW_TITLE = re.compile(
+    r"<a[^>]*>(?P<label>[^<]*?)\s+Chords\s*</a>", re.DOTALL | re.IGNORECASE
+)
+
+
+@dataclass(frozen=True)
+class AzchordsSite(ChartPageSite):
+    """AZChords: it has no search of its own (its box is Google's), so it lists instead.
+
+    Its robots.txt allows the sitemap, the artist pages and the song pages, and bars
+    ``/tabs/`` and ``*/chords/*``. :meth:`find` therefore works from an *artist*: it
+    spells the query's words as an artist's slug in the sitemap (``neil sedaka`` is
+    ``sedakaneil``; the list is kept for :data:`ARTISTS_MAX_AGE`), fetches that artist's
+    chords page, and lists its songs, keeping those whose title the other words name.
+    A query with no artist in it finds nothing: it does not guess.
+
+    Args:
+        sitemap_url: Where the site lists its artist pages.
+    """
+
+    sitemap_url: str = ""
+
+    def find(self, query: str, *, limit: int, fetch: Fetch) -> list[Candidate]:
+        artists = self._artists(fetch)
+        words = _words_of(query)
+        found = _artist_in(words, artists)
+        if found is None:
+            return []
+        (letter, slug, artist_id), title_words = found
+        page_url = urljoin(self.home, f"{letter}/{slug}-chords-{artist_id}.html")
+        page = fetch(page_url)
+        artist = self._artist_name(page) or slug
+        wanted = "".join(w for w in title_words if w not in QUERY_NOISE)
+        candidates: dict[str, Candidate] = {}
+        for title, url in _az_songs(page):
+            if wanted and wanted not in "".join(_words_of(title)):
+                continue
+            url = canonical_url(url, self.site_url)
+            if url not in candidates:
+                candidates[url] = Candidate(self.name, url_id(url), title, artist, url)
+            if len(candidates) >= limit:
+                break
+        return list(candidates.values())
+
+    @staticmethod
+    def _artist_name(page: str) -> str:
+        found = _TITLE_RE.search(page)
+        text = _html.unescape(found.group(1)).strip() if found else ""
+        return re.split(r"\s*\((?:Tabs|Chords)[^)]*\)", text)[0].strip()
+
+    def _artists(self, fetch: Fetch) -> dict[str, tuple[str, str, str]]:
+        """``{slug: (letter, slug, id)}`` from the sitemap, kept on disk for a month."""
+        from songleaf.store import data_dir
+
+        path = os.path.join(data_dir("cache"), f"{self.name}-artists.json")
+        try:
+            with open(path, encoding="utf-8") as file:
+                kept = json.load(file)
+            if time.time() - kept["fetched"] < ARTISTS_MAX_AGE and kept["artists"]:
+                return {slug: tuple(row) for slug, row in kept["artists"].items()}
+        except (OSError, ValueError, KeyError, TypeError):
+            pass
+        artists = {}
+        for url in re.findall(r"<loc>(.*?)</loc>", fetch(self.sitemap_url)):
+            match = _AZ_ARTIST_URL.search(url)
+            if match:
+                letter, slug, artist_id = match.group("letter", "slug", "id")
+                artists.setdefault(slug, (letter, slug, artist_id))
+        if artists:  # an empty list is a changed sitemap: not worth keeping
+            with open(path, "w", encoding="utf-8") as file:
+                json.dump({"fetched": time.time(), "artists": artists}, file)
+        return artists
+
+
+def _words_of(text: str) -> list[str]:
+    """The lowercase words of ``text`` without accents (``"Beyoncé"`` -> ``"beyonce"``)."""
+    import unicodedata
+
+    plain = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    return re.findall(r"[a-z0-9]+", plain.lower())
+
+
+def _artist_in(words: list[str], artists: Mapping) -> tuple | None:
+    """The artist whose slug the longest run of ``words`` spells, and the other words.
+
+    A run spells a slug in reading order (``paper boats`` -> ``paperboats``) or with its
+    words reversed (``neil sedaka`` -> ``sedakaneil``: the site files people by surname).
+    """
+    best = None
+    for start in range(len(words)):
+        for stop in range(len(words), start, -1):
+            run = words[start:stop]
+            for spelling in ("".join(run), "".join(reversed(run))):
+                row = artists.get(spelling)
+                if row and (best is None or len(run) > best[0]):
+                    best = (len(run), row, words[:start] + words[stop:])
+    return None if best is None else (best[1], best[2])
+
+
+def _az_songs(page: str) -> Iterable[tuple[str, str]]:
+    """``(title, song page path)`` of an artist's chords page, a title's versions included."""
+    for row in _AZ_ROW.findall(page):
+        titled = _AZ_ROW_TITLE.search(row)
+        title = _html.unescape(titled.group("label")).strip() if titled else ""
+        if not title:
+            continue
+        for link in _AZ_SONG_LINK.finditer(row):
+            yield title, link.group("url")
+
+
 #: AZChords (azchords.com): chords over lyrics in ``<pre id="content">``. Its robots.txt
-#: allows song pages; it publishes no terms beyond a footer limiting use to "private study,
-#: scholarship, research". Its search box is Google's, so it only reads pages named by URL.
-AZCHORDS = ChartPageSite(
+#: allows song and artist pages; it publishes no terms beyond a footer limiting use to
+#: "private study, scholarship, research". It lists by artist (see :class:`AzchordsSite`)
+#: and reads pages named by URL.
+AZCHORDS = AzchordsSite(
     name="azchords",
     search_url="",
     result_link="",
     page_path=r"^/[a-z0-9]/[a-z0-9]+-tabs-\d+/[a-z0-9]+-tabs-\d+\.html$",
     home="https://www.azchords.com/",
+    sitemap_url="https://www.azchords.com/assets/sitemap/sitemap_azc_s.xml",
     heading="title",  # its first <h1> is a breadcrumb, artist first
     label="AZChords",
 )
@@ -441,7 +617,7 @@ WEB_SITES: dict[str, WebSite] = {
     "ug": UltimateGuitarURLSource(),
 }
 #: The sites asked when none are configured: those whose terms allow automated access.
-DEFAULT_WEB_SITES = ("lrclib",)
+DEFAULT_WEB_SITES = ("lrclib", "chordie")
 
 
 def site_label(site: WebSite) -> str:
@@ -792,6 +968,9 @@ def expand(
     ranked = find_online(query, sites=sites, fetch=fetch, **find_kwargs)
     tried = 0
     for score, candidate, site in ranked:
+        if candidate.license == LINK_ONLY:  # a link, never a kept copy
+            log.info("songleaf: %s may be opened, not kept", candidate.url)
+            continue
         if candidate.key in store:
             return Found(candidate.key, store[candidate.key], score, cached=True)
         if tried >= max_extractions:

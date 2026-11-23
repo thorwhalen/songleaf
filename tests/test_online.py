@@ -96,6 +96,12 @@ SEARCH_PAGE = """
 """
 
 
+@pytest.fixture
+def lrclib_only(monkeypatch):
+    """These tests serve LRCLIB's answers only: ask no other site."""
+    monkeypatch.setenv("SONGLEAF_WEB_SITES", "lrclib")
+
+
 def chart_page(chart, *, decoy="Tuning: E A D G B E"):
     """A chord page: navigation, a short decoy block, and the chart in a <pre>."""
     escaped = chart.replace("&", "&amp;").replace("<", "&lt;")
@@ -151,8 +157,8 @@ def site_fetch():
 # --- configuration ------------------------------------------------------------------
 
 
-def test_the_default_sites_are_lrclib_only_and_the_list_is_configuration(monkeypatch):
-    assert [site.name for site in web_sites()] == ["lrclib"]
+def test_the_default_sites_are_lrclib_and_chordie_and_the_list_is_configuration(monkeypatch):
+    assert [site.name for site in web_sites()] == ["lrclib", "chordie"]
     monkeypatch.setenv("SONGLEAF_WEB_SITES", "chordie, lrclib")
     assert [site.name for site in web_sites()] == ["chordie", "lrclib"]
     assert web_sites([SITE]) == (SITE,)  # a site object is an entry too
@@ -253,7 +259,7 @@ def test_expand_skips_an_unusable_page_and_tries_the_next(site_fetch):
     assert found.key.startswith("web:invented:")
 
 
-def test_a_kept_song_is_returned_without_a_request(lrclib_fetch):
+def test_a_kept_song_is_returned_without_a_request(lrclib_fetch, lrclib_only):
     store = {}
     expand("paper boats invented band", fetch=lrclib_fetch, store=store)
     asked = len(lrclib_fetch.asked)

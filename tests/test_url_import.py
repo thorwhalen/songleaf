@@ -125,14 +125,14 @@ def test_an_unknown_host_names_the_sites_that_read_pages():
         site_for_url("https://nowhere.example/a-song")  # the registry by default
 
 
-def test_the_registry_reads_chordie_and_ultimate_guitar_pages_but_searches_neither_by_default():
+def test_the_registry_reads_chordie_and_ultimate_guitar_pages_and_searches_ultimate_guitar_never():
     assert site_for_url("https://www.chordie.com/chord.pere/x.example/a.html")[0].name == (
         "chordie"
     )
     site, candidate = site_for_url(UG_URL)
     assert site.name == "ug" and candidate.key == "ug:424242"
     assert site.find("paper boats") == []
-    assert "ug" not in online.DEFAULT_WEB_SITES and "chordie" not in online.DEFAULT_WEB_SITES
+    assert "ug" not in online.DEFAULT_WEB_SITES and "azchords" not in online.DEFAULT_WEB_SITES
 
 
 def test_ultimate_guitar_by_url_is_opt_in_and_a_kept_chart_needs_no_request(monkeypatch):
@@ -167,7 +167,7 @@ def test_imported_and_pasted_songs_are_found_by_local_search(monkeypatch):
     assert [(row["key"], row["source"]) for row in rows] == [(pasted["key"], "paste")]
 
 
-def test_a_site_with_no_search_reads_pages_by_url_only():
+def test_a_site_with_no_search_of_its_own_reads_pages_by_url():
     page_url = "https://www.azchords.com/i/inventedband-tabs-1/paperboats-tabs-2.html"
     page = (
         "<html><head><title>Paper Boats  Chords &ndash; Invented Band | Version #1</title>"
@@ -175,7 +175,7 @@ def test_a_site_with_no_search_reads_pages_by_url_only():
         f"<pre id='content'>{CHART}</pre></body></html>"
     )
     site, candidate = site_for_url(page_url)
-    assert site is online.AZCHORDS and site.find("paper boats", limit=5, fetch=None) == []
+    assert site is online.AZCHORDS
     kept = import_url(page_url, fetch=counting(page), store={})
     assert (kept.song.title, kept.song.artist) == ("Paper Boats", "Invented Band")
     assert kept.key == f"web:azchords:{online.url_id(page_url)}"
