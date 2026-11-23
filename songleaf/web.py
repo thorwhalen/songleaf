@@ -125,6 +125,7 @@ LAYOUT_CONTROLS: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
         (("", "None"), ("piano", "Piano"), ("guitar", "Guitar")),
     ),
     ("score", "Score snippet", (("", "Off"), ("score", "On"))),
+    ("lyrics", "Lyrics", (("", "Shown"), ("chords-only", "Chords only"))),
 )
 #: How the reader's settings map onto layout options, so a sheet starts as the song reads:
 #: ``{setting: {value: option}}`` (values as strings). Served by ``/layouts`` as ``from_reader``.

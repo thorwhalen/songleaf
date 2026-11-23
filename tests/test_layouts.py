@@ -25,6 +25,7 @@ from songleaf.render import (
     _heading,
     _page_dimensions,
     _paint,
+    _drawn,
     _pieces,
     _width,
     fit_font_size,
@@ -52,7 +53,7 @@ def flow_at(song, size, spec):
     layout = as_layout(spec)
     paint = _paint(song, layout.style, layout.shading)
     return _flow(
-        _pieces(song),
+        _pieces(_drawn(song, layout)),
         _heading(song),
         size,
         width=WIDTH,
@@ -105,7 +106,7 @@ def test_nothing_runs_past_its_column(spec, long_chart):
         assert all(right_edge(item) <= flow.column_width + 1e-6 for item in row.items)
 
 
-@pytest.mark.parametrize("spec", SPECS)
+@pytest.mark.parametrize("spec", [s for s in SPECS if "chords-only" not in s])
 def test_a_pile_of_chords_on_a_short_line_moves_to_a_chord_row(spec):
     symbols = ["Cmaj7", "G/B", "Am7", "Fmaj7", "Dsus4", "E7", "Bb", "Ebmaj7"] * 3
     song = Song("la\nla la", [chord(2, symbol) for symbol in symbols])
