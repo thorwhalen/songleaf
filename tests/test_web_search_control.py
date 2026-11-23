@@ -28,6 +28,12 @@ RECORDS = [{"id": 31, "trackName": "Willow Lanterns", "artistName": "The Invente
 
 
 @pytest.fixture
+def lrclib_only(monkeypatch):
+    """These tests serve LRCLIB's answers only: ask no other site."""
+    monkeypatch.setenv("SONGLEAF_WEB_SITES", "lrclib")
+
+
+@pytest.fixture
 def asked():
     return []
 
@@ -42,7 +48,7 @@ def fetch(asked):
     return fetch
 
 
-def test_the_default_app_never_searches_the_web(memory_source):
+def test_the_default_app_never_searches_the_web(memory_source, lrclib_only):
     client = TestClient(mk_app(sources=[memory_source], store={}))
     assert client.get("/web").json() == {
         "available": False, "sites": ["LRCLIB"], "reason": "off in this app"}
@@ -51,9 +57,8 @@ def test_the_default_app_never_searches_the_web(memory_source):
 
 
 def test_a_search_on_request_keeps_the_song_and_says_where_it_came_from(
-    memory_source, fetch, asked, monkeypatch
+    memory_source, fetch, asked, lrclib_only
 ):
-    monkeypatch.delenv("SONGLEAF_WEB_SITES", raising=False)
     store = {}
     sources = [StoredWebSource(store), memory_source]
     client = TestClient(
