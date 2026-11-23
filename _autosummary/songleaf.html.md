@@ -144,7 +144,7 @@ Lyrics hold every word of the query, rank by popularity, and carry
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](songleaf.sources.html.md#songleaf.sources.Hit)]]
 
-### *class* songleaf.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, diagrams=None, style=DenseStyle(), score=False)
+### *class* songleaf.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, diagrams=None, style=DenseStyle(), score=False, lyrics=True)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -161,6 +161,8 @@ One way to lay a song out on a page.
   * **diagrams** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – `"piano"` or `"guitar"` draws the song’s chords as a strip
     of diagrams at the foot of the first page ([`songleaf.diagrams`](songleaf.diagrams.html.md#module-songleaf.diagrams));
     the lyrics shrink to make room. `None`: no diagrams.
+  * **lyrics** ([`bool`](https://docs.python.org/3/builtins/functions.html#bool)) – `False` draws a chords-only sheet (`chords_only()`): per section,
+    its generic label and its chord symbols, no lyric text (songleaf#68).
   * **score** ([`bool`](https://docs.python.org/3/builtins/functions.html#bool)) – Draw the song’s score snippet, if its provider has one, above
     the line it belongs to ([`songleaf.snippets`](songleaf.snippets.html.md#module-songleaf.snippets)); the lyrics shrink
     to make room.

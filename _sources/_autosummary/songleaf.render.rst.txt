@@ -19,6 +19,7 @@ songleaf.render
 
    .. autosummary::
    
+      chords_only
       fit_font_size
       layout_named
       layout_spec

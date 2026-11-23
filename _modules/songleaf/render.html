@@ -331,7 +331,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Protocol</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.harmony</span><span class="w"> </span><span class="kn">import</span> <span class="n">chord_function</span><span class="p">,</span> <span class="n">estimate_key</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Song</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotation</span><span class="p">,</span> <span class="n">Song</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.packing</span><span class="w"> </span><span class="kn">import</span> <span class="n">line_break_costs</span><span class="p">,</span> <span class="n">pack_greedy</span><span class="p">,</span> <span class="n">pack_structured</span>
 
 <span class="c1">#: Page margin in points (5 mm), about the least a printer leaves blank anyway.</span>
@@ -599,6 +599,72 @@
         <span class="n">sung</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">words</span><span class="p">)</span>
         <span class="n">new_paragraph</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">return</span> <span class="n">pieces</span>
+
+
+<span class="c1">#: A section marker that is only a structure word (``Verse 2``, ``Chorus x2``), never lyric text.</span>
+<span class="n">_GENERIC_LABEL_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s2">"^\s*(?:intro|verse|chorus|pre-?\s?chorus|post-?\s?chorus|bridge|outro|interlude|"</span>
+    <span class="sa">r</span><span class="s2">"instrumental|solo|refrain|hook|tag|coda|ending|break|riff|part)\b[\s\d:xX×()-]*$"</span><span class="p">,</span>
+    <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_generic_label</span><span class="p">(</span><span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">number</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``label`` if it is a structure word, else ``"Part &lt;number&gt;"`` (a marker can hold anything)."""</span>
+    <span class="k">return</span> <span class="n">label</span> <span class="k">if</span> <span class="n">_GENERIC_LABEL_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"Part </span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2">"</span>
+
+
+<div class="viewcode-block" id="chords_only">
+<a class="viewcode-back" href="../../_autosummary/songleaf.render.html#songleaf.chords_only">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">chords_only</span><span class="p">(</span><span class="n">song</span><span class="p">:</span> <span class="n">Song</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Song</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``song`` with its lyrics replaced by its chord symbols, one line of symbols per chord line.</span>
+
+<span class="sd">    Sections keep their structure-word labels (``Verse 1``, ``Chorus``); any other marker</span>
+<span class="sd">    becomes ``Part n``, and a song with no markers numbers its paragraphs ``Part n``, so</span>
+<span class="sd">    no lyric text survives. Lines with no chords are dropped. Title, key, capo and</span>
+<span class="sd">    provenance are kept; the chords are no longer annotations, they *are* the text.</span>
+
+<span class="sd">    &gt;&gt;&gt; from songleaf.parse import parse_chords_over_lyrics</span>
+<span class="sd">    &gt;&gt;&gt; song = parse_chords_over_lyrics("[Verse]\\nC   G\\nla la la\\n\\n[Chorus]\\nAm  F\\nna na")</span>
+<span class="sd">    &gt;&gt;&gt; chords_only(song).text</span>
+<span class="sd">    'C G\\n\\nAm F'</span>
+<span class="sd">    """</span>
+    <span class="n">pieces</span> <span class="o">=</span> <span class="n">_pieces</span><span class="p">(</span><span class="n">song</span><span class="p">)</span>
+    <span class="n">numbered</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">song</span><span class="o">.</span><span class="n">of_kind</span><span class="p">(</span><span class="s2">"section"</span><span class="p">)</span>
+    <span class="n">lines</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">sections</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># [label, first line, last line, marker]</span>
+    <span class="n">paragraphs</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">piece</span> <span class="ow">in</span> <span class="n">pieces</span><span class="p">:</span>
+        <span class="n">symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">symbol</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">piece</span><span class="o">.</span><span class="n">chords</span> <span class="k">if</span> <span class="n">symbol</span><span class="p">]</span>
+        <span class="n">starts</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">piece</span><span class="o">.</span><span class="n">label</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">numbered</span> <span class="ow">and</span> <span class="n">piece</span><span class="o">.</span><span class="n">new_paragraph</span> <span class="ow">and</span> <span class="n">symbols</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">symbols</span> <span class="ow">or</span> <span class="n">piece</span><span class="o">.</span><span class="n">label</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">piece</span><span class="o">.</span><span class="n">new_paragraph</span> <span class="ow">and</span> <span class="n">lines</span> <span class="ow">and</span> <span class="n">lines</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">""</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">starts</span><span class="p">:</span>
+            <span class="n">paragraphs</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">raw</span> <span class="o">=</span> <span class="n">piece</span><span class="o">.</span><span class="n">section</span> <span class="k">if</span> <span class="n">piece</span><span class="o">.</span><span class="n">label</span> <span class="k">else</span> <span class="s2">""</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="n">_generic_label</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="n">paragraphs</span><span class="p">)</span> <span class="k">if</span> <span class="n">raw</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"Part </span><span class="si">{</span><span class="n">paragraphs</span><span class="si">}</span><span class="s2">"</span>
+            <span class="n">sections</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">label</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">),</span> <span class="ow">not</span> <span class="n">symbols</span><span class="p">])</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">symbols</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">sections</span><span class="p">:</span>
+            <span class="n">sections</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">offsets</span><span class="p">,</span> <span class="n">at</span> <span class="o">=</span> <span class="p">[],</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="n">offsets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">at</span><span class="p">)</span>
+        <span class="n">at</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">annotations</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">,</span> <span class="n">marker</span> <span class="ow">in</span> <span class="n">sections</span><span class="p">:</span>
+        <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">offsets</span><span class="p">[</span><span class="n">first</span><span class="p">],</span> <span class="n">offsets</span><span class="p">[</span><span class="n">last</span><span class="p">]</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="n">last</span><span class="p">])</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"label"</span><span class="p">:</span> <span class="n">label</span><span class="p">,</span> <span class="o">**</span><span class="p">({</span><span class="s2">"marker"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span> <span class="k">if</span> <span class="n">marker</span> <span class="ow">and</span> <span class="n">first</span> <span class="o">==</span> <span class="n">last</span> <span class="k">else</span> <span class="p">{})}</span>
+        <span class="n">annotations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Annotation</span><span class="p">(</span><span class="s2">"section"</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">body</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">Song</span><span class="p">(</span>
+        <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">),</span>
+        <span class="n">annotations</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">song</span><span class="o">.</span><span class="n">meta</span><span class="p">),</span>
+        <span class="n">provenance</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">song</span><span class="o">.</span><span class="n">provenance</span><span class="p">),</span>
+    <span class="p">)</span></div>
+
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_heading</span><span class="p">(</span><span class="n">song</span><span class="p">:</span> <span class="n">Song</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -1201,6 +1267,8 @@
 <span class="sd">        diagrams: ``"piano"`` or ``"guitar"`` draws the song's chords as a strip</span>
 <span class="sd">            of diagrams at the foot of the first page (:mod:`songleaf.diagrams`);</span>
 <span class="sd">            the lyrics shrink to make room. ``None``: no diagrams.</span>
+<span class="sd">        lyrics: ``False`` draws a chords-only sheet (:func:`chords_only`): per section,</span>
+<span class="sd">            its generic label and its chord symbols, no lyric text (songleaf#68).</span>
 <span class="sd">        score: Draw the song's score snippet, if its provider has one, above</span>
 <span class="sd">            the line it belongs to (:mod:`songleaf.snippets`); the lyrics shrink</span>
 <span class="sd">            to make room.</span>
@@ -1214,6 +1282,7 @@
     <span class="n">diagrams</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">style</span><span class="p">:</span> <span class="n">DenseStyle</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">DenseStyle</span><span class="p">)</span>
     <span class="n">score</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">lyrics</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># a bad layout fails here, not mid-render</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.diagrams</span><span class="w"> </span><span class="kn">import</span> <span class="n">DIAGRAM_KINDS</span>
@@ -1229,6 +1298,8 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"shading must be True or False, got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">shading</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"score must be True or False, got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lyrics</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"lyrics must be True or False, got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">lyrics</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">methods</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"extent"</span><span class="p">,</span> <span class="s2">"fitting_length"</span><span class="p">,</span> <span class="s2">"items"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">placement</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -1277,8 +1348,11 @@
     <span class="s2">"piano"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"diagrams"</span><span class="p">:</span> <span class="s2">"piano"</span><span class="p">},</span>
     <span class="s2">"guitar"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"diagrams"</span><span class="p">:</span> <span class="s2">"guitar"</span><span class="p">},</span>
     <span class="s2">"score"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"score"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+    <span class="s2">"chords-only"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"lyrics"</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
 <span class="p">}</span>
 <span class="n">_OPTION_ALIASES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"chords_only"</span><span class="p">:</span> <span class="s2">"chords-only"</span><span class="p">,</span>
+    <span class="s2">"nolyrics"</span><span class="p">:</span> <span class="s2">"chords-only"</span><span class="p">,</span>
     <span class="s2">"2col"</span><span class="p">:</span> <span class="s2">"two-column"</span><span class="p">,</span>
     <span class="s2">"two_column"</span><span class="p">:</span> <span class="s2">"two-column"</span><span class="p">,</span>
     <span class="s2">"structured"</span><span class="p">:</span> <span class="s2">"packed"</span><span class="p">,</span>
@@ -1454,6 +1528,11 @@
     <span class="k">return</span> <span class="n">found</span><span class="p">,</span> <span class="n">line</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_drawn</span><span class="p">(</span><span class="n">song</span><span class="p">:</span> <span class="n">Song</span><span class="p">,</span> <span class="n">layout</span><span class="p">:</span> <span class="n">SheetLayout</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Song</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The song as the layout draws it: itself, or its chords alone."""</span>
+    <span class="k">return</span> <span class="n">song</span> <span class="k">if</span> <span class="n">layout</span><span class="o">.</span><span class="n">lyrics</span> <span class="k">else</span> <span class="n">chords_only</span><span class="p">(</span><span class="n">song</span><span class="p">)</span>
+
+
 <div class="viewcode-block" id="fit_font_size">
 <a class="viewcode-back" href="../../_autosummary/songleaf.render.html#songleaf.fit_font_size">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">fit_font_size</span><span class="p">(</span>
@@ -1484,7 +1563,7 @@
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">layout</span><span class="o">.</span><span class="n">columns</span><span class="si">}</span><span class="s2"> column(s) do not fit across a </span><span class="si">{</span><span class="n">page_width</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> pt page "</span>
             <span class="sa">f</span><span class="s2">"with </span><span class="si">{</span><span class="n">margin</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> pt margins, even at </span><span class="si">{</span><span class="n">min_font_size</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> pt"</span>
         <span class="p">)</span>
-    <span class="n">pieces</span><span class="p">,</span> <span class="n">heading</span> <span class="o">=</span> <span class="n">_pieces</span><span class="p">(</span><span class="n">song</span><span class="p">),</span> <span class="n">_heading</span><span class="p">(</span><span class="n">song</span><span class="p">)</span>
+    <span class="n">pieces</span><span class="p">,</span> <span class="n">heading</span> <span class="o">=</span> <span class="n">_pieces</span><span class="p">(</span><span class="n">_drawn</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">layout</span><span class="p">)),</span> <span class="n">_heading</span><span class="p">(</span><span class="n">song</span><span class="p">)</span>
     <span class="n">paint</span> <span class="o">=</span> <span class="n">_paint</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">layout</span><span class="o">.</span><span class="n">style</span><span class="p">,</span> <span class="n">layout</span><span class="o">.</span><span class="n">shading</span><span class="p">)</span>
     <span class="n">diagram_chords</span> <span class="o">=</span> <span class="n">_diagram_chords</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">layout</span><span class="p">)</span>
     <span class="n">snippet</span> <span class="o">=</span> <span class="n">_snippet</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">layout</span><span class="p">,</span> <span class="n">snippets</span><span class="p">)</span>
@@ -1596,7 +1675,7 @@
     <span class="n">diagram_chords</span> <span class="o">=</span> <span class="n">_diagram_chords</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">layout</span><span class="p">)</span>
     <span class="n">snippet</span> <span class="o">=</span> <span class="n">_snippet</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">layout</span><span class="p">,</span> <span class="n">snippets</span><span class="p">)</span>
     <span class="n">flow</span> <span class="o">=</span> <span class="n">_flow</span><span class="p">(</span>
-        <span class="n">_pieces</span><span class="p">(</span><span class="n">song</span><span class="p">),</span>
+        <span class="n">_pieces</span><span class="p">(</span><span class="n">_drawn</span><span class="p">(</span><span class="n">song</span><span class="p">,</span> <span class="n">layout</span><span class="p">)),</span>
         <span class="n">heading</span><span class="p">,</span>
         <span class="n">size</span><span class="p">,</span>
         <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span>
@@ -1779,7 +1858,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=f889a70c"></script>
+</div><script src="../../_static/documentation_options.js?v=10aae6bc"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

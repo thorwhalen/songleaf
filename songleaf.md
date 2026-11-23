@@ -1,4 +1,4 @@
-> built 2026-11-22 16:31 UTC from e7be7c0 (main) · songleaf 0.0.33. Details: build_info.json
+> built 2026-11-23 13:04 UTC from 7de260a (main) · songleaf 0.0.34. Details: build_info.json
 
 # index.html.md
 
@@ -888,7 +888,7 @@ Lyrics hold every word of the query, rank by popularity, and carry
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Hit`](_autosummary/songleaf.sources.html.md#songleaf.sources.Hit)]]
 
-### *class* songleaf.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, diagrams=None, style=DenseStyle(), score=False)
+### *class* songleaf.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, diagrams=None, style=DenseStyle(), score=False, lyrics=True)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -905,6 +905,8 @@ One way to lay a song out on a page.
   * **diagrams** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – `"piano"` or `"guitar"` draws the song’s chords as a strip
     of diagrams at the foot of the first page ([`songleaf.diagrams`](_autosummary/songleaf.diagrams.html.md#module-songleaf.diagrams));
     the lyrics shrink to make room. `None`: no diagrams.
+  * **lyrics** ([`bool`](https://docs.python.org/3/builtins/functions.html#bool)) – `False` draws a chords-only sheet (`chords_only()`): per section,
+    its generic label and its chord symbols, no lyric text (songleaf#68).
   * **score** ([`bool`](https://docs.python.org/3/builtins/functions.html#bool)) – Draw the song’s score snippet, if its provider has one, above
     the line it belongs to ([`songleaf.snippets`](_autosummary/songleaf.snippets.html.md#module-songleaf.snippets)); the lyrics shrink
     to make room.
@@ -2786,17 +2788,18 @@ not covered by either.
 
 ### Functions
 
-| [`fit_font_size`](_autosummary/songleaf.render.html.md#songleaf.render.fit_font_size)(song, \*[, page_size, margin, ...])   | The largest lyric font size at which `song` fits one page in `layout` (default: v1's).                                                  |
-|------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
-| [`layout_named`](_autosummary/songleaf.render.html.md#songleaf.render.layout_named)(spec, \*[, style])                     | The layout of a spec: options of [`LAYOUT_OPTIONS`](_autosummary/songleaf.render.html.md#songleaf.render.LAYOUT_OPTIONS) joined by `+` (`"inline+two-column"`). |
-| [`layout_spec`](_autosummary/songleaf.render.html.md#songleaf.render.layout_spec)(spec)                                   | The one spelling of a layout spec, for names: `"Dense"` -> `"dense"`.                                                                   |
-| [`make_renderer`](_autosummary/songleaf.render.html.md#songleaf.render.make_renderer)([layout])                             | A `(song, output) -> dict` renderer for `layout`, the shape `sheet`'s `renderer=` takes.                                                |
-| [`on_paper`](_autosummary/songleaf.render.html.md#songleaf.render.on_paper)(color[, alpha, paper])                     | `color` at opacity `alpha` over `paper`, as one opaque colour: what ink at that opacity shows.                                          |
-| [`render_dense_a4`](_autosummary/songleaf.render.html.md#songleaf.render.render_dense_a4)(song, output, \*[, ...])            | Render `song` in the v1 layout as a PDF to `output` (a path or a binary file object).                                                   |
-| [`render_sheet`](_autosummary/songleaf.render.html.md#songleaf.render.render_sheet)(song, output, \*[, layout, ...])       | Render `song` in `layout` (a [`SheetLayout`](_autosummary/songleaf.render.html.md#songleaf.render.SheetLayout) or a spec) as a PDF to `output`.              |
-| [`section_family`](_autosummary/songleaf.render.html.md#songleaf.render.section_family)(label)                               | `"chorus"` for a chorus or refrain, `"bridge"` for a pre-chorus or bridge, else `""`.                                                   |
-| [`short_label`](_autosummary/songleaf.render.html.md#songleaf.render.short_label)(label)                                  | A compact section label: `"Verse 1"` -> `"V1"`, `"Chorus x2"` -> `"Ch x2"`.                                                             |
-| [`usable_font`](_autosummary/songleaf.render.html.md#songleaf.render.usable_font)(name)                                   | The reportlab font name to set `name` in, registering a bundled TTF once.                                                               |
+| [`chords_only`](_autosummary/songleaf.render.html.md#songleaf.render.chords_only)(song)                                 | `song` with its lyrics replaced by its chord symbols, one line of symbols per chord line.                                               |
+|----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| [`fit_font_size`](_autosummary/songleaf.render.html.md#songleaf.render.fit_font_size)(song, \*[, page_size, margin, ...]) | The largest lyric font size at which `song` fits one page in `layout` (default: v1's).                                                  |
+| [`layout_named`](_autosummary/songleaf.render.html.md#songleaf.render.layout_named)(spec, \*[, style])                   | The layout of a spec: options of [`LAYOUT_OPTIONS`](_autosummary/songleaf.render.html.md#songleaf.render.LAYOUT_OPTIONS) joined by `+` (`"inline+two-column"`). |
+| [`layout_spec`](_autosummary/songleaf.render.html.md#songleaf.render.layout_spec)(spec)                                 | The one spelling of a layout spec, for names: `"Dense"` -> `"dense"`.                                                                   |
+| [`make_renderer`](_autosummary/songleaf.render.html.md#songleaf.render.make_renderer)([layout])                           | A `(song, output) -> dict` renderer for `layout`, the shape `sheet`'s `renderer=` takes.                                                |
+| [`on_paper`](_autosummary/songleaf.render.html.md#songleaf.render.on_paper)(color[, alpha, paper])                   | `color` at opacity `alpha` over `paper`, as one opaque colour: what ink at that opacity shows.                                          |
+| [`render_dense_a4`](_autosummary/songleaf.render.html.md#songleaf.render.render_dense_a4)(song, output, \*[, ...])          | Render `song` in the v1 layout as a PDF to `output` (a path or a binary file object).                                                   |
+| [`render_sheet`](_autosummary/songleaf.render.html.md#songleaf.render.render_sheet)(song, output, \*[, layout, ...])     | Render `song` in `layout` (a [`SheetLayout`](_autosummary/songleaf.render.html.md#songleaf.render.SheetLayout) or a spec) as a PDF to `output`.              |
+| [`section_family`](_autosummary/songleaf.render.html.md#songleaf.render.section_family)(label)                             | `"chorus"` for a chorus or refrain, `"bridge"` for a pre-chorus or bridge, else `""`.                                                   |
+| [`short_label`](_autosummary/songleaf.render.html.md#songleaf.render.short_label)(label)                                | A compact section label: `"Verse 1"` -> `"V1"`, `"Chorus x2"` -> `"Ch x2"`.                                                             |
+| [`usable_font`](_autosummary/songleaf.render.html.md#songleaf.render.usable_font)(name)                                 | The reportlab font name to set `name` in, registering a bundled TTF once.                                                               |
 
 ### Classes
 
@@ -2872,7 +2875,7 @@ Chords in the lyric line, right before their syllable; a chord-only line is a ro
   or the syllable’s start (see `_syllable_start()`); the song’s
   annotations are not changed.
 
-### songleaf.render.LAYOUT_OPTIONS *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)]* *= {'dense': {}, 'guitar': {'diagrams': 'guitar'}, 'inline': {'chords': 'inline'}, 'overlap': {'chords': 'over', 'style': {'chord_halo': '#ffffff', 'chord_rise': 0.42}}, 'packed': {'packing': 'structured'}, 'piano': {'diagrams': 'piano'}, 'score': {'score': True}, 'shaded': {'shading': True}, 'two-column': {'columns': 2}}*
+### songleaf.render.LAYOUT_OPTIONS *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)]* *= {'chords-only': {'lyrics': False}, 'dense': {}, 'guitar': {'diagrams': 'guitar'}, 'inline': {'chords': 'inline'}, 'overlap': {'chords': 'over', 'style': {'chord_halo': '#ffffff', 'chord_rise': 0.42}}, 'packed': {'packing': 'structured'}, 'piano': {'diagrams': 'piano'}, 'score': {'score': True}, 'shaded': {'shading': True}, 'two-column': {'columns': 2}}*
 
 What each option of a layout spec changes, from the v1 layout (`dense`).
 
@@ -2886,7 +2889,7 @@ Chords above their syllables, smaller and lighter, overlapping the lyric row by 
 
 The line packers a [`SheetLayout`](_autosummary/songleaf.render.html.md#songleaf.render.SheetLayout) can name (see [`songleaf.packing`](_autosummary/songleaf.packing.html.md#module-songleaf.packing)).
 
-### *class* songleaf.render.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, diagrams=None, style=DenseStyle(), score=False)
+### *class* songleaf.render.SheetLayout(chords='over', packing='greedy', columns=1, shading=False, diagrams=None, style=DenseStyle(), score=False, lyrics=True)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -2903,6 +2906,8 @@ One way to lay a song out on a page.
   * **diagrams** ([`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)) – `"piano"` or `"guitar"` draws the song’s chords as a strip
     of diagrams at the foot of the first page ([`songleaf.diagrams`](_autosummary/songleaf.diagrams.html.md#module-songleaf.diagrams));
     the lyrics shrink to make room. `None`: no diagrams.
+  * **lyrics** ([`bool`](https://docs.python.org/3/builtins/functions.html#bool)) – `False` draws a chords-only sheet ([`chords_only()`](_autosummary/songleaf.render.html.md#songleaf.render.chords_only)): per section,
+    its generic label and its chord symbols, no lyric text (songleaf#68).
   * **score** ([`bool`](https://docs.python.org/3/builtins/functions.html#bool)) – Draw the song’s score snippet, if its provider has one, above
     the line it belongs to ([`songleaf.snippets`](_autosummary/songleaf.snippets.html.md#module-songleaf.snippets)); the lyrics shrink
     to make room.
@@ -2915,6 +2920,25 @@ The line packer.
 #### *property* placement *: [ChordPlacement](_autosummary/songleaf.render.html.md#songleaf.render.ChordPlacement)*
 
 The chord placement strategy.
+
+### songleaf.render.chords_only(song)
+
+`song` with its lyrics replaced by its chord symbols, one line of symbols per chord line.
+
+Sections keep their structure-word labels (`Verse 1`, `Chorus`); any other marker
+becomes `Part n`, and a song with no markers numbers its paragraphs `Part n`, so
+no lyric text survives. Lines with no chords are dropped. Title, key, capo and
+provenance are kept; the chords are no longer annotations, they *are* the text.
+
+```pycon
+>>> from songleaf.parse import parse_chords_over_lyrics
+>>> song = parse_chords_over_lyrics("[Verse]\nC   G\nla la la\n\n[Chorus]\nAm  F\nna na")
+>>> chords_only(song).text
+'C G\n\nAm F'
+```
+
+* **Return type:**
+  [`Song`](_autosummary/songleaf.model.html.md#songleaf.model.Song)
 
 ### songleaf.render.fit_font_size(song, , page_size='A4', margin=14.0, style=None, layout=None, min_font_size=6.0, max_font_size=72.0, precision=0.05, snippets=None)
 
@@ -4374,7 +4398,7 @@ True
 
 # About this build
 
-This documentation was built on **2026-11-22 16:31 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/e7be7c06bc4ecd93f15d358389fa1707819eb73f"><code>e7be7c0</code></a> on branch <code>main</code>, for **songleaf 0.0.33** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-23 13:04 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/7de260a0dc8df6aa6ca4da20f8939c916cfcdc52"><code>7de260a</code></a> on branch <code>main</code>, for **songleaf 0.0.34** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -4383,7 +4407,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/e7be7c06bc4ecd93f15d358389fa1707819eb73f"><code>e7be7c06bc4ecd93f15d358389fa1707819eb73f</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/7de260a0dc8df6aa6ca4da20f8939c916cfcdc52"><code>7de260a0dc8df6aa6ca4da20f8939c916cfcdc52</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -4394,15 +4418,15 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/45044122233">45044122233</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/45180059352">45180059352</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>e7be7c06bc4ecd93f15d358389fa1707819eb73f</code> (in the history of the built commit) |
+| Event commit | <code>7de260a0dc8df6aa6ca4da20f8939c916cfcdc52</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.23  |
+| epythet  | 0.2.25  |
 | Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
 | Python   | 3.12.16 |
@@ -4421,14 +4445,14 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.33/">0.0.33</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.34/">0.0.34</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout e7be7c06bc4ecd93f15d358389fa1707819eb73f
-pip install "epythet==0.2.23"
+git checkout 7de260a0dc8df6aa6ca4da20f8939c916cfcdc52
+pip install "epythet==0.2.25"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

@@ -1,36 +1,36 @@
 {
   "schema_version": 1,
-  "built_at": "2026-11-22T16:31:42Z",
+  "built_at": "2026-11-23T13:04:56Z",
   "package": {
     "name": "songleaf",
-    "version": "0.0.33",
+    "version": "0.0.34",
     "display_name": "songleaf",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "e7be7c06bc4ecd93f15d358389fa1707819eb73f",
-    "short_commit": "e7be7c0",
+    "commit": "7de260a0dc8df6aa6ca4da20f8939c916cfcdc52",
+    "short_commit": "7de260a",
     "branch": "main",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/thorwhalen/songleaf",
-    "commit_url": "https://github.com/thorwhalen/songleaf/commit/e7be7c06bc4ecd93f15d358389fa1707819eb73f",
+    "commit_url": "https://github.com/thorwhalen/songleaf/commit/7de260a0dc8df6aa6ca4da20f8939c916cfcdc52",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "thorwhalen/songleaf",
-    "sha": "e7be7c06bc4ecd93f15d358389fa1707819eb73f",
+    "sha": "7de260a0dc8df6aa6ca4da20f8939c916cfcdc52",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "45044122233",
-    "run_url": "https://github.com/thorwhalen/songleaf/actions/runs/45044122233",
+    "run_id": "45180059352",
+    "run_url": "https://github.com/thorwhalen/songleaf/actions/runs/45180059352",
     "server_url": "https://github.com"
   },
   "tools": {
-    "epythet": "0.2.23",
+    "epythet": "0.2.25",
     "sphinx": "9.1.1",
     "docutils": "0.22.4",
     "python": "3.12.16"
@@ -56,15 +56,15 @@
   },
   "site": {
     "modules_documented": 24,
-    "objects_documented": 311
+    "objects_documented": 312
   },
   "pypi": {
     "checked": true,
-    "latest": "0.0.33",
+    "latest": "0.0.34",
     "relation": "same",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/songleaf && cd songleaf\ngit checkout e7be7c06bc4ecd93f15d358389fa1707819eb73f\npip install \"epythet==0.2.23\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/songleaf && cd songleaf\ngit checkout 7de260a0dc8df6aa6ca4da20f8939c916cfcdc52\npip install \"epythet==0.2.25\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": true,
