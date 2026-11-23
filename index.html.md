@@ -23,13 +23,14 @@ The default source is the Kaggle *chords-and-lyrics* corpus (about 135,000 songs
 
 That is the `dense` layout. Other layouts trade looks for larger lyrics. Name one by joining options with `+`:
 
-| option       | what it changes                                                                                                                                                 |
-|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `overlap`    | chords sit lower, on the words themselves, outlined in white and drawn over them: no extra height for chords                                                    |
-| `inline`     | chords go in the lyric line, right before the syllable they land on; `‹G` marks a chord that sounds *before* its syllable                                       |
-| `packed`     | rows break where the lyrics break (between couplets, not inside a rhyming pair or a repeated line) instead of as late as fits                                   |
-| `two-column` | two columns under a full-width heading                                                                                                                          |
-| `shaded`     | light bands for choruses and bridges, dark grey for lines already sung, chords coloured by function in the song’s key (tonic darker, outside the key in orange) |
+| option        | what it changes                                                                                                                                                                                       |
+|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `overlap`     | chords sit lower, on the words themselves, outlined in white and drawn over them: no extra height for chords                                                                                          |
+| `inline`      | chords go in the lyric line, right before the syllable they land on; `‹G` marks a chord that sounds *before* its syllable                                                                             |
+| `packed`      | rows break where the lyrics break (between couplets, not inside a rhyming pair or a repeated line) instead of as late as fits                                                                         |
+| `two-column`  | two columns under a full-width heading                                                                                                                                                                |
+| `chords-only` | no lyrics: per section its label (`Verse 1`, `Chorus`; any other marker becomes `Part n`) and its chord symbols, under the title, key and capo. Songbooks take it too: `make_renderer("chords-only")` |
+| `shaded`      | light bands for choruses and bridges, dark grey for lines already sung, chords coloured by function in the song’s key (tonic darker, outside the key in orange)                                       |
 ```bash
 python -m songleaf sheet "wonderwall oasis" --layout inline
 python -m songleaf sheet "wonderwall oasis" --layout overlap+packed+two-column+shaded
@@ -135,10 +136,10 @@ pip install "songleaf[online]"
 python -m songleaf search "birds of a feather billie eilish"     # finds it online the first time, locally after
 python -m songleaf search "wonderwall oasis" --web always        # look online even when it is here
 python -m songleaf search "paper boats" --web off                # never
-SONGLEAF_WEB_SITES=lrclib,chordie python -m songleaf search ...  # which sites to ask
+SONGLEAF_WEB_SITES=lrclib,chordie,azchords python -m songleaf search ...  # which sites to ask
 ```
 
-`sheet` takes the best local match, chords and all, so it goes online only when nothing here matches at all, or with `--web always`; to choose between a local near miss and the song online, `search` first and make the sheet from the key it shows. `--web` (or `SONGLEAF_WEB_SEARCH`) is `fallback` (the default), `always` or `off`; `--web-sites` (or `SONGLEAF_WEB_SITES`) names the sites, comma-separated. The default list is LRCLIB only, an open lyrics API made for automated clients: it gives lyrics (with their timings) but no chords. Chordie is known but off by default; why each site is in or out is in [`misc/docs/sources.md`](). Every request obeys the site’s robots.txt, waits at least a second between two requests to one host, and says it is songleaf (no browser disguise). The web app does not go online as you type unless built with `mk_app(web_search="fallback")`: its page searches on every keystroke. Built with `mk_app(web_on_request=True)` (and the `online` extra), the page instead shows a **Search the web for “…”** button after the results: one press asks the configured sites once (`/search?web=always`), and a song found there is kept and shown with where it came from ([songleaf#62](https://github.com/thorwhalen/songleaf/issues/62)). `GET /web` says whether it is available.
+`sheet` takes the best local match, chords and all, so it goes online only when nothing here matches at all, or with `--web always`; to choose between a local near miss and the song online, `search` first and make the sheet from the key it shows. `--web` (or `SONGLEAF_WEB_SEARCH`) is `fallback` (the default), `always` or `off`; `--web-sites` (or `SONGLEAF_WEB_SITES`) names the sites, comma-separated. The default list is LRCLIB, an open lyrics API made for automated clients (lyrics with their timings, no chords), and Chordie, which gives chord charts: pages it re-hosts from guitartabs.cc and guitaretab.com, whose terms forbid kept copies, are link only (never stored). AZChords is off by default; it has no search, so it lists an artist’s songs (the query must name the artist). Why each site is in or out is in [`misc/docs/sources.md`](). Every request obeys the site’s robots.txt, waits at least a second between two requests to one host, and says it is songleaf (no browser disguise). The web app does not go online as you type unless built with `mk_app(web_search="fallback")`: its page searches on every keystroke. Built with `mk_app(web_on_request=True)` (and the `online` extra), the page instead shows a **Search the web for “…”** button after the results: one press asks the configured sites once (`/search?web=always`), and a song found there is kept and shown with where it came from ([songleaf#62](https://github.com/thorwhalen/songleaf/issues/62)). `GET /web` says whether it is available.
 
 Lyrics and chord charts are copyrighted. What songleaf fetches stays in your data directory, for your own use.
 

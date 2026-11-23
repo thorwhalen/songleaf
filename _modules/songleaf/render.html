@@ -656,7 +656,10 @@
     <span class="n">annotations</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">,</span> <span class="n">marker</span> <span class="ow">in</span> <span class="n">sections</span><span class="p">:</span>
         <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">offsets</span><span class="p">[</span><span class="n">first</span><span class="p">],</span> <span class="n">offsets</span><span class="p">[</span><span class="n">last</span><span class="p">]</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="n">last</span><span class="p">])</span>
-        <span class="n">body</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"label"</span><span class="p">:</span> <span class="n">label</span><span class="p">,</span> <span class="o">**</span><span class="p">({</span><span class="s2">"marker"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span> <span class="k">if</span> <span class="n">marker</span> <span class="ow">and</span> <span class="n">first</span> <span class="o">==</span> <span class="n">last</span> <span class="k">else</span> <span class="p">{})}</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"label"</span><span class="p">:</span> <span class="n">label</span><span class="p">,</span>
+            <span class="o">**</span><span class="p">({</span><span class="s2">"marker"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span> <span class="k">if</span> <span class="n">marker</span> <span class="ow">and</span> <span class="n">first</span> <span class="o">==</span> <span class="n">last</span> <span class="k">else</span> <span class="p">{}),</span>
+        <span class="p">}</span>
         <span class="n">annotations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Annotation</span><span class="p">(</span><span class="s2">"section"</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">body</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">Song</span><span class="p">(</span>
         <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">),</span>
@@ -1858,7 +1861,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=10aae6bc"></script>
+</div><script src="../../_static/documentation_options.js?v=b9ea92da"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

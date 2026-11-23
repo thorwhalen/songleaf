@@ -486,6 +486,17 @@
 
 
 
+<span class="c1">#: The licence of a search result whose chart songleaf may link to but not keep.</span>
+<span class="n">LINK_ONLY</span> <span class="o">=</span> <span class="s2">"link-only"</span>
+
+
+<div class="viewcode-block" id="LinkOnly">
+<a class="viewcode-back" href="../../_autosummary/songleaf.online.html#songleaf.online.LinkOnly">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LinkOnly</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""A page whose chart may be opened but not kept (its host forbids stored copies)."""</span></div>
+
+
+
 <div class="viewcode-block" id="ChartPageSite">
 <a class="viewcode-back" href="../../_autosummary/songleaf.online.html#songleaf.online.ChartPageSite">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -509,6 +520,11 @@
 <span class="sd">            heading, else its ``&lt;title&gt;``) or ``"title"`` (its ``&lt;title&gt;``, for a site whose</span>
 <span class="sd">            first heading is a breadcrumb, artist first).</span>
 <span class="sd">        label: How a page names the site (``""``: its name).</span>
+<span class="sd">        rehost_path: A regex over a page's path with a named group ``host``: the site a</span>
+<span class="sd">            page re-hosts (Chordie's ``/chord.pere/&lt;host&gt;/...``). ``""``: pages are its own.</span>
+<span class="sd">        link_only_hosts: Re-hosted sites whose terms forbid a kept copy. A page from one</span>
+<span class="sd">            is a link, never a stored chart: its search result is marked</span>
+<span class="sd">            :data:`LINK_ONLY` and :meth:`extract` refuses it (:class:`LinkOnly`).</span>
 <span class="sd">    """</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
@@ -521,6 +537,30 @@
     <span class="n">home</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
     <span class="n">heading</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"h1"</span>
     <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">rehost_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">link_only_hosts</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+
+<div class="viewcode-block" id="ChartPageSite.link_only">
+<a class="viewcode-back" href="../../_autosummary/songleaf.online.html#songleaf.online.ChartPageSite.link_only">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">link_only</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether ``url`` is a page re-hosting a site that forbids kept copies.</span>
+
+<span class="sd">        &gt;&gt;&gt; chordie = ChartPageSite("c", "", "", rehost_path=r"^/chord\\.pere/(?P&lt;host&gt;[^/]+)/",</span>
+<span class="sd">        ...                         link_only_hosts=("copies.example",))</span>
+<span class="sd">        &gt;&gt;&gt; chordie.link_only("https://c.example/chord.pere/www.copies.example/a.html")</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; chordie.link_only("https://c.example/chord.pere/other.example/a.html")</span>
+<span class="sd">        False</span>
+<span class="sd">        """</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rehost_path</span> <span class="ow">and</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rehost_path</span><span class="p">,</span> <span class="n">urlsplit</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">host</span> <span class="o">=</span> <span class="n">found</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">"host"</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">removeprefix</span><span class="p">(</span><span class="s2">"www."</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="n">host</span> <span class="o">==</span> <span class="n">blocked</span> <span class="ow">or</span> <span class="n">host</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="sa">f</span><span class="s2">".</span><span class="si">{</span><span class="n">blocked</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">blocked</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">link_only_hosts</span>
+        <span class="p">)</span></div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">site_url</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -541,7 +581,14 @@
                 <span class="k">continue</span>
             <span class="n">title</span><span class="p">,</span> <span class="n">artist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_title_and_artist</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">"label"</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">title</span><span class="p">:</span>
-                <span class="n">found</span><span class="p">[</span><span class="n">url</span><span class="p">]</span> <span class="o">=</span> <span class="n">Candidate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">url_id</span><span class="p">(</span><span class="n">url</span><span class="p">),</span> <span class="n">title</span><span class="p">,</span> <span class="n">artist</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span>
+                <span class="n">found</span><span class="p">[</span><span class="n">url</span><span class="p">]</span> <span class="o">=</span> <span class="n">Candidate</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="n">url_id</span><span class="p">(</span><span class="n">url</span><span class="p">),</span>
+                    <span class="n">title</span><span class="p">,</span>
+                    <span class="n">artist</span><span class="p">,</span>
+                    <span class="n">url</span><span class="p">,</span>
+                    <span class="n">license</span><span class="o">=</span><span class="n">LINK_ONLY</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">link_only</span><span class="p">(</span><span class="n">url</span><span class="p">)</span> <span class="k">else</span> <span class="s2">""</span><span class="p">,</span>
+                <span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">limit</span><span class="p">:</span>
                 <span class="k">break</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
@@ -580,6 +627,11 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">extract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">candidate</span><span class="p">:</span> <span class="n">Candidate</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">fetch</span><span class="p">:</span> <span class="n">Fetch</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Song</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.importers</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_song</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">link_only</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">url</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">LinkOnly</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">url</span><span class="si">}</span><span class="s2"> re-hosts a site that forbids kept copies: "</span>
+                <span class="s2">"open it in a browser, songleaf keeps no copy"</span>
+            <span class="p">)</span>
         <span class="n">page</span> <span class="o">=</span> <span class="n">fetch</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>
         <span class="n">text</span> <span class="o">=</span> <span class="n">chart_text</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="p">:</span>
@@ -716,19 +768,152 @@
     <span class="n">name</span><span class="o">=</span><span class="s2">"chordie"</span><span class="p">,</span>
     <span class="n">search_url</span><span class="o">=</span><span class="s2">"https://www.chordie.com/result.php?q=</span><span class="si">{query}</span><span class="s2">"</span><span class="p">,</span>
     <span class="n">result_link</span><span class="o">=</span><span class="sa">r</span><span class="s1">'&lt;a[^&gt;]+href="(?P&lt;url&gt;/(?:chord|song)\.pere/[^"]+)"[^&gt;]*&gt;(?P&lt;label&gt;.*?)&lt;/a&gt;'</span><span class="p">,</span>
+    <span class="c1"># the title and the artist are two spans apart by &amp;nbsp;: a " - " inside a title is not the split</span>
+    <span class="n">label_separator</span><span class="o">=</span><span class="sa">r</span><span class="s2">"\s*\xa0+\s*"</span><span class="p">,</span>
     <span class="n">page_path</span><span class="o">=</span><span class="sa">r</span><span class="s2">"^/(?:chord|song)\.pere/"</span><span class="p">,</span>
+    <span class="c1"># /chord.pere/&lt;host&gt;/... re-hosts &lt;host&gt;; some of those forbid kept copies (sources.md)</span>
+    <span class="n">rehost_path</span><span class="o">=</span><span class="sa">r</span><span class="s2">"^/(?:chord|song)\.pere/(?:chordiearchive\.chordie\.com/chord\.pere/)?(?P&lt;host&gt;[^/]+)/"</span><span class="p">,</span>
+    <span class="n">link_only_hosts</span><span class="o">=</span><span class="p">(</span><span class="s2">"guitartabs.cc"</span><span class="p">,</span> <span class="s2">"guitaretab.com"</span><span class="p">),</span>
     <span class="n">label</span><span class="o">=</span><span class="s2">"Chordie"</span><span class="p">,</span>
 <span class="p">)</span>
 
+<span class="c1">#: Words of a query that name neither a title nor an artist (``"X by Y chords"``).</span>
+<span class="n">QUERY_NOISE</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">"by"</span><span class="p">,</span> <span class="s2">"chord"</span><span class="p">,</span> <span class="s2">"chords"</span><span class="p">,</span> <span class="s2">"lyrics"</span><span class="p">,</span> <span class="s2">"tab"</span><span class="p">,</span> <span class="s2">"tabs"</span><span class="p">,</span> <span class="s2">"song"</span><span class="p">})</span>
+<span class="c1">#: How long the list of AZChords artists is kept before it is fetched again (seconds).</span>
+<span class="n">ARTISTS_MAX_AGE</span> <span class="o">=</span> <span class="mi">30</span> <span class="o">*</span> <span class="mi">24</span> <span class="o">*</span> <span class="mi">3600</span>
+<span class="n">_AZ_ARTIST_URL</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s2">"/(?P&lt;letter&gt;[a-z0-9])/(?P&lt;slug&gt;[a-z0-9]+)-(?:tabs|chords|guitarpro|ukulele|bass)-(?P&lt;id&gt;\d+)\.html$"</span>
+<span class="p">)</span>
+<span class="n">_AZ_SONG_LINK</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s1">'&lt;a(?P&lt;attrs&gt;[^&gt;]*)href="(?P&lt;url&gt;/[a-z0-9]/[a-z0-9]+-tabs-\d+/[a-z0-9]+-tabs-\d+\.html)"[^&gt;]*&gt;'</span>
+    <span class="sa">r</span><span class="s2">"(?P&lt;label&gt;.*?)&lt;/a&gt;"</span><span class="p">,</span>
+    <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_AZ_ROW</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"&lt;tr\b.*?&lt;/tr&gt;"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+<span class="n">_AZ_ROW_TITLE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s2">"&lt;a[^&gt;]*&gt;(?P&lt;label&gt;[^&lt;]*?)\s+Chords\s*&lt;/a&gt;"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="AzchordsSite">
+<a class="viewcode-back" href="../../_autosummary/songleaf.online.html#songleaf.online.AzchordsSite">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AzchordsSite</span><span class="p">(</span><span class="n">ChartPageSite</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""AZChords: it has no search of its own (its box is Google's), so it lists instead.</span>
+
+<span class="sd">    Its robots.txt allows the sitemap, the artist pages and the song pages, and bars</span>
+<span class="sd">    ``/tabs/`` and ``*/chords/*``. :meth:`find` therefore works from an *artist*: it</span>
+<span class="sd">    spells the query's words as an artist's slug in the sitemap (``neil sedaka`` is</span>
+<span class="sd">    ``sedakaneil``; the list is kept for :data:`ARTISTS_MAX_AGE`), fetches that artist's</span>
+<span class="sd">    chords page, and lists its songs, keeping those whose title the other words name.</span>
+<span class="sd">    A query with no artist in it finds nothing: it does not guess.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sitemap_url: Where the site lists its artist pages.</span>
+<span class="sd">    """</span>
+
+    <span class="n">sitemap_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">fetch</span><span class="p">:</span> <span class="n">Fetch</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Candidate</span><span class="p">]:</span>
+        <span class="n">artists</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_artists</span><span class="p">(</span><span class="n">fetch</span><span class="p">)</span>
+        <span class="n">words</span> <span class="o">=</span> <span class="n">_words_of</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="n">_artist_in</span><span class="p">(</span><span class="n">words</span><span class="p">,</span> <span class="n">artists</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">found</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="p">(</span><span class="n">letter</span><span class="p">,</span> <span class="n">slug</span><span class="p">,</span> <span class="n">artist_id</span><span class="p">),</span> <span class="n">title_words</span> <span class="o">=</span> <span class="n">found</span>
+        <span class="n">page_url</span> <span class="o">=</span> <span class="n">urljoin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">home</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">letter</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">slug</span><span class="si">}</span><span class="s2">-chords-</span><span class="si">{</span><span class="n">artist_id</span><span class="si">}</span><span class="s2">.html"</span><span class="p">)</span>
+        <span class="n">page</span> <span class="o">=</span> <span class="n">fetch</span><span class="p">(</span><span class="n">page_url</span><span class="p">)</span>
+        <span class="n">artist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_artist_name</span><span class="p">(</span><span class="n">page</span><span class="p">)</span> <span class="ow">or</span> <span class="n">slug</span>
+        <span class="n">wanted</span> <span class="o">=</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">title_words</span> <span class="k">if</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">QUERY_NOISE</span><span class="p">)</span>
+        <span class="n">candidates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Candidate</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">title</span><span class="p">,</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">_az_songs</span><span class="p">(</span><span class="n">page</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">wanted</span> <span class="ow">and</span> <span class="n">wanted</span> <span class="ow">not</span> <span class="ow">in</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_words_of</span><span class="p">(</span><span class="n">title</span><span class="p">)):</span>
+                <span class="k">continue</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="n">canonical_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_url</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">url</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">:</span>
+                <span class="n">candidates</span><span class="p">[</span><span class="n">url</span><span class="p">]</span> <span class="o">=</span> <span class="n">Candidate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">url_id</span><span class="p">(</span><span class="n">url</span><span class="p">),</span> <span class="n">title</span><span class="p">,</span> <span class="n">artist</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">limit</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">candidates</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_artist_name</span><span class="p">(</span><span class="n">page</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="n">_TITLE_RE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">_html</span><span class="o">.</span><span class="n">unescape</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="n">found</span> <span class="k">else</span> <span class="s2">""</span>
+        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\s*\((?:Tabs|Chords)[^)]*\)"</span><span class="p">,</span> <span class="n">text</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_artists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fetch</span><span class="p">:</span> <span class="n">Fetch</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""``{slug: (letter, slug, id)}`` from the sitemap, kept on disk for a month."""</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">songleaf.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">data_dir</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">(</span><span class="s2">"cache"</span><span class="p">),</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">-artists.json"</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+                <span class="n">kept</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">kept</span><span class="p">[</span><span class="s2">"fetched"</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">ARTISTS_MAX_AGE</span> <span class="ow">and</span> <span class="n">kept</span><span class="p">[</span><span class="s2">"artists"</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="n">slug</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">slug</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">kept</span><span class="p">[</span><span class="s2">"artists"</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="n">artists</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"&lt;loc&gt;(.*?)&lt;/loc&gt;"</span><span class="p">,</span> <span class="n">fetch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sitemap_url</span><span class="p">)):</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">_AZ_ARTIST_URL</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+                <span class="n">letter</span><span class="p">,</span> <span class="n">slug</span><span class="p">,</span> <span class="n">artist_id</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">"letter"</span><span class="p">,</span> <span class="s2">"slug"</span><span class="p">,</span> <span class="s2">"id"</span><span class="p">)</span>
+                <span class="n">artists</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">slug</span><span class="p">,</span> <span class="p">(</span><span class="n">letter</span><span class="p">,</span> <span class="n">slug</span><span class="p">,</span> <span class="n">artist_id</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">artists</span><span class="p">:</span>  <span class="c1"># an empty list is a changed sitemap: not worth keeping</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="s2">"fetched"</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span> <span class="s2">"artists"</span><span class="p">:</span> <span class="n">artists</span><span class="p">},</span> <span class="n">file</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">artists</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_words_of</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The lowercase words of ``text`` without accents (``"Beyoncé"`` -&gt; ``"beyonce"``)."""</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">unicodedata</span>
+
+    <span class="n">plain</span> <span class="o">=</span> <span class="n">unicodedata</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s2">"NFKD"</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">"ascii"</span><span class="p">,</span> <span class="s2">"ignore"</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"[a-z0-9]+"</span><span class="p">,</span> <span class="n">plain</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_artist_in</span><span class="p">(</span><span class="n">words</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">artists</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The artist whose slug the longest run of ``words`` spells, and the other words.</span>
+
+<span class="sd">    A run spells a slug in reading order (``paper boats`` -&gt; ``paperboats``) or with its</span>
+<span class="sd">    words reversed (``neil sedaka`` -&gt; ``sedakaneil``: the site files people by surname).</span>
+<span class="sd">    """</span>
+    <span class="n">best</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">stop</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">),</span> <span class="n">start</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">run</span> <span class="o">=</span> <span class="n">words</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">spelling</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">run</span><span class="p">),</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="n">run</span><span class="p">))):</span>
+                <span class="n">row</span> <span class="o">=</span> <span class="n">artists</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">spelling</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">row</span> <span class="ow">and</span> <span class="p">(</span><span class="n">best</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">run</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">best</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                    <span class="n">best</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">run</span><span class="p">),</span> <span class="n">row</span><span class="p">,</span> <span class="n">words</span><span class="p">[:</span><span class="n">start</span><span class="p">]</span> <span class="o">+</span> <span class="n">words</span><span class="p">[</span><span class="n">stop</span><span class="p">:])</span>
+    <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">best</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">best</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">best</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_az_songs</span><span class="p">(</span><span class="n">page</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""``(title, song page path)`` of an artist's chords page, a title's versions included."""</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">_AZ_ROW</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">page</span><span class="p">):</span>
+        <span class="n">titled</span> <span class="o">=</span> <span class="n">_AZ_ROW_TITLE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="n">_html</span><span class="o">.</span><span class="n">unescape</span><span class="p">(</span><span class="n">titled</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">"label"</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="n">titled</span> <span class="k">else</span> <span class="s2">""</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">title</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">_AZ_SONG_LINK</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">title</span><span class="p">,</span> <span class="n">link</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">"url"</span><span class="p">)</span>
+
+
 <span class="c1">#: AZChords (azchords.com): chords over lyrics in ``&lt;pre id="content"&gt;``. Its robots.txt</span>
-<span class="c1">#: allows song pages; it publishes no terms beyond a footer limiting use to "private study,</span>
-<span class="c1">#: scholarship, research". Its search box is Google's, so it only reads pages named by URL.</span>
-<span class="n">AZCHORDS</span> <span class="o">=</span> <span class="n">ChartPageSite</span><span class="p">(</span>
+<span class="c1">#: allows song and artist pages; it publishes no terms beyond a footer limiting use to</span>
+<span class="c1">#: "private study, scholarship, research". It lists by artist (see :class:`AzchordsSite`)</span>
+<span class="c1">#: and reads pages named by URL.</span>
+<span class="n">AZCHORDS</span> <span class="o">=</span> <span class="n">AzchordsSite</span><span class="p">(</span>
     <span class="n">name</span><span class="o">=</span><span class="s2">"azchords"</span><span class="p">,</span>
     <span class="n">search_url</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
     <span class="n">result_link</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
     <span class="n">page_path</span><span class="o">=</span><span class="sa">r</span><span class="s2">"^/[a-z0-9]/[a-z0-9]+-tabs-\d+/[a-z0-9]+-tabs-\d+\.html$"</span><span class="p">,</span>
     <span class="n">home</span><span class="o">=</span><span class="s2">"https://www.azchords.com/"</span><span class="p">,</span>
+    <span class="n">sitemap_url</span><span class="o">=</span><span class="s2">"https://www.azchords.com/assets/sitemap/sitemap_azc_s.xml"</span><span class="p">,</span>
     <span class="n">heading</span><span class="o">=</span><span class="s2">"title"</span><span class="p">,</span>  <span class="c1"># its first &lt;h1&gt; is a breadcrumb, artist first</span>
     <span class="n">label</span><span class="o">=</span><span class="s2">"AZChords"</span><span class="p">,</span>
 <span class="p">)</span>
@@ -742,7 +927,7 @@
     <span class="s2">"ug"</span><span class="p">:</span> <span class="n">UltimateGuitarURLSource</span><span class="p">(),</span>
 <span class="p">}</span>
 <span class="c1">#: The sites asked when none are configured: those whose terms allow automated access.</span>
-<span class="n">DEFAULT_WEB_SITES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"lrclib"</span><span class="p">,)</span>
+<span class="n">DEFAULT_WEB_SITES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"lrclib"</span><span class="p">,</span> <span class="s2">"chordie"</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="site_label">
@@ -1140,6 +1325,9 @@
     <span class="n">ranked</span> <span class="o">=</span> <span class="n">find_online</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">sites</span><span class="o">=</span><span class="n">sites</span><span class="p">,</span> <span class="n">fetch</span><span class="o">=</span><span class="n">fetch</span><span class="p">,</span> <span class="o">**</span><span class="n">find_kwargs</span><span class="p">)</span>
     <span class="n">tried</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">score</span><span class="p">,</span> <span class="n">candidate</span><span class="p">,</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">ranked</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">license</span> <span class="o">==</span> <span class="n">LINK_ONLY</span><span class="p">:</span>  <span class="c1"># a link, never a kept copy</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"songleaf: </span><span class="si">%s</span><span class="s2"> may be opened, not kept"</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>
+            <span class="k">continue</span>
         <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">key</span> <span class="ow">in</span> <span class="n">store</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">Found</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">store</span><span class="p">[</span><span class="n">candidate</span><span class="o">.</span><span class="n">key</span><span class="p">],</span> <span class="n">score</span><span class="p">,</span> <span class="n">cached</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">tried</span> <span class="o">&gt;=</span> <span class="n">max_extractions</span><span class="p">:</span>
@@ -1450,7 +1638,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=10aae6bc"></script>
+</div><script src="../../_static/documentation_options.js?v=b9ea92da"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
