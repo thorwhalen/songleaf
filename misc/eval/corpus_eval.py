@@ -50,7 +50,12 @@ LAYOUTS = (
 SCORE_LAYOUTS = ("score", "two-column+score")
 #: One fixed two-bar phrase per song for the score layouts (songleaf#53): only its size matters.
 REFERENCE_ABC = "X:1\nM:4/4\nL:1/8\nK:C\nCDEF GABc|c2B2 A2G2|"
-HELVETICA = dict(lyric_font="Helvetica", chord_font="Helvetica-Bold", label_font="Helvetica-Bold", title_font="Helvetica-Bold")
+HELVETICA = dict(
+    lyric_font="Helvetica",
+    chord_font="Helvetica-Bold",
+    label_font="Helvetica-Bold",
+    title_font="Helvetica-Bold",
+)
 CHORD_SHARE = 0.6
 
 
@@ -79,21 +84,33 @@ def _fit_one(args):
     from songleaf.render import DenseStyle, fit_font_size, layout_named
 
     rows = []
-    styles = [("default", DenseStyle())] + ([("helvetica", DenseStyle(**HELVETICA))] if helvetica else [])
+    styles = [("default", DenseStyle())] + (
+        [("helvetica", DenseStyle(**HELVETICA))] if helvetica else []
+    )
     scored = None
     if score:
         from songleaf.snippets import mark_segment
 
         try:
             scored = mark_segment(song, REFERENCE_ABC)
-        except ValueError:  # no lyric line to put a snippet over: no score rows for this song
+        except (
+            ValueError
+        ):  # no lyric line to put a snippet over: no score rows for this song
             pass
     for font, style in styles:
         for spec in specs + (SCORE_LAYOUTS if scored is not None else ()):
             target = scored if "score" in spec else song
             t0 = time.perf_counter()
             size = fit_font_size(target, layout=layout_named(spec, style=style))
-            rows.append((song_id, font, spec, round(size, 2), round((time.perf_counter() - t0) * 1000, 1)))
+            rows.append(
+                (
+                    song_id,
+                    font,
+                    spec,
+                    round(size, 2),
+                    round((time.perf_counter() - t0) * 1000, 1),
+                )
+            )
     return rows
 
 
@@ -116,15 +133,19 @@ def layouts(args):
     for song_id, font, spec, size, ms in rows:
         by.setdefault((font, spec), {})[song_id] = (size, ms)
     print(f"{len(songs)} songs; {out}")
-    print("| font | layout | at min size (6 pt) | p10 | median | p90 | median vs dense | ms median |")
+    print(
+        "| font | layout | at min size (6 pt) | p10 | median | p90 | median vs dense | ms median |"
+    )
     print("|---|---|---|---|---|---|---|---|")
     for (font, spec), d in by.items():
         sizes = [v[0] for v in d.values()]
-        dense = statistics.median(v[0] for k, v in by[(font, "dense")].items() if k in d)
+        dense = statistics.median(
+            v[0] for k, v in by[(font, "dense")].items() if k in d
+        )
         med = statistics.median(sizes)
         print(
-            f"| {font} | `{spec}` | {sum(s <= 6.0 for s in sizes)} | {_pct(sizes, .1):.1f} | {med:.1f} | "
-            f"{_pct(sizes, .9):.1f} | {100 * (med / dense - 1):+.1f}% | {statistics.median(v[1] for v in d.values()):.0f} |"
+            f"| {font} | `{spec}` | {sum(s <= 6.0 for s in sizes)} | {_pct(sizes, 0.1):.1f} | {med:.1f} | "
+            f"{_pct(sizes, 0.9):.1f} | {100 * (med / dense - 1):+.1f}% | {statistics.median(v[1] for v in d.values()):.0f} |"
         )
 
 
@@ -152,17 +173,28 @@ def chordlines(args):
                 shapes.update(_shape(t) for t in tokens if not is_chord_token(t))
         songs_hit += hit > 0
         lines_hit += hit
-    print(f"{len(ids)} songs: {songs_hit} songs, {lines_hit} lines with >= {CHORD_SHARE:.0%} chord tokens kept as lyrics")
-    print("blocking token shapes (C = a note letter, 9 = digits, a = lowercase run):", shapes.most_common(15))
+    print(
+        f"{len(ids)} songs: {songs_hit} songs, {lines_hit} lines with >= {CHORD_SHARE:.0%} chord tokens kept as lyrics"
+    )
+    print(
+        "blocking token shapes (C = a note letter, 9 = digits, a = lowercase run):",
+        shapes.most_common(15),
+    )
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = p.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("layouts")
-    a.add_argument("--ids-from", required=True, help="a CSV with an `id` column (the #4 sample)")
-    a.add_argument("--helvetica", action="store_true", help="also measure the old Helvetica style")
-    a.add_argument("--score", action="store_true", help="also measure the score layouts")
+    a.add_argument(
+        "--ids-from", required=True, help="a CSV with an `id` column (the #4 sample)"
+    )
+    a.add_argument(
+        "--helvetica", action="store_true", help="also measure the old Helvetica style"
+    )
+    a.add_argument(
+        "--score", action="store_true", help="also measure the score layouts"
+    )
     a.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 2) // 2))
     a.add_argument("--out", default="layouts-remeasure.csv")
     a.set_defaults(func=layouts)
