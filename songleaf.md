@@ -1,4 +1,4 @@
-> built 2026-11-23 13:16 UTC from 8f231b1 (main) · songleaf 0.0.35. Details: build_info.json
+> built 2026-11-24 01:57 UTC from 032bf2d (main) · songleaf 0.0.36. Details: build_info.json
 
 # index.html.md
 
@@ -17,7 +17,7 @@ The default source is the Kaggle *chords-and-lyrics* corpus (about 135,000 songs
 
 ## What the sheet looks like
 
-- **One page, largest type that fits.** The lyric font size is found by search for each song. On 2,000 randomly sampled corpus songs, the default layout’s median came out around 23 pt, and 1,999 of the 2,000 fit on one page. A song that cannot fit at the minimum size spills onto a second page.
+- **One page, largest type that fits.** The lyric font size is found by search for each song. On 2,000 randomly sampled corpus songs, the default layout’s median is about 21.5 pt in the default font (DejaVu Sans; 22.7 pt in Helvetica), and 1,999 of the 2,000 fit on one page (`misc/eval/corpus_eval.py` reruns the measurement). A song that cannot fit at the minimum size spills onto a second page.
 - **Any script the font covers.** Text is set in DejaVu Sans, bundled with the package and embedded in each PDF (Bitstream Vera licence, beside the font files), so Turkish, Greek, Cyrillic and other non-Latin-1 text draws correctly. It is wider than Helvetica, so fitted sizes are somewhat smaller than the numbers above, which were measured in Helvetica; `DenseStyle(lyric_font="Helvetica", ...)` restores the old look.
 - **Chords take no line of their own.** They are smaller and blue, start over the syllable they land on, and overlap the tops of the letters of their lyric line.
 - **Lines share rows.** Consecutive lines of a paragraph are packed onto one row, separated by a light `/`. A blank line or a new section starts a new row.
@@ -4460,18 +4460,16 @@ True
 
 # About this build
 
-This documentation was built on **2026-11-23 13:16 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/8f231b1f19fecafb3dc98a54e463ec1e6443f7e4"><code>8f231b1</code></a> on branch <code>main</code>, for **songleaf 0.0.35** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-24 01:57 UTC** from commit <a href="https://github.com/thorwhalen/songleaf/commit/032bf2df7d0b368600d79129cf0b7955f38321ae"><code>032bf2d</code></a> on branch <code>main</code>, for **songleaf 0.0.36** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.35) is behind the latest release on PyPI (0.0.36): `pip install songleaf` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/8f231b1f19fecafb3dc98a54e463ec1e6443f7e4"><code>8f231b1f19fecafb3dc98a54e463ec1e6443f7e4</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/songleaf/commit/032bf2df7d0b368600d79129cf0b7955f38321ae"><code>032bf2df7d0b368600d79129cf0b7955f38321ae</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -4482,9 +4480,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/songleaf</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/45181963065">45181963065</a>  |
+| Run          | <a href="https://github.com/thorwhalen/songleaf/actions/runs/45308514280">45308514280</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>8f231b1f19fecafb3dc98a54e463ec1e6443f7e4</code> (in the history of the built commit) |
+| Event commit | <code>032bf2df7d0b368600d79129cf0b7955f38321ae</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -4509,13 +4507,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/songleaf/0.0.36/">0.0.36</a>, newer than the documented version (0.0.35).
+Latest release: <a href="https://pypi.org/project/songleaf/0.0.36/">0.0.36</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/songleaf && cd songleaf
-git checkout 8f231b1f19fecafb3dc98a54e463ec1e6443f7e4
+git checkout 032bf2df7d0b368600d79129cf0b7955f38321ae
 pip install "epythet==0.2.25"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
